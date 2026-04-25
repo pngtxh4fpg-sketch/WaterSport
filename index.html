@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WakeSki"/>
+<meta name="theme-color" content="#000000"/>
+<title>WakeSki Pro</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+*,*::before,*::after{
+box-sizing:border-box;margin:0;padding:0;
+/* ── Verhindert Textmarkierung bei Long-Press ── */
+user-select:none;
+-webkit-user-select:none;
+-webkit-touch-callout:none;   /* iOS: kein Kontext-Popup auf Bilder/Links */
+}
+/* Inputs dürfen Text selektieren */
+input,textarea{user-select:text;-webkit-user-select:text}
+
+:root{
+–bg:#000;–bg1:#0a0a0a;–bg2:#111;–bg3:#1a1a1a;
+–glass:rgba(255,255,255,.04);–glass-b:rgba(255,255,255,.09);–glass-s:rgba(255,255,255,.08);
+–ac:#0a84ff;–ac-glow:rgba(10,132,255,.28);–ac-light:rgba(10,132,255,.12);
+–green:#30d158;–green-g:rgba(48,209,88,.25);
+–red:#ff453a;–red-g:rgba(255,69,58,.3);
+–yellow:#ffd60a;–yellow-g:rgba(255,214,10,.25);
+–purple:#bf5af2;–orange:#ff9f0a;–pink:#ff2d55;–teal:#5ac8fa;
+–tx:rgba(255,255,255,.92);–tx2:rgba(255,255,255,.55);–tx3:rgba(255,255,255,.28);
+–r:20px;–r-lg:28px;–r-xl:36px;
+–fd:‘Barlow Condensed’,sans-serif;–fb:‘DM Sans’,sans-serif;
+–nav-h:82px;–safe-b:env(safe-area-inset-bottom,0px);
+}
+
+html,body{height:100%;width:100%;background:var(–bg);color:var(–tx);font-family:var(–fb);
+-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden;max-width:430px;margin:0 auto}
+#app::before{content:’’;position:fixed;inset:0;
+background-image:url(“data:image/svg+xml,%3Csvg viewBox=‘0 0 256 256’ xmlns=‘http://www.w3.org/2000/svg’%3E%3Cfilter id=‘n’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.9’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23n)’ opacity=‘0.03’/%3E%3C/svg%3E”);
+pointer-events:none;z-index:999;opacity:.4}
+
+.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 0 calc(var(–nav-h) + 12px)}
+.page::-webkit-scrollbar{display:none}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes ripple{0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.2);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fallShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px var(–ac-glow)}50%{box-shadow:0 0 40px var(–ac-glow),0 0 60px rgba(10,132,255,.12)}}
+@keyframes lockProgress{from{width:0}to{width:100%}}
+
+/* ── NAV ── */
+#nav{
+position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+width:100%;max-width:430px;height:var(–nav-h);
+background:rgba(10,10,10,.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);
+border-top:.5px solid var(–glass-b);
+display:flex;align-items:flex-start;justify-content:space-around;
+z-index:200;padding:10px 0 calc(10px + var(–safe-b));
+}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;
+cursor:pointer;padding:8px 16px;border-radius:14px;font-family:var(–fb);font-size:10px;font-weight:500;transition:color .2s}
+.nav-btn svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
+.nav-btn.active{color:var(–ac)}
+.nav-btn.active svg{transform:scale(1.08)}
+.nav-btn:active{opacity:.6}
+
+/* ── BASE UI ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;
+border-radius:16px;border:none;cursor:pointer;font-family:var(–fb);font-size:16px;font-weight:600;
+transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%;position:relative;overflow:hidden}
+.btn:active{transform:scale(.965)}
+.btn-primary{background:var(–ac);color:#fff;box-shadow:0 4px 24px var(–ac-glow)}
+.btn-danger{background:var(–red);color:#fff;box-shadow:0 4px 24px var(–red-g)}
+.btn-ghost{background:var(–glass-s);border:.5px solid var(–glass-b);color:var(–tx)}
+.btn-sm{padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
+
+.inp{width:100%;background:var(–glass-s);border:.5px solid var(–glass-b);border-radius:14px;
+padding:14px 16px;color:var(–tx);font-family:var(–fb);font-size:16px;outline:none;
+transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.inp:focus{border-color:var(–ac);box-shadow:0 0 0 3px var(–ac-light)}
+.inp::placeholder{color:var(–tx3)}
+
+/* ── PERMISSION SCREEN ── */
+#screen-permission{
+position:fixed;inset:0;z-index:1000;background:var(–bg);
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+padding:32px 28px;animation:fadeIn .4s ease both;
+}
+.perm-logo{font-family:var(–fd);font-size:58px;font-weight:800;color:#fff;letter-spacing:2px;
+margin-bottom:8px;text-shadow:0 0 60px rgba(10,132,255,.4)}
+.perm-tagline{font-size:14px;color:var(–tx2);margin-bottom:48px;letter-spacing:.3px}
+.perm-items{width:100%;margin-bottom:36px;display:flex;flex-direction:column;gap:12px}
+.perm-item{display:flex;align-items:center;gap:16px;padding:16px 18px;
+background:var(–glass);border:.5px solid var(–glass-b);border-radius:18px;
+animation:fadeUp .4s cubic-bezier(.34,1.2,.64,1) both}
+.perm-item:nth-child(1){animation-delay:.1s}
+.perm-item:nth-child(2){animation-delay:.18s}
+.perm-item:nth-child(3){animation-delay:.26s}
+.perm-icon{width:44px;height:44px;border-radius:12px;background:var(–ac-light);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.perm-icon svg{width:22px;height:22px;color:var(–ac)}
+.perm-text-title{font-size:15px;font-weight:600;margin-bottom:2px}
+.perm-text-sub{font-size:12px;color:var(–tx2)}
+.perm-btn-wrap{width:100%;animation:fadeUp .4s .36s cubic-bezier(.34,1.2,.64,1) both}
+
+/* ── TRACK PAGE ── */
+.track-header{padding:56px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.track-title{font-family:var(–fd);font-size:32px;font-weight:800}
+.gps-badge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;
+background:var(–glass);border:.5px solid var(–glass-b);font-size:12px;font-weight:500}
+.gps-dot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
+.gps-dot.waiting{background:var(–yellow);animation:pulse 1.4s ease-in-out infinite}
+.gps-dot.ready{background:var(–green);box-shadow:0 0 8px var(–green-g)}
+.gps-dot.error{background:var(–red)}
+
+.speed-wrap{display:flex;flex-direction:column;align-items:center;padding:28px 20px 20px}
+.speed-ring{position:relative;width:230px;height:230px;display:flex;align-items:center;justify-content:center}
+.speed-ring svg.ring-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.speed-ring .ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:3}
+.speed-ring .ring-fill{fill:none;stroke:var(–ac);stroke-width:3;stroke-linecap:round;
+stroke-dasharray:603;stroke-dashoffset:603;
+transition:stroke-dashoffset .6s cubic-bezier(.34,1.2,.64,1),stroke .4s ease;
+filter:drop-shadow(0 0 6px var(–ac))}
+.speed-ring .ring-fill.warn{stroke:var(–yellow);filter:drop-shadow(0 0 6px var(–yellow-g))}
+.speed-ring .ring-fill.danger{stroke:var(–red);filter:drop-shadow(0 0 6px var(–red-g))}
+.speed-inner{display:flex;flex-direction:column;align-items:center;z-index:1}
+.speed-num{font-family:var(–fd);font-size:88px;font-weight:800;line-height:1;color:#fff;
+transition:color .4s;text-shadow:0 0 40px rgba(255,255,255,.08)}
+.speed-num.warn{color:var(–yellow);text-shadow:0 0 40px var(–yellow-g)}
+.speed-num.danger{color:var(–red);text-shadow:0 0 40px var(–red-g)}
+.speed-unit{font-size:15px;font-weight:400;color:var(–tx2);margin-top:-2px;letter-spacing:1px}
+
+.metrics-strip{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:0 16px;margin-bottom:14px}
+.metric-cell{background:var(–glass);border:.5px solid var(–glass-b);border-radius:16px;padding:11px 8px 10px;text-align:center}
+.metric-val{font-family:var(–fd);font-size:22px;font-weight:700;line-height:1;color:var(–tx)}
+.metric-lbl{font-size:9px;color:var(–tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
+
+.track-btn-wrap{padding:0 16px;margin-bottom:14px}
+.track-btn{width:100%;height:64px;border-radius:20px;border:none;cursor:pointer;
+font-family:var(–fb);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;
+position:relative;overflow:hidden;transition:all .25s cubic-bezier(.34,1.4,.64,1)}
+.track-btn.start{background:var(–ac);color:#fff;box-shadow:0 6px 32px var(–ac-glow);animation:glowPulse 3s ease-in-out infinite}
+.track-btn.stop{background:var(–red);color:#fff;box-shadow:0 6px 32px var(–red-g)}
+.track-btn:active{transform:scale(.96)}
+.track-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;animation:none}
+
+.map-wrap{margin:0 16px 14px;border-radius:20px;overflow:hidden;border:.5px solid var(–glass-b);height:220px;position:relative}
+#map{width:100%;height:100%;background:#0a0d12}
+.map-overlay{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.75);backdrop-filter:blur(10px);
+border-radius:8px;padding:4px 8px;font-size:10px;color:var(–tx2);border:.5px solid var(–glass-b);z-index:500}
+
+.fall-alert{margin:0 16px 14px;padding:14px 18px;background:rgba(255,69,58,.1);
+border:.5px solid rgba(255,69,58,.35);border-radius:18px;display:flex;align-items:center;gap:14px}
+.fall-icon{font-size:28px;flex-shrink:0}
+.fall-title{font-weight:700;color:var(–red);font-size:15px}
+.fall-sub{font-size:12px;color:var(–tx2);margin-top:1px}
+
+/* ── HISTORY PAGE ── */
+.page-header{padding:56px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.page-header-title{font-family:var(–fd);font-size:32px;font-weight:800}
+
+/* Folder tabs */
+.folder-tabs-wrap{padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;display:flex;gap:8px}
+.folder-tabs-wrap::-webkit-scrollbar{display:none}
+.folder-tab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;
+font-size:13px;font-weight:500;background:var(–glass);border:.5px solid var(–glass-b);
+cursor:pointer;white-space:nowrap;color:var(–tx2);transition:all .18s ease;-webkit-tap-highlight-color:transparent}
+.folder-tab.active{background:var(–ac);border-color:var(–ac);color:#fff}
+.folder-tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.folder-tab-add{background:none;border-style:dashed;color:var(–tx3)}
+
+/* Run cards */
+.run-card{margin:0 16px 10px;padding:18px;background:var(–glass);border:.5px solid var(–glass-b);
+border-radius:var(–r-lg);animation:fadeUp .4s cubic-bezier(.34,1.2,.64,1) both;transition:border-color .2s}
+.run-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.run-card-left{flex:1;cursor:pointer;min-width:0}
+.run-name{font-weight:600;font-size:16px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run-date{font-size:12px;color:var(–tx2)}
+.run-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;margin-left:12px}
+.run-speed-large{font-family:var(–fd);font-size:34px;font-weight:800;color:var(–tx);line-height:1}
+.run-speed-unit{font-size:11px;color:var(–tx2);text-align:right}
+.run-menu-btn{width:30px;height:30px;border-radius:50%;background:var(–glass-s);border:.5px solid var(–glass-b);
+display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(–tx2);transition:all .15s;flex-shrink:0}
+.run-menu-btn:active{transform:scale(.88)}
+.run-folder-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;
+font-size:10px;font-weight:500;color:var(–tx2);background:rgba(255,255,255,.05);margin-bottom:8px}
+.run-folder-badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.run-stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.run-stat{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
+.run-stat-val{font-size:14px;font-weight:600}
+.run-stat-lbl{font-size:9px;color:var(–tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(–tx2)}
+.empty-icon{font-size:52px;margin-bottom:14px;opacity:.5}
+.empty-text{font-size:15px}
+
+/* ── SETTINGS PAGE ── */
+.profile-card{margin:0 16px 14px;padding:20px;background:var(–glass);border:.5px solid var(–glass-b);
+border-radius:var(–r-xl);display:flex;align-items:center;gap:16px;cursor:pointer;transition:border-color .2s}
+.profile-card:active{border-color:rgba(10,132,255,.4)}
+.settings-avatar{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+font-family:var(–fd);font-size:26px;font-weight:800;color:#fff;flex-shrink:0;transition:background .3s}
+.profile-name-text{font-size:18px;font-weight:700}
+.profile-sub-text{font-size:12px;color:var(–tx2);margin-top:3px}
+.profile-edit-hint{font-size:11px;color:var(–tx3);margin-top:6px}
+
+.settings-section{margin:0 16px 14px;background:var(–glass);border:.5px solid var(–glass-b);border-radius:20px;overflow:hidden}
+.settings-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:.5px solid var(–glass-b);
+cursor:pointer;transition:background .15s}
+.settings-row:last-child{border-bottom:none}
+.settings-row:active{background:var(–glass-s)}
+.settings-row-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.settings-row-text{flex:1}
+.settings-row-label{font-size:15px;font-weight:500}
+.settings-row-sub{font-size:12px;color:var(–tx2);margin-top:1px}
+.settings-chevron{color:var(–tx2)}
+.settings-chevron svg{width:16px;height:16px}
+
+/* ── DETAIL PAGE ── */
+#page-detail{position:fixed;inset:0;z-index:150;background:var(–bg);overflow-y:auto}
+#page-detail::-webkit-scrollbar{display:none}
+.detail-header{padding:56px 20px 18px;display:flex;align-items:flex-start;gap:14px}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(–glass);border:.5px solid var(–glass-b);
+display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
+.back-btn:active{transform:scale(.9)}
+.back-btn svg{width:18px;height:18px;color:var(–ac)}
+.detail-title{font-family:var(–fd);font-size:28px;font-weight:800;line-height:1.15}
+.detail-date{font-size:12px;color:var(–tx2);margin-top:4px}
+.detail-hero{margin:0 16px 14px;padding:22px;
+background:linear-gradient(135deg,rgba(10,132,255,.1) 0%,rgba(0,0,0,0) 70%);
+border:.5px solid rgba(10,132,255,.2);border-radius:var(–r-xl);text-align:center}
+.detail-speed-big{font-family:var(–fd);font-size:80px;font-weight:800;line-height:1;color:#fff;margin-bottom:4px}
+.detail-speed-lbl{font-size:13px;color:var(–tx2);letter-spacing:1px;text-transform:uppercase}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
+.detail-stat{padding:16px;background:var(–glass);border:.5px solid var(–glass-b);border-radius:18px}
+.detail-stat-val{font-family:var(–fd);font-size:30px;font-weight:700;color:var(–tx);line-height:1}
+.detail-stat-lbl{font-size:11px;color:var(–tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.8px}
+.section-label{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1.2px;padding:0 20px;margin-bottom:8px;margin-top:6px}
+.detail-map-wrap{margin:0 16px 14px;border-radius:20px;overflow:hidden;border:.5px solid var(–glass-b);height:240px}
+#map-detail{width:100%;height:100%;background:#0a0d12}
+.fall-list{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
+.fall-item{display:flex;align-items:center;gap:14px;padding:14px 16px;
+background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:16px}
+.fall-item-title{font-size:14px;font-weight:600}
+.fall-item-detail{font-size:12px;color:var(–tx2);margin-top:1px}
+.speed-chart-wrap{margin:0 16px 14px;padding:16px;background:var(–glass);border:.5px solid var(–glass-b);border-radius:20px}
+.speed-chart-canvas{width:100%;height:80px;display:block}
+.delete-btn{margin:0 16px 40px;padding:15px;background:rgba(255,69,58,.1);border:.5px solid rgba(255,69,58,.3);
+border-radius:16px;color:var(–red);font-family:var(–fb);font-size:15px;font-weight:600;
+cursor:pointer;width:calc(100% - 32px);display:flex;align-items:center;justify-content:center;gap:8px}
+.delete-btn:active{transform:scale(.97)}
+
+/* ── WATER LOCK ── */
+#water-lock{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.96);
+display:none;flex-direction:column;align-items:center;justify-content:center;animation:fadeIn .3s ease both}
+#water-lock.active{display:flex}
+.lock-icon{font-size:60px;margin-bottom:16px}
+.lock-title{font-family:var(–fd);font-size:36px;font-weight:800;margin-bottom:8px}
+.lock-sub{font-size:15px;color:var(–tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
+.lock-btn{width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+cursor:pointer;position:relative;overflow:hidden;touch-action:none}
+.lock-btn-progress{position:absolute;bottom:0;left:0;height:4px;background:var(–ac);width:0;border-radius:2px}
+.lock-btn-progress.animating{animation:lockProgress 2s linear both}
+.lock-btn-text{font-size:14px;color:var(–tx2);margin-top:10px}
+.lock-waves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.lock-wave{position:absolute;inset:0;border-radius:50%;border:2px solid var(–ac);opacity:0}
+.lock-btn.pressing .lock-wave{animation:ripple 1s ease-out infinite}
+.lock-btn.pressing .lock-wave:nth-child(2){animation-delay:.3s}
+.lock-btn.pressing .lock-wave:nth-child(3){animation-delay:.6s}
+
+/* ── SHEETS & OVERLAYS ── */
+.overlay-bg{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);
+display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease both;
+padding-bottom:calc(var(–safe-b) + 16px)}
+
+.sheet{width:100%;max-width:430px;background:rgba(20,20,22,.98);border:.5px solid var(–glass-b);
+border-radius:28px 28px 20px 20px;animation:slideUp .32s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
+
+.sheet-header{padding:18px 20px 12px;border-bottom:.5px solid var(–glass-b)}
+.sheet-title{font-size:17px;font-weight:700}
+.sheet-sub{font-size:12px;color:var(–tx2);margin-top:2px}
+
+.sheet-row{display:flex;align-items:center;gap:14px;padding:15px 20px;cursor:pointer;
+border-bottom:.5px solid rgba(255,255,255,.04);transition:background .15s;font-size:15px;font-weight:500}
+.sheet-row:last-child{border-bottom:none}
+.sheet-row:active{background:var(–glass-s)}
+.sheet-row.red{color:var(–red)}
+.sheet-row.cancel{color:var(–tx2);border-top:.5px solid var(–glass-b);margin-top:4px}
+.sheet-row-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.sheet-check{margin-left:auto;width:22px;height:22px;border-radius:50%;background:var(–ac);
+display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.sheet-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+.sheet-body{padding:20px}
+.sheet-label{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.color-swatches{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.color-swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;
+transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
+.color-swatch:active{transform:scale(.88)}
+.color-swatch.selected{box-shadow:0 0 0 2px #fff,0 0 0 5px rgba(255,255,255,.3);transform:scale(1.12)}
+.color-swatch.selected::after{content:‘✓’;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:700}
+
+/* ── CONFIRM OVERLAY ── */
+.confirm-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);
+display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s ease both;
+padding-bottom:calc(var(–safe-b) + 20px)}
+.confirm-sheet{width:100%;max-width:430px;padding:24px 20px;background:rgba(28,28,30,.98);
+border:.5px solid var(–glass-b);border-radius:28px 28px 20px 20px;animation:slideUp .3s cubic-bezier(.34,1.3,.64,1) both}
+.confirm-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.confirm-sub{font-size:14px;color:var(–tx2);margin-bottom:20px}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:800;
+background:rgba(28,28,30,.95);border:.5px solid var(–glass-b);border-radius:20px;padding:10px 18px;
+font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);
+pointer-events:none;transition:opacity .3s,transform .3s;opacity:0;transform:translateX(-50%) translateY(-8px)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── LEAFLET DARK ── */
+.leaflet-container{background:#0a0d12 !important}
+.leaflet-tile{filter:brightness(.65) saturate(.7) hue-rotate(200deg)}
+.leaflet-popup-content-wrapper{background:rgba(10,13,20,.96);border:.5px solid var(–glass-b);border-radius:12px;color:var(–tx)}
+.leaflet-popup-tip{background:rgba(10,13,20,.96)}
+.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(–tx) !important;border-color:var(–glass-b) !important}
+.leaflet-control-attribution{display:none}
+</style>
+
+</head>
+<body>
+
+<!-- ═══ PERMISSION SCREEN ═══ -->
+
+<div id="screen-permission">
+  <div class="perm-logo">WakeSki</div>
+  <div class="perm-tagline">Wasserski · Wakeboard · Wakesurf</div>
+  <div class="perm-items">
+    <div class="perm-item">
+      <div class="perm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      </div>
+      <div>
+        <div class="perm-text-title">GPS & Standort</div>
+        <div class="perm-text-sub">Für Geschwindigkeit, Distanz und Streckenverfolgung</div>
+      </div>
+    </div>
+    <div class="perm-item">
+      <div class="perm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12L7 7M12 12l5-5M2 17l5-3M17 14l5 3"/></svg>
+      </div>
+      <div>
+        <div class="perm-text-title">Bewegungssensoren</div>
+        <div class="perm-text-sub">Sturzerkennung via Beschleunigungssensor</div>
+      </div>
+    </div>
+    <div class="perm-item">
+      <div class="perm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>
+      </div>
+      <div>
+        <div class="perm-text-title">Lokaler Speicher</div>
+        <div class="perm-text-sub">Automatisches Speichern deiner Fahrten offline</div>
+      </div>
+    </div>
+  </div>
+  <div class="perm-btn-wrap">
+    <button class="btn btn-primary" id="perm-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Berechtigungen erteilen
+    </button>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+
+<div id="app" style="display:none;">
+  <div id="toast"></div>
+
+  <!-- ── TRACK PAGE ── -->
+
+  <div id="page-track" class="page" style="display:none;">
+    <div class="track-header">
+      <div class="track-title">Track</div>
+      <div class="gps-badge">
+        <div class="gps-dot" id="gps-dot"></div>
+        <span id="gps-label">Warte…</span>
+      </div>
+    </div>
+    <div class="speed-wrap">
+      <div class="speed-ring">
+        <svg class="ring-svg" viewBox="0 0 200 200">
+          <circle class="ring-bg" cx="100" cy="100" r="96"/>
+          <circle class="ring-fill" cx="100" cy="100" r="96" id="ring-fill"/>
+        </svg>
+        <div class="speed-inner">
+          <div class="speed-num" id="speed-num">0</div>
+          <div class="speed-unit">km/h</div>
+        </div>
+      </div>
+    </div>
+    <div class="metrics-strip">
+      <div class="metric-cell">
+        <div class="metric-val" id="m-max">0</div>
+        <div class="metric-lbl">Max</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-val" id="m-avg">0</div>
+        <div class="metric-lbl">Avg</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-val" id="m-dist">0.00</div>
+        <div class="metric-lbl" id="m-dist-lbl">km</div>
+      </div>
+      <div class="metric-cell">
+        <div class="metric-val" id="m-time">0:00</div>
+        <div class="metric-lbl">Zeit</div>
+      </div>
+    </div>
+    <div class="track-btn-wrap">
+      <button class="track-btn start" id="track-btn" disabled>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        <span id="track-btn-label">Run starten</span>
+      </button>
+    </div>
+    <div style="padding:0 16px;margin-bottom:14px;">
+      <button class="btn btn-ghost" id="lock-btn" style="display:flex;align-items:center;gap:9px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+        Wassergeschützt sperren
+      </button>
+    </div>
+    <div class="map-wrap" id="map-wrap" style="display:none;">
+      <div id="map"></div>
+      <div class="map-overlay">Live Track</div>
+    </div>
+    <div class="fall-alert" id="fall-alert" style="display:none;">
+      <div class="fall-icon">💥</div>
+      <div>
+        <div class="fall-title" id="fall-alert-title">Sturz erkannt!</div>
+        <div class="fall-sub" id="fall-alert-sub">Starker Aufprall detektiert</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORY PAGE ── -->
+
+  <div id="page-history" class="page" style="display:none;">
+    <div class="page-header">
+      <div class="page-header-title">Verlauf</div>
+      <button class="btn btn-sm btn-ghost" id="new-folder-btn" style="display:flex;align-items:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Ordner
+      </button>
+    </div>
+    <div class="folder-tabs-wrap" id="folder-tabs"></div>
+    <div id="runs-list"></div>
+  </div>
+
+  <!-- ── SETTINGS PAGE ── -->
+
+  <div id="page-settings" class="page" style="display:none;">
+    <div class="page-header">
+      <div class="page-header-title">Einstellungen</div>
+    </div>
+    <!-- Profile card (tap to edit) -->
+    <div class="profile-card" id="profile-card">
+      <div class="settings-avatar" id="settings-avatar">W</div>
+      <div style="flex:1;min-width:0;">
+        <div class="profile-name-text" id="profile-name-el">Fahrer</div>
+        <div class="profile-sub-text" id="profile-stats">0 Fahrten · 0 km</div>
+        <div class="profile-edit-hint">Tippen zum Bearbeiten</div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx3);flex-shrink:0"><polyline points="9,18 15,12 9,6"/></svg>
+    </div>
+
+```
+<div class="settings-section">
+  <div class="settings-row" id="s-export">
+    <div class="settings-row-icon" style="background:rgba(10,132,255,.15);">📤</div>
+    <div class="settings-row-text">
+      <div class="settings-row-label">Daten exportieren</div>
+      <div class="settings-row-sub">Profil + Fahrten als JSON</div>
+    </div>
+    <div class="settings-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9,18 15,12 9,6"/></svg></div>
+  </div>
+  <div class="settings-row" id="s-import">
+    <div class="settings-row-icon" style="background:rgba(48,209,88,.15);">📥</div>
+    <div class="settings-row-text">
+      <div class="settings-row-label">Daten importieren</div>
+      <div class="settings-row-sub">JSON-Backup laden</div>
+    </div>
+    <div class="settings-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9,18 15,12 9,6"/></svg></div>
+  </div>
+</div>
+
+<div class="settings-section">
+  <div class="settings-row" id="s-clear">
+    <div class="settings-row-icon" style="background:rgba(255,69,58,.15);">🗑️</div>
+    <div class="settings-row-text">
+      <div class="settings-row-label">Alle Fahrten löschen</div>
+      <div class="settings-row-sub">Lokalen Speicher leeren</div>
+    </div>
+  </div>
+</div>
+
+<div class="settings-section">
+  <div class="settings-row" style="cursor:default;">
+    <div class="settings-row-icon" style="background:rgba(255,255,255,.06);">ℹ️</div>
+    <div class="settings-row-text">
+      <div class="settings-row-label">WakeSki Pro v2.0</div>
+      <div class="settings-row-sub">GPS-Tracker mit Sturzerkennung & Ordnersystem</div>
+    </div>
+  </div>
+</div>
+<div style="height:20px;"></div>
+```
+
+  </div>
+
+  <!-- ── DETAIL PAGE ── -->
+
+  <div id="page-detail" style="display:none;">
+    <div class="detail-header">
+      <button class="back-btn" id="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+      </button>
+      <div>
+        <div class="detail-title" id="detail-title">Run</div>
+        <div class="detail-date" id="detail-date"></div>
+      </div>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- ── NAV ── -->
+
+  <nav id="nav">
+    <button class="nav-btn active" data-page="track">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
+      Track
+    </button>
+    <button class="nav-btn" data-page="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Verlauf
+    </button>
+    <button class="nav-btn" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Mehr
+    </button>
+  </nav>
+</div>
+
+<!-- ═══ WATER LOCK ═══ -->
+
+<div id="water-lock">
+  <div class="lock-icon">💧</div>
+  <div class="lock-title">Wassergeschützt</div>
+  <div class="lock-sub">Bildschirm gesperrt. Halte den Kreis 2 Sekunden gedrückt zum Entsperren.</div>
+  <div class="lock-btn" id="lock-release-btn">
+    <div class="lock-waves">
+      <div class="lock-wave"></div>
+      <div class="lock-wave"></div>
+      <div class="lock-wave"></div>
+    </div>
+    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+    </svg>
+    <div class="lock-btn-progress" id="lock-progress"></div>
+  </div>
+  <div class="lock-btn-text">Gedrückt halten</div>
+</div>
+
+<!-- ═══ CONFIRM OVERLAY ═══ -->
+
+<div class="confirm-overlay" id="confirm-overlay" style="display:none;">
+  <div class="confirm-sheet">
+    <div class="confirm-title" id="confirm-title"></div>
+    <div class="confirm-sub" id="confirm-sub"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" id="confirm-no">Abbrechen</button>
+      <button class="btn btn-danger" id="confirm-yes">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden import input -->
+
+<input type="file" id="import-input" accept=".json" style="display:none;"/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════
+// SERVICE WORKER (Offline-Betrieb)
+// ══════════════════════════════════════════
+const SW_SRC = `
+const CACHE='wakeski-v2';
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.add(location.href)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',e=>{e.waitUntil(clients.claim());});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  e.respondWith(caches.match(e.request).then(cached=>{
+    const net=fetch(e.request).then(res=>{
+      if(res.ok)caches.open(CACHE).then(c=>c.put(e.request,res.clone()));
+      return res;
+    }).catch(()=>cached);
+    return cached||net;
+  }));
+});`;
+if('serviceWorker' in navigator){
+  const b=new Blob([SW_SRC],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(b)).catch(()=>{});
+}
+
+// ══════════════════════════════════════════
+// DATABASE (localStorage)
+// ══════════════════════════════════════════
+const DB = {
+  // ── Runs ──
+  getRuns:    ()=>{ try{return JSON.parse(localStorage.getItem('ws_runs'))||[];}catch{return [];} },
+  saveRuns:   r=>localStorage.setItem('ws_runs',JSON.stringify(r)),
+  addRun:     r=>{ const a=DB.getRuns(); a.unshift(r); DB.saveRuns(a); },
+  updateRun:  (id,patch)=>{ const a=DB.getRuns(); const i=a.findIndex(r=>r.id===id); if(i>=0){a[i]={...a[i],...patch};DB.saveRuns(a);} },
+  deleteRun:  id=>DB.saveRuns(DB.getRuns().filter(r=>r.id!==id)),
+  clearRuns:  ()=>localStorage.removeItem('ws_runs'),
+
+  // ── Folders ──
+  getFolders:    ()=>{ try{return JSON.parse(localStorage.getItem('ws_folders'))||[];}catch{return [];} },
+  saveFolders:   f=>localStorage.setItem('ws_folders',JSON.stringify(f)),
+  addFolder:     f=>{ const a=DB.getFolders(); a.push(f); DB.saveFolders(a); return f; },
+  updateFolder:  (id,patch)=>{ const a=DB.getFolders(); const i=a.findIndex(f=>f.id===id); if(i>=0){a[i]={...a[i],...patch};DB.saveFolders(a);} },
+  deleteFolder:  id=>{ // also clears folderId from affected runs
+    DB.saveFolders(DB.getFolders().filter(f=>f.id!==id));
+    const runs=DB.getRuns(); runs.forEach(r=>{ if(r.folderId===id) r.folderId=null; }); DB.saveRuns(runs);
+  },
+
+  // ── Profile ──
+  getProfile:  ()=>{ try{return JSON.parse(localStorage.getItem('ws_profile'))||DB._defaultProfile();}catch{return DB._defaultProfile();} },
+  saveProfile: p=>localStorage.setItem('ws_profile',JSON.stringify(p)),
+  _defaultProfile: ()=>({ name:'Fahrer', initial:'F', color:'#0a84ff', seasonStart:'11-01' }),
+
+  // ── Session (Absturz-Wiederherstellung) ──
+  getSession:   ()=>{ try{return JSON.parse(localStorage.getItem('ws_session'));}catch{return null;} },
+  saveSession:  s=>localStorage.setItem('ws_session',JSON.stringify(s)),
+  clearSession: ()=>localStorage.removeItem('ws_session'),
+
+  // ── Vollständiger Export / Import ──
+  export: ()=>({ profile:DB.getProfile(), folders:DB.getFolders(), runs:DB.getRuns(), exportedAt:Date.now() }),
+  import: data=>{
+    if(data.profile)  DB.saveProfile(data.profile);
+    if(data.folders)  DB.saveFolders(data.folders);
+    if(data.runs)     DB.saveRuns(data.runs);
+  },
+};
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+// Haversine-Formel: Abstand zweier GPS-Punkte in km
+function haversine(a,b){
+  const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function fmtDur(ms){ const s=Math.floor(ms/1000),m=Math.floor(s/60); return `${m}:${(s%60).toString().padStart(2,'0')}` }
+function fmtDate(ts){ return new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
+function fmtDist(km){
+  if(km<0.1) return `${Math.round(km*1000)}m`;
+  return `${km.toFixed(2)}`;
+}
+const $=id=>document.getElementById(id);
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+const state = {
+  page:'track',
+  gps:'idle',
+  tracking:false,
+  speed:0, maxSpeed:0, avgSpeed:0, distance:0, elapsed:0,
+  t0:null,
+  speedHistory:[], trackPoints:[], falls:[],
+  speedBuffer:[],         // 3-Punkt gleitender Mittelwert
+  watchId:null, timerInterval:null, lastPt:null,
+  map:null, mapDetail:null, polyline:null,
+  fallCount:0,
+  locked:false,
+  activeFolderId:null,    // null = "Alle"
+};
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let _toastTimer;
+function showToast(msg,dur=2400){
+  const el=$('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const pages={track:$('page-track'),history:$('page-history'),settings:$('page-settings')};
+
+function goPage(pg){
+  state.page=pg;
+  Object.entries(pages).forEach(([k,el])=>{
+    const on=k===pg;
+    el.style.display=on?'block':'none';
+    if(on) el.style.animation='fadeUp .38s cubic-bezier(.34,1.28,.64,1) both';
+  });
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===pg));
+  if(pg==='history') renderHistory();
+  if(pg==='settings') renderSettings();
+  // Map wird nicht beim Tab-Wechsel initialisiert (Container wäre ggf. nicht sichtbar)
+}
+
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>goPage(b.dataset.page)));
+
+// ══════════════════════════════════════════
+// GPS
+// ══════════════════════════════════════════
+function initGPS(){
+  if(!navigator.geolocation){ setGPSState('error'); return; }
+  setGPSState('waiting');
+  state.watchId=navigator.geolocation.watchPosition(
+    pos=>{ setGPSState('ready'); if(state.tracking) handlePosition(pos); },
+    ()=>setGPSState('error'),
+    {enableHighAccuracy:true,timeout:20000,maximumAge:0}
+  );
+}
+
+function setGPSState(s){
+  state.gps=s;
+  const dot=$('gps-dot'),lbl=$('gps-label'),btn=$('track-btn');
+  dot.className='gps-dot'+(s==='ready'?' ready':s==='waiting'?' waiting':s==='error'?' error':'');
+  lbl.textContent={idle:'GPS',waiting:'Suche GPS…',ready:'GPS bereit',error:'GPS fehlt'}[s];
+  btn.disabled=s!=='ready';
+}
+
+// ── Verbesserte Geschwindigkeitsberechnung ──
+// Problem: pos.coords.speed ist auf vielen Geräten null.
+// Lösung: Fallback auf delta-basierte Berechnung (Δdistanz / Δzeit).
+// Zusatz: 3-Punkt gleitender Mittelwert eliminiert GPS-Jitter.
+function handlePosition(pos){
+  const now=Date.now();
+  const pt={lat:pos.coords.latitude,lon:pos.coords.longitude,time:now};
+
+  let rawSpd=0;
+
+  // Primär: nativer GPS-Speed (m/s → km/h)
+  if(pos.coords.speed!==null && pos.coords.speed>=0){
+    rawSpd=pos.coords.speed*3.6;
+  }
+
+  // Distanz und Fallback-Geschwindigkeit aus Positionsdelta
+  if(state.lastPt){
+    const dt=(now-state.lastPt.time)/1000;           // Sekunden
+    const distKm=haversine(state.lastPt,pt);          // km
+
+    if(dt>0 && dt<15 && distKm<0.5){                 // plausibilitätsgefiltert
+      state.distance+=distKm;
+      // Fallback wenn GPS-Speed nicht verfügbar
+      if(pos.coords.speed===null || pos.coords.speed<0){
+        rawSpd=(distKm/dt)*3600;                      // km/h
+      }
+    }
+  }
+  state.lastPt=pt;
+  state.trackPoints.push(pt);
+
+  // Gleitender 3-Punkt-Mittelwert
+  state.speedBuffer.push(rawSpd);
+  if(state.speedBuffer.length>3) state.speedBuffer.shift();
+  state.speed=state.speedBuffer.reduce((a,b)=>a+b,0)/state.speedBuffer.length;
+
+  state.maxSpeed=Math.max(state.maxSpeed,state.speed);
+  state.speedHistory.push({speed:state.speed,time:now});
+
+  // Durchschnittsgeschwindigkeit nur bei Bewegung > 2 km/h
+  const moving=state.speedHistory.filter(p=>p.speed>2);
+  state.avgSpeed=moving.length?moving.reduce((a,b)=>a+b.speed,0)/moving.length:0;
+
+  updateTrackUI();
+  updateMap(pt);
+}
+
+// ══════════════════════════════════════════
+// STURZERKENNUNG (Beschleunigungssensor)
+// ══════════════════════════════════════════
+function initMotion(){
+  if(!window.DeviceMotionEvent) return;
+  const handler=e=>{
+    if(!state.tracking) return;
+    const ag=e.accelerationIncludingGravity||e.acceleration;
+    if(!ag) return;
+    const g=Math.sqrt((ag.x||0)**2+(ag.y||0)**2+(ag.z||0)**2)/9.81;
+    if(g>2.5&&state.speed>8){
+      const now=Date.now();
+      const last=state.falls[state.falls.length-1];
+      if(!last||now-last.time>3000) triggerFall(g,now);
+    }
+  };
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+    DeviceMotionEvent.requestPermission().then(r=>{ if(r==='granted') window.addEventListener('devicemotion',handler,{passive:true}); }).catch(()=>{});
+  } else {
+    window.addEventListener('devicemotion',handler,{passive:true});
+  }
+}
+
+function triggerFall(g,time){
+  state.falls.push({time,speed:state.speed,gForce:g.toFixed(2)});
+  state.fallCount++;
+  const alert=$('fall-alert');
+  $('fall-alert-title').textContent=`💥 Sturz #${state.fallCount} erkannt!`;
+  $('fall-alert-sub').textContent=`${g.toFixed(1)}g · ${state.speed.toFixed(1)} km/h`;
+  alert.style.display='flex';
+  alert.style.animation='fallShake .5s ease, fadeUp .4s cubic-bezier(.34,1.4,.64,1)';
+  if(navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
+  setTimeout(()=>{ alert.style.display='none'; },5000);
+}
+
+// ══════════════════════════════════════════
+// TRACKING START / STOP
+// ══════════════════════════════════════════
+$('track-btn').addEventListener('click',()=>{ if(state.tracking) stopTracking(); else startTracking(); });
+
+function startTracking(){
+  Object.assign(state,{
+    tracking:true,t0:Date.now(),speed:0,maxSpeed:0,avgSpeed:0,distance:0,elapsed:0,
+    speedHistory:[],trackPoints:[],falls:[],fallCount:0,lastPt:null,speedBuffer:[]
+  });
+  state.timerInterval=setInterval(()=>{
+    state.elapsed=Date.now()-state.t0;
+    $('m-time').textContent=fmtDur(state.elapsed);
+  },1000);
+
+  // Container sichtbar machen BEVOR Map initialisiert/resized wird
+  $('map-wrap').style.display='block';
+  // Kleines rAF-Delay damit der Browser den Container gerendert hat
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{ ensureMapReady(); });
+  });
+
+  if(state.polyline){state.polyline.remove();state.polyline=null;}
+
+  const btn=$('track-btn');
+  btn.className='track-btn stop'; btn.style.animation='none';
+  $('track-btn-label').textContent='Run beenden';
+  showToast('⏱ Run gestartet');
+}
+
+function stopTracking(){
+  state.tracking=false;
+  clearInterval(state.timerInterval);
+  const btn=$('track-btn');
+  btn.className='track-btn start'; btn.style.animation='glowPulse 3s ease-in-out infinite';
+  $('track-btn-label').textContent='Run starten';
+
+  if(state.speedHistory.length>3) saveCurrentRun();
+  else showToast('Zu kurz – nicht gespeichert');
+}
+
+function saveCurrentRun(){
+  const run={
+    id:Date.now().toString(),
+    name:`Run ${new Date().toLocaleDateString('de-DE')}`,
+    folderId:null,
+    startTime:state.t0,
+    duration:state.elapsed,
+    maxSpeed:state.maxSpeed,
+    avgSpeed:state.avgSpeed,
+    distance:state.distance,
+    speedHistory:state.speedHistory.map(p=>({s:Math.round(p.speed*10)/10,t:p.time})),
+    trackPoints:state.trackPoints,
+    falls:state.falls,
+  };
+  DB.addRun(run);
+  DB.clearSession();
+  showToast(`✅ Gespeichert · ${state.maxSpeed.toFixed(1)} km/h max`);
+}
+
+// ══════════════════════════════════════════
+// TRACK UI UPDATE
+// ══════════════════════════════════════════
+function updateTrackUI(){
+  const spd=state.speed;
+  const num=$('speed-num'),ring=$('ring-fill');
+  const MAX=80;
+
+  num.textContent=Math.round(spd);
+  num.className='speed-num'+(spd>60?' danger':spd>40?' warn':'');
+
+  const circ=603;
+  ring.style.strokeDashoffset=circ*(1-Math.min(spd/MAX,1));
+  ring.className='ring-fill'+(spd>60?' danger':spd>40?' warn':'');
+
+  $('m-max').textContent=Math.round(state.maxSpeed);
+  $('m-avg').textContent=Math.round(state.avgSpeed);
+
+  // Distanz: unter 0.1 km → Meter, sonst km (immer aktuell)
+  const d=state.distance||0;
+  if(d<0.1){
+    $('m-dist').textContent=Math.round(d*1000);
+    $('m-dist-lbl').textContent='m';
+  } else {
+    $('m-dist').textContent=d.toFixed(2);
+    $('m-dist-lbl').textContent='km';
+  }
+}
+
+// ══════════════════════════════════════════
+// KARTE (Live-Track)
+// ══════════════════════════════════════════
+// Wichtig: Leaflet MUSS auf einem sichtbaren (display!=none) Container
+// initialisiert werden, sonst berechnet es Größe 0 und rendert nie.
+// Deshalb wird initMap() erst NACH dem Sichtbarmachen von map-wrap aufgerufen.
+function initMap(){
+  const el=$('map');
+  if(!el||state.map) return;
+  // Sicherstellen dass Container sichtbar ist
+  $('map-wrap').style.display='block';
+
+  const map=L.map(el,{zoomControl:false,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,
+    updateWhenIdle:false,keepBuffer:2}).addTo(map);
+  map.setView([48.2,13.5],15);
+  state.map=map;
+  // Initiales invalidateSize nach erstem Paint
+  requestAnimationFrame(()=>{ map.invalidateSize(); });
+}
+
+function ensureMapReady(){
+  if(!state.map){
+    initMap();
+  } else {
+    // Mehrfaches invalidateSize um Rendering-Bugs auf allen Geräten abzufangen
+    state.map.invalidateSize();
+    setTimeout(()=>state.map&&state.map.invalidateSize(),150);
+    setTimeout(()=>state.map&&state.map.invalidateSize(),400);
+  }
+}
+
+function updateMap(pt){
+  if(!state.map) return;
+  if(!state.polyline){
+    state.polyline=L.polyline([[pt.lat,pt.lon]],
+      {color:'#0a84ff',weight:4.5,opacity:.95,smoothFactor:1,lineCap:'round',lineJoin:'round'})
+      .addTo(state.map);
+    // Start-Marker
+    L.circleMarker([pt.lat,pt.lon],{radius:6,color:'#30d158',fillColor:'#30d158',fillOpacity:1,weight:2,stroke:true})
+      .addTo(state.map);
+  } else {
+    state.polyline.addLatLng([pt.lat,pt.lon]);
+  }
+  state.map.panTo([pt.lat,pt.lon],{animate:true,duration:0.5});
+}
+
+function initDetailMap(trackPoints,falls){
+  const el=$('map-detail');
+  if(!el||!trackPoints||trackPoints.length<2) return;
+  if(state.mapDetail){state.mapDetail.remove();state.mapDetail=null;}
+  const map=L.map(el,{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  state.mapDetail=map;
+  const latlngs=trackPoints.map(p=>[p.lat,p.lon]);
+  const poly=L.polyline(latlngs,{color:'#0a84ff',weight:4,opacity:.9}).addTo(map);
+  map.fitBounds(poly.getBounds(),{padding:[20,20]});
+  const mkIcon=(color,size=12)=>L.divIcon({html:`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[size,size],iconAnchor:[size/2,size/2],className:''});
+  L.marker(latlngs[0],{icon:mkIcon('#30d158')}).addTo(map).bindPopup('Start');
+  L.marker(latlngs[latlngs.length-1],{icon:mkIcon('#ff453a')}).addTo(map).bindPopup('Ende');
+  (falls||[]).forEach(f=>{
+    const close=trackPoints.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);
+    L.marker([close.lat,close.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map).bindPopup(`Sturz · ${f.speed.toFixed(1)} km/h`);
+  });
+  setTimeout(()=>{map.invalidateSize();map.fitBounds(poly.getBounds(),{padding:[20,20]});},300);
+}
+
+// ══════════════════════════════════════════
+// SPEED CHART (mini Canvas)
+// ══════════════════════════════════════════
+function drawSpeedChart(canvas,speedHistory){
+  if(!canvas||!speedHistory||speedHistory.length<2) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||300,H=canvas.offsetHeight||80;
+  canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+  const speeds=speedHistory.map(p=>p.s!==undefined?p.s:p.speed);
+  const max=Math.max(...speeds,1);
+  const step=Math.max(1,Math.floor(speeds.length/120));
+  const pts=speeds.filter((_,i)=>i%step===0);
+  ctx.clearRect(0,0,W,H);
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(10,132,255,.35)'); grad.addColorStop(1,'rgba(10,132,255,0)');
+  ctx.beginPath();
+  pts.forEach((s,i)=>{ const x=(i/(pts.length-1))*W,y=H-(s/max)*(H-6); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath();
+  pts.forEach((s,i)=>{ const x=(i/(pts.length-1))*W,y=H-(s/max)*(H-6); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.strokeStyle='#0a84ff'; ctx.lineWidth=2; ctx.stroke();
+}
+
+// ══════════════════════════════════════════
+// HISTORY + ORDNER-SYSTEM
+// ══════════════════════════════════════════
+function renderFolderTabs(){
+  const folders=DB.getFolders();
+  const tabs=$('folder-tabs');
+  tabs.innerHTML='';
+
+  // "Alle" Tab
+  const allTab=document.createElement('div');
+  allTab.className='folder-tab'+(state.activeFolderId===null?' active':'');
+  allTab.textContent='Alle';
+  allTab.addEventListener('click',()=>{ state.activeFolderId=null; renderHistory(); });
+  tabs.appendChild(allTab);
+
+  // Ordner-Tabs
+  folders.forEach(folder=>{
+    const tab=document.createElement('div');
+    tab.className='folder-tab'+(state.activeFolderId===folder.id?' active':'');
+    tab.innerHTML=`<div class="folder-tab-dot" style="background:${folder.color}"></div>${escHtml(folder.name)}`;
+    tab.addEventListener('click',()=>{
+      if(state.activeFolderId===folder.id){
+        // Nochmaliges Tippen auf aktiven Tab → Ordner-Optionen
+        showFolderOptions(folder);
+      } else {
+        state.activeFolderId=folder.id;
+        renderHistory();
+      }
+    });
+    tabs.appendChild(tab);
+  });
+}
+
+function renderHistory(){
+  renderFolderTabs();
+  const allRuns=DB.getRuns();
+  const runs=state.activeFolderId===null
+    ? allRuns
+    : allRuns.filter(r=>r.folderId===state.activeFolderId);
+
+  const list=$('runs-list');
+  list.innerHTML='';
+
+  if(!runs.length){
+    const empty=document.createElement('div');
+    empty.className='empty-state';
+    empty.innerHTML=`<div class="empty-icon">🌊</div><div class="empty-text">${state.activeFolderId?'Keine Fahrten in diesem Ordner':'Noch keine Fahrten'}</div>`;
+    list.appendChild(empty);
+    return;
+  }
+
+  const folders=DB.getFolders();
+  const folderMap=Object.fromEntries(folders.map(f=>[f.id,f]));
+
+  runs.forEach((r,idx)=>{
+    const folder=r.folderId?folderMap[r.folderId]:null;
+    const card=document.createElement('div');
+    card.className='run-card';
+    card.style.animationDelay=`${idx*0.05}s`;
+
+    card.innerHTML=`
+      <div class="run-card-top">
+        <div class="run-card-left">
+          ${folder?`<div class="run-folder-badge"><div class="run-folder-badge-dot" style="background:${folder.color}"></div>${escHtml(folder.name)}</div>`:''}
+          <div class="run-name">${escHtml(r.name||'Run')}</div>
+          <div class="run-date">${fmtDate(r.startTime)}</div>
+        </div>
+        <div class="run-card-right">
+          <button class="run-menu-btn" data-id="${r.id}" title="Optionen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          <div style="text-align:right;">
+            <div class="run-speed-large">${Math.round(r.maxSpeed||0)}</div>
+            <div class="run-speed-unit">km/h max</div>
+          </div>
+        </div>
+      </div>
+      <div class="run-stats">
+        <div class="run-stat">
+          <div class="run-stat-val">${(r.avgSpeed||0).toFixed(1)}</div>
+          <div class="run-stat-lbl">Ø km/h</div>
+        </div>
+        <div class="run-stat">
+          <div class="run-stat-val">${r.distance<0.1?Math.round(r.distance*1000)+'m':(r.distance||0).toFixed(2)}</div>
+          <div class="run-stat-lbl">${r.distance<0.1?'Meter':'km'}</div>
+        </div>
+        <div class="run-stat">
+          <div class="run-stat-val">${fmtDur(r.duration||0)}</div>
+          <div class="run-stat-lbl">Zeit</div>
+        </div>
+        <div class="run-stat" style="color:${(r.falls||[]).length?'var(--red)':'var(--green)'}">
+          <div class="run-stat-val">${(r.falls||[]).length}</div>
+          <div class="run-stat-lbl">Stürze</div>
+        </div>
+      </div>`;
+
+    // Tap auf Karte → Detail
+    card.querySelector('.run-card-left').addEventListener('click',()=>openDetail(r));
+    card.querySelectorAll('.run-stat').forEach(s=>s.addEventListener('click',()=>openDetail(r)));
+
+    // Optionen-Button
+    card.querySelector('.run-menu-btn').addEventListener('click',e=>{
+      e.stopPropagation();
+      showRunOptions(r);
+    });
+
+    list.appendChild(card);
+  });
+}
+
+// ── Ordner erstellen / bearbeiten ──
+$('new-folder-btn').addEventListener('click',()=>showFolderCreate());
+
+const FOLDER_COLORS=['#0a84ff','#30d158','#ff9f0a','#ff2d55','#bf5af2','#5ac8fa'];
+
+function showFolderCreate(existing){
+  const isEdit=!!existing;
+  let selColor=existing?existing.color:FOLDER_COLORS[0];
+
+  const overlay=document.createElement('div');
+  overlay.className='overlay-bg';
+  overlay.innerHTML=`
+    <div class="sheet" style="padding:24px 20px calc(24px + var(--safe-b))">
+      <div style="font-size:19px;font-weight:700;margin-bottom:18px">${isEdit?'Ordner bearbeiten':'Neuer Ordner'}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Name</div>
+      <input class="inp" id="folder-name-inp" placeholder="z. B. Trainingseinheiten" value="${isEdit?escHtml(existing.name):''}"/>
+      <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:16px">Farbe</div>
+      <div class="color-swatches" id="folder-color-swatches">
+        ${FOLDER_COLORS.map(c=>`<div class="color-swatch${c===selColor?' selected':''}" data-color="${c}" style="background:${c}"></div>`).join('')}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn btn-ghost" id="folder-cancel">Abbrechen</button>
+        <button class="btn btn-primary" id="folder-save">${isEdit?'Speichern':'Erstellen'}</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  const inp=overlay.querySelector('#folder-name-inp');
+  setTimeout(()=>inp.focus(),100);
+
+  // Farb-Swatches
+  overlay.querySelectorAll('.color-swatch').forEach(sw=>{
+    sw.addEventListener('click',()=>{
+      selColor=sw.dataset.color;
+      overlay.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected');
+    });
+  });
+
+  overlay.querySelector('#folder-cancel').addEventListener('click',()=>overlay.remove());
+  overlay.querySelector('#folder-save').addEventListener('click',()=>{
+    const name=inp.value.trim();
+    if(!name){inp.focus();inp.style.borderColor='var(--red)';return;}
+    if(isEdit){
+      DB.updateFolder(existing.id,{name,color:selColor});
+      showToast('Ordner aktualisiert');
+    } else {
+      DB.addFolder({id:'f_'+Date.now(),name,color:selColor,createdAt:Date.now()});
+      showToast('Ordner erstellt');
+    }
+    overlay.remove();
+    renderHistory();
+  });
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+function showFolderOptions(folder){
+  const overlay=document.createElement('div');
+  overlay.className='overlay-bg';
+  overlay.innerHTML=`
+    <div class="sheet">
+      <div class="sheet-header"><div class="sheet-title">${escHtml(folder.name)}</div></div>
+      <div class="sheet-row" id="fo-rename"><div class="sheet-row-icon" style="background:rgba(10,132,255,.12)">✏️</div>Umbenennen</div>
+      <div class="sheet-row red" id="fo-delete"><div class="sheet-row-icon" style="background:rgba(255,69,58,.1)">🗑️</div>Ordner löschen</div>
+      <div class="sheet-row cancel" id="fo-cancel">Abbrechen</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#fo-rename').addEventListener('click',()=>{ overlay.remove(); showFolderCreate(folder); });
+  overlay.querySelector('#fo-delete').addEventListener('click',()=>{
+    overlay.remove();
+    showConfirm('Ordner löschen?','Fahrten werden nicht gelöscht, nur der Ordner.',()=>{
+      DB.deleteFolder(folder.id);
+      if(state.activeFolderId===folder.id) state.activeFolderId=null;
+      renderHistory();
+      showToast('Ordner gelöscht');
+    });
+  });
+  overlay.querySelector('#fo-cancel').addEventListener('click',()=>overlay.remove());
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+// ── Run-Kontextmenü ──
+function showRunOptions(run){
+  const overlay=document.createElement('div');
+  overlay.className='overlay-bg';
+  overlay.innerHTML=`
+    <div class="sheet">
+      <div class="sheet-header"><div class="sheet-title">${escHtml(run.name||'Run')}</div><div class="sheet-sub">${fmtDate(run.startTime)}</div></div>
+      <div class="sheet-row" id="ro-rename"><div class="sheet-row-icon" style="background:rgba(10,132,255,.12)">✏️</div>Umbenennen</div>
+      <div class="sheet-row" id="ro-move"><div class="sheet-row-icon" style="background:rgba(255,159,10,.12)">📁</div>In Ordner verschieben</div>
+      <div class="sheet-row red" id="ro-delete"><div class="sheet-row-icon" style="background:rgba(255,69,58,.1)">🗑️</div>Fahrt löschen</div>
+      <div class="sheet-row cancel" id="ro-cancel">Abbrechen</div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#ro-rename').addEventListener('click',()=>{
+    overlay.remove();
+    showRenameRun(run);
+  });
+  overlay.querySelector('#ro-move').addEventListener('click',()=>{
+    overlay.remove();
+    showFolderPicker(run);
+  });
+  overlay.querySelector('#ro-delete').addEventListener('click',()=>{
+    overlay.remove();
+    showConfirm('Fahrt löschen?','Kann nicht rückgängig gemacht werden.',()=>{
+      DB.deleteRun(run.id);
+      renderHistory();
+      showToast('Fahrt gelöscht');
+    });
+  });
+  overlay.querySelector('#ro-cancel').addEventListener('click',()=>overlay.remove());
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+function showRenameRun(run){
+  const overlay=document.createElement('div');
+  overlay.className='overlay-bg';
+  overlay.innerHTML=`
+    <div class="sheet" style="padding:24px 20px calc(24px + var(--safe-b))">
+      <div style="font-size:19px;font-weight:700;margin-bottom:16px">Umbenennen</div>
+      <input class="inp" id="rename-inp" value="${escHtml(run.name||'Run')}"/>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="btn btn-ghost" id="rename-cancel">Abbrechen</button>
+        <button class="btn btn-primary" id="rename-save">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const inp=overlay.querySelector('#rename-inp');
+  setTimeout(()=>{ inp.focus(); inp.select(); },80);
+  overlay.querySelector('#rename-cancel').addEventListener('click',()=>overlay.remove());
+  overlay.querySelector('#rename-save').addEventListener('click',()=>{
+    const name=inp.value.trim();
+    if(!name) return;
+    DB.updateRun(run.id,{name});
+    overlay.remove();
+    renderHistory();
+    showToast('Umbenannt');
+  });
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+// ── Ordner-Picker (Fahrt verschieben) ──
+function showFolderPicker(run){
+  const folders=DB.getFolders();
+  const overlay=document.createElement('div');
+  overlay.className='overlay-bg';
+
+  const folderRows=folders.map(f=>`
+    <div class="sheet-row folder-pick-row" data-id="${f.id}">
+      <div class="sheet-dot" style="background:${f.color}"></div>
+      ${escHtml(f.name)}
+      ${run.folderId===f.id?'<div class="sheet-check" style="margin-left:auto">✓</div>':''}
+    </div>`).join('');
+
+  overlay.innerHTML=`
+    <div class="sheet">
+      <div class="sheet-header"><div class="sheet-title">In Ordner verschieben</div></div>
+      <div class="sheet-row folder-pick-row" data-id="__none__">
+        <div class="sheet-dot" style="background:#48484a"></div>
+        Kein Ordner
+        ${!run.folderId?'<div class="sheet-check" style="margin-left:auto;background:#48484a">✓</div>':''}
+      </div>
+      ${folderRows}
+      <div class="sheet-row" id="fp-new"><div class="sheet-row-icon">➕</div>Neuen Ordner erstellen</div>
+      <div class="sheet-row cancel" id="fp-cancel">Abbrechen</div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.querySelectorAll('.folder-pick-row').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const id=row.dataset.id;
+      DB.updateRun(run.id,{folderId:id==='__none__'?null:id});
+      overlay.remove();
+      renderHistory();
+      const fname=id==='__none__'?'Allgemein':folders.find(f=>f.id===id)?.name;
+      showToast(`Verschoben nach: ${fname}`);
+    });
+  });
+  overlay.querySelector('#fp-new').addEventListener('click',()=>{
+    overlay.remove();
+    showFolderCreate();
+  });
+  overlay.querySelector('#fp-cancel').addEventListener('click',()=>overlay.remove());
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+// ══════════════════════════════════════════
+// DETAIL-ANSICHT
+// ══════════════════════════════════════════
+function openDetail(run){
+  const detail=$('page-detail');
+  $('detail-title').textContent=run.name||'Run';
+  $('detail-date').textContent=fmtDate(run.startTime);
+  const hasTrack=run.trackPoints&&run.trackPoints.length>2;
+  const hasFalls=run.falls&&run.falls.length>0;
+
+  $('detail-content').innerHTML=`
+    <div class="detail-hero" style="animation:fadeUp .35s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="detail-speed-big">${Math.round(run.maxSpeed||0)}</div>
+      <div class="detail-speed-lbl">km/h Maximalgeschwindigkeit</div>
+    </div>
+    <div class="detail-grid" style="animation:fadeUp .35s .05s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="detail-stat"><div class="detail-stat-val">${(run.avgSpeed||0).toFixed(1)}</div><div class="detail-stat-lbl">Ø Geschwindigkeit</div></div>
+      <div class="detail-stat"><div class="detail-stat-val">${run.distance<0.1?Math.round(run.distance*1000)+'m':(run.distance||0).toFixed(2)}</div><div class="detail-stat-lbl">${run.distance<0.1?'Meter':'Distanz km'}</div></div>
+      <div class="detail-stat"><div class="detail-stat-val">${fmtDur(run.duration||0)}</div><div class="detail-stat-lbl">Fahrzeit</div></div>
+      <div class="detail-stat" style="border-color:${hasFalls?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}">
+        <div class="detail-stat-val" style="color:${hasFalls?'var(--red)':'var(--green)'}">${(run.falls||[]).length}</div>
+        <div class="detail-stat-lbl">Stürze</div>
+      </div>
+    </div>
+    ${run.speedHistory&&run.speedHistory.length>5?`
+    <div class="section-label">Geschwindigkeitsprofil</div>
+    <div class="speed-chart-wrap" style="animation:fadeUp .35s .1s cubic-bezier(.34,1.28,.64,1) both">
+      <canvas class="speed-chart-canvas" id="detail-chart" style="height:80px"></canvas>
+    </div>`:''}
+    ${hasTrack?`
+    <div class="section-label">Strecke</div>
+    <div class="detail-map-wrap" style="animation:fadeUp .35s .13s cubic-bezier(.34,1.28,.64,1) both">
+      <div id="map-detail"></div>
+    </div>`:''}
+    ${hasFalls?`
+    <div class="section-label">Stürze</div>
+    <div class="fall-list">
+      ${run.falls.map((f,i)=>`
+        <div class="fall-item" style="animation:fadeUp .35s ${.16+i*.04}s cubic-bezier(.34,1.28,.64,1) both">
+          <div style="font-size:22px">💥</div>
+          <div>
+            <div class="fall-item-title">Sturz #${i+1}</div>
+            <div class="fall-item-detail">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div>
+          </div>
+        </div>`).join('')}
+    </div>`:''}
+    <button class="delete-btn" id="detail-delete">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+      Fahrt löschen
+    </button>`;
+
+  detail.style.display='block';
+
+  requestAnimationFrame(()=>{
+    if(hasTrack) initDetailMap(run.trackPoints,run.falls);
+    const cv=$('detail-chart');
+    if(cv) setTimeout(()=>drawSpeedChart(cv,run.speedHistory),150);
+  });
+
+  $('detail-delete').addEventListener('click',()=>{
+    showConfirm('Fahrt löschen?','Kann nicht rückgängig gemacht werden.',()=>{
+      DB.deleteRun(run.id);
+      closeDetail(); renderHistory();
+      showToast('Fahrt gelöscht');
+    });
+  });
+}
+
+function closeDetail(){
+  if(state.mapDetail){state.mapDetail.remove();state.mapDetail=null;}
+  $('page-detail').style.display='none';
+}
+$('back-btn').addEventListener('click',closeDetail);
+
+// ══════════════════════════════════════════
+// PROFIL & EINSTELLUNGEN
+// ══════════════════════════════════════════
+const PROFILE_COLORS=['#0a84ff','#30d158','#ff9f0a','#ff2d55','#bf5af2','#5ac8fa','#ff6b35'];
+
+function renderSettings(){
+  const profile=DB.getProfile();
+  const runs=DB.getRuns();
+  const dist=runs.reduce((a,r)=>a+(r.distance||0),0);
+
+  // Avatar
+  const av=$('settings-avatar');
+  av.textContent=profile.initial||'?';
+  av.style.background=`linear-gradient(135deg,${profile.color},${shadeColor(profile.color,-40)})`;
+  av.style.boxShadow=`0 4px 20px ${profile.color}55`;
+
+  $('profile-name-el').textContent=profile.name;
+  $('profile-stats').textContent=`${runs.length} Fahrten · ${dist<0.1?Math.round(dist*1000)+'m':dist.toFixed(1)+' km'}`;
+}
+
+$('profile-card').addEventListener('click',()=>showProfileEdit());
+
+function showProfileEdit(){
+  const profile=DB.getProfile();
+  let selColor=profile.color;
+
+  const overlay=document.createElement('div');
+  overlay.className='overlay-bg';
+  overlay.innerHTML=`
+    <div class="sheet" style="padding:24px 20px calc(24px + var(--safe-b))">
+      <div style="font-size:19px;font-weight:700;margin-bottom:18px">Profil bearbeiten</div>
+      <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Name</div>
+      <input class="inp" id="p-name" placeholder="Dein Name" value="${escHtml(profile.name)}" style="margin-bottom:14px"/>
+      <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Kürzel (1–2 Zeichen)</div>
+      <input class="inp" id="p-initial" placeholder="AB" value="${escHtml(profile.initial)}" maxlength="2" style="margin-bottom:14px"/>
+      <div style="font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Farbe</div>
+      <div class="color-swatches" id="p-colors">
+        ${PROFILE_COLORS.map(c=>`<div class="color-swatch${c===selColor?' selected':''}" data-color="${c}" style="background:${c}"></div>`).join('')}
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="btn btn-ghost" id="p-cancel">Abbrechen</button>
+        <button class="btn btn-primary" id="p-save">Speichern</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>overlay.querySelector('#p-name').focus(),80);
+
+  overlay.querySelectorAll('.color-swatch').forEach(sw=>{
+    sw.addEventListener('click',()=>{
+      selColor=sw.dataset.color;
+      overlay.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+      sw.classList.add('selected');
+    });
+  });
+
+  overlay.querySelector('#p-cancel').addEventListener('click',()=>overlay.remove());
+  overlay.querySelector('#p-save').addEventListener('click',()=>{
+    const name=overlay.querySelector('#p-name').value.trim()||'Fahrer';
+    const initial=(overlay.querySelector('#p-initial').value.trim()||name[0]).toUpperCase().slice(0,2);
+    DB.saveProfile({...profile,name,initial,color:selColor});
+    overlay.remove();
+    renderSettings();
+    showToast('Profil gespeichert ✓');
+  });
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+}
+
+// Hilfsfunktion: Hex-Farbe abdunkeln
+function shadeColor(col,amt){
+  const num=parseInt(col.slice(1),16);
+  const r=Math.min(255,Math.max(0,(num>>16)+amt));
+  const g=Math.min(255,Math.max(0,((num>>8)&0xff)+amt));
+  const b=Math.min(255,Math.max(0,(num&0xff)+amt));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Export ──
+$('s-export').addEventListener('click',()=>{
+  const data=DB.export();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`wakeski-backup-${Date.now()}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Export gestartet');
+});
+
+// ── Import ──
+$('s-import').addEventListener('click',()=>$('import-input').click());
+$('import-input').addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      if(!data.runs&&!data.profile) throw new Error('Ungültiges Format');
+      showConfirm('Daten importieren?',`${(data.runs||[]).length} Fahrten, ${(data.folders||[]).length} Ordner werden geladen.`,()=>{
+        DB.import(data);
+        renderSettings();
+        showToast(`Import abgeschlossen · ${(data.runs||[]).length} Fahrten`);
+      });
+    }catch{showToast('❌ Ungültige Datei');}
+    e.target.value='';
+  };
+  reader.readAsText(file);
+});
+
+// ── Alle löschen ──
+$('s-clear').addEventListener('click',()=>{
+  showConfirm('Alle Fahrten löschen?','Ordner und Profil bleiben erhalten.',()=>{
+    DB.clearRuns();
+    renderSettings();
+    showToast('Alle Fahrten gelöscht');
+  });
+});
+
+// ══════════════════════════════════════════
+// CONFIRM OVERLAY
+// ══════════════════════════════════════════
+function showConfirm(title,sub,onYes){
+  $('confirm-title').textContent=title;
+  $('confirm-sub').textContent=sub;
+  $('confirm-overlay').style.display='flex';
+  const hide=()=>{ $('confirm-overlay').style.display='none'; };
+  const yBtn=$('confirm-yes'),nBtn=$('confirm-no');
+  const yNew=yBtn.cloneNode(true),nNew=nBtn.cloneNode(true);
+  yBtn.parentNode.replaceChild(yNew,yBtn);
+  nBtn.parentNode.replaceChild(nNew,nBtn);
+  $('confirm-yes').addEventListener('click',()=>{ hide(); onYes(); });
+  $('confirm-no').addEventListener('click',hide);
+}
+
+// ══════════════════════════════════════════
+// WASSER-SPERRE
+// ══════════════════════════════════════════
+$('lock-btn').addEventListener('click',()=>{
+  $('water-lock').classList.add('active');
+  state.locked=true;
+  if(navigator.vibrate) navigator.vibrate(60);
+});
+
+let lockTimer=null;
+const lockRelBtn=$('lock-release-btn'),lockProg=$('lock-progress');
+
+lockRelBtn.addEventListener('pointerdown',e=>{
+  if(!state.locked) return; e.preventDefault();
+  lockRelBtn.classList.add('pressing');
+  lockProg.style.width='0'; lockProg.className='lock-btn-progress animating';
+  lockTimer=setTimeout(()=>{
+    $('water-lock').classList.remove('active'); state.locked=false;
+    lockRelBtn.classList.remove('pressing'); lockProg.className='lock-btn-progress';
+    if(navigator.vibrate) navigator.vibrate([80,40,80]);
+  },2000);
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>{
+  lockRelBtn.addEventListener(ev,()=>{
+    clearTimeout(lockTimer); lockTimer=null;
+    lockRelBtn.classList.remove('pressing'); lockProg.className='lock-btn-progress';
+  });
+});
+
+// ══════════════════════════════════════════
+// AUTO-SESSION-SAVE (Crash Recovery)
+// ══════════════════════════════════════════
+setInterval(()=>{
+  if(!state.tracking) return;
+  DB.saveSession({maxSpeed:state.maxSpeed,avgSpeed:state.avgSpeed,distance:state.distance,elapsed:state.elapsed,t0:state.t0});
+},10000);
+
+// ══════════════════════════════════════════
+// HTML-ESCAPING (XSS-Schutz)
+// ══════════════════════════════════════════
+function escHtml(str){
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════
+// GLOBAL: Long-Press Textmarkierung blockieren
+// ══════════════════════════════════════════
+document.addEventListener('contextmenu', e=>e.preventDefault(), {passive:false});
+document.addEventListener('selectstart', e=>{ if(!(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)) e.preventDefault(); }, {passive:false});
+document.addEventListener('dragstart', e=>e.preventDefault(), {passive:false});
+
+// ══════════════════════════════════════════
+// PERMISSION FLOW & INIT
+// ══════════════════════════════════════════
+function launchApp(){
+  $('screen-permission').style.display='none';
+  const app=$('app'); app.style.display='flex'; app.style.flexDirection='column'; app.style.height='100vh';
+  goPage('track');
+  initGPS();
+  initMotion();
+  // Session wiederherstellen
+  const s=DB.getSession();
+  if(s){ state.maxSpeed=s.maxSpeed||0; state.distance=s.distance||0; updateTrackUI(); }
+  // Map wird NICHT hier initialisiert – erst wenn Tracking startet
+  // (Leaflet braucht einen sichtbaren Container)
+}
+
+$('perm-btn').addEventListener('click',async()=>{
+  const btn=$('perm-btn');
+  btn.disabled=true;
+  btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0110 10"/></svg> Aktiviere…';
+  for(const E of[window.DeviceMotionEvent,window.DeviceOrientationEvent]){
+    if(typeof E?.requestPermission==='function'){
+      await E.requestPermission().catch(()=>{});
+    }
+  }
+  setTimeout(()=>{
+    $('screen-permission').style.opacity='0';
+    $('screen-permission').style.transition='opacity .4s';
+    setTimeout(launchApp,400);
+  },500);
+});
+
+// Wenn GPS bereits erteilt → direkt starten
+(async()=>{
+  if(navigator.permissions){
+    try{
+      const r=await navigator.permissions.query({name:'geolocation'});
+      if(r.state==='granted'){ launchApp(); }
+    }catch{}
+  }
+})();
+</script>
+
+</body>
+</html>
