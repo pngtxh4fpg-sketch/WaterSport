@@ -34,7 +34,7 @@ color-scheme:dark;
 html,body{
 height:100%;width:100%;
 background:#000;background:var(--bg);
-color:var(--tx);
+color:rgba(255,255,255,.92);color:var(--tx);
 font-family:var(--fb);-webkit-font-smoothing:antialiased;
 overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
@@ -58,10 +58,11 @@ background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='htt
 @keyframes pulse   {0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes ripple  {0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.4);opacity:0}}
 @keyframes spin    {to{transform:rotate(360deg)}}
+@keyframes shake   {0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 @keyframes glow    {0%,100%{box-shadow:0 0 20px var(--ac-g)}50%{box-shadow:0 0 44px var(--ac-g),0 0 70px rgba(10,132,255,.10)}}
 @keyframes lockFill{from{width:0}to{width:100%}}
 
-/* NAVIGATION */
+/* NAV */
 #nav{
 position:fixed;bottom:0;left:50%;transform:translateX(-50%);
 width:100%;max-width:430px;height:var(--nav);
@@ -75,95 +76,218 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
 .nav-btn svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
 .nav-btn.active{color:var(--ac)}.nav-btn.active svg{transform:scale(1.1)}
 
-/* BUTTONS & UI */
+/* BUTTONS */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:var(--fb);font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
 .btn:active{transform:scale(.965)}
 .btn-primary{background:var(--ac);color:#fff;box-shadow:0 4px 24px var(--ac-g)}
 .btn-danger {background:var(--red);color:#fff;box-shadow:0 4px 24px var(--red-g)}
 .btn-ghost  {background:var(--gs);border:.5px solid var(--gb);color:var(--tx)}
 .btn-sm     {padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
+.inp{width:100%;background:var(--gs);border:.5px solid var(--gb);border-radius:14px;padding:14px 16px;color:var(--tx);font-family:var(--fb);font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-l)}.inp::placeholder{color:var(--tx3)}
 
-/* PERMISSION SCREEN */
+/* PERMISSION */
 #screen-perm{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fadeIn .4s ease both}
 .perm-logo{font-family:var(--fd);font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
 .perm-tag{font-size:14px;color:var(--tx2);margin-bottom:44px}
 .perm-list{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
 .perm-item{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;animation:fadeUp .4s cubic-bezier(.34,1.2,.64,1) both}
+.perm-item:nth-child(1){animation-delay:.08s}.perm-item:nth-child(2){animation-delay:.16s}.perm-item:nth-child(3){animation-delay:.24s}
 .perm-ico{width:42px;height:42px;border-radius:11px;background:var(--ac-l);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .perm-ico svg{width:20px;height:20px;color:var(--ac)}
 .perm-t{font-size:15px;font-weight:600;margin-bottom:2px}.perm-s{font-size:12px;color:var(--tx2)}
+.perm-btn-wrap{width:100%;animation:fadeUp .4s .32s cubic-bezier(.34,1.2,.64,1) both}
 
-/* TRACK PAGE STYLES */
+/* TRACK PAGE */
 .track-hdr{padding:52px 20px 0;display:flex;align-items:center;justify-content:space-between}
 .track-title{font-family:var(--fd);font-size:34px;font-weight:900}
 .gps-badge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--glass);border:.5px solid var(--gb);font-size:12px;font-weight:500}
 .gps-dot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
-.gps-dot.waiting{background:var(--yellow);animation:pulse 1.4s infinite}
-.gps-dot.ready{background:var(--green);box-shadow:0 0 8px var(--green-g)}
+.gps-dot.waiting{background:var(--yellow);animation:pulse 1.4s ease-in-out infinite}
+.gps-dot.ready  {background:var(--green);box-shadow:0 0 8px var(--green-g)}
+.gps-dot.error  {background:var(--red)}
 
+/* Speed ring */
 .speed-wrap{display:flex;flex-direction:column;align-items:center;padding:24px 20px 16px}
 .speed-ring{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
 .speed-ring .ring-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
-.ring-bg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:3}
+.ring-bg  {fill:none;stroke:rgba(255,255,255,.07);stroke-width:3}
 .ring-fill{fill:none;stroke:var(--ac);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:603;stroke-dashoffset:603;transition:stroke-dashoffset .5s cubic-bezier(.34,1.2,.64,1),stroke .3s ease;filter:drop-shadow(0 0 7px var(--ac))}
-.speed-num{font-family:var(--fd);font-size:90px;font-weight:900;line-height:1;color:#fff;letter-spacing:-2px}
-.speed-unit{font-size:14px;color:var(--tx2);margin-top:-4px}
+.ring-fill.warn  {stroke:var(--yellow);filter:drop-shadow(0 0 7px var(--yellow-g))}
+.ring-fill.danger{stroke:var(--red);filter:drop-shadow(0 0 7px var(--red-g))}
+.speed-inner{display:flex;flex-direction:column;align-items:center;z-index:1}
+.speed-num{font-family:var(--fd);font-size:90px;font-weight:900;line-height:1;color:#fff;transition:color .3s;letter-spacing:-2px}
+.speed-num.warn  {color:var(--yellow)}.speed-num.danger{color:var(--red)}
+.speed-unit{font-size:14px;color:var(--tx2);margin-top:-4px;letter-spacing:1px}
 
+/* Metrics strip */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 16px;margin-bottom:14px}
 .mc{background:var(--glass);border:.5px solid var(--gb);border-radius:14px;padding:10px 6px 9px;text-align:center}
-.mv{font-family:var(--fd);font-size:22px;font-weight:800;color:var(--tx)}
-.ml{font-size:9px;color:var(--tx2);margin-top:3px;text-transform:uppercase}
+.mv{font-family:var(--fd);font-size:22px;font-weight:800;line-height:1;color:var(--tx)}
+.ml{font-size:9px;color:var(--tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
 
+/* Track button */
 .tbtn-wrap{padding:0 16px;margin-bottom:12px}
 .tbtn{width:100%;height:64px;border-radius:18px;border:none;cursor:pointer;font-family:var(--fb);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
 .tbtn.start{background:var(--ac);color:#fff;box-shadow:0 6px 28px var(--ac-g);animation:glow 3s ease-in-out infinite}
-.tbtn.stop {background:var(--red);color:#fff;box-shadow:0 6px 28px var(--red-g)}
+.tbtn.stop {background:var(--red);color:#fff;box-shadow:0 6px 28px var(--red-g);animation:none}
+.tbtn:active{transform:scale(.96)}
+.tbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;animation:none;box-shadow:none}
 
-.map-wrap{margin:0 16px 12px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:220px;position:relative}
+/* Map */
+.map-wrap{margin:0 16px 12px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:220px;position:relative;width:calc(100% - 32px)}
 #live-map{width:100%;height:100%;background:#0a0d12}
+.map-label{position:absolute;bottom:8px;right:8px;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border:.5px solid var(--gb);border-radius:8px;padding:3px 8px;font-size:10px;color:var(--tx2)}
+
+/* Fall alert */
+.fall-alert{margin:0 16px 12px;padding:13px 16px;background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.35);border-radius:16px;display:flex;align-items:center;gap:12px}
+.fall-t{font-weight:700;color:var(--red);font-size:15px}.fall-s{font-size:12px;color:var(--tx2);margin-top:1px}
+
+/* HISTORY */
+.page-hdr{padding:52px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.page-hdr-t{font-family:var(--fd);font-size:34px;font-weight:900}
+.ftabs{padding:0 16px 12px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.ftabs::-webkit-scrollbar{display:none}
+.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--glass);border:.5px solid var(--gb);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.ftab.active{background:var(--ac);border-color:var(--ac);color:#fff}
+.ftab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.run-card{margin:0 16px 10px;padding:16px;background:var(--glass);border:.5px solid var(--gb);border-radius:24px;animation:fadeUp .38s cubic-bezier(.34,1.2,.64,1) both}
+.run-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.run-card-left{flex:1;min-width:0;cursor:pointer}
+.run-name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.run-date{font-size:12px;color:var(--tx2)}
+.run-fbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
+.run-fbadge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.run-spd-big {font-family:var(--fd);font-size:34px;font-weight:800;line-height:1;text-align:right}
+.run-spd-unit{font-size:11px;color:var(--tx2);text-align:right}
+.run-menu{width:28px;height:28px;border-radius:50%;background:var(--gs);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);flex-shrink:0;margin-left:8px}
+.run-menu:active{opacity:.5}
+.run-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rs{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
+.rs-v{font-size:14px;font-weight:600}.rs-l{font-size:9px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.empty-state{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--tx2)}
+.empty-ico{font-size:52px;margin-bottom:12px;opacity:.45}
+
+/* SETTINGS */
+.profile-card{margin:0 16px 14px;padding:18px;background:var(--glass);border:.5px solid var(--gb);border-radius:28px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
+.profile-card:active{border-color:rgba(10,132,255,.4)}
+.s-avatar{width:58px;height:58px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:26px;font-weight:800;color:#fff}
+.s-name{font-size:18px;font-weight:700}.s-sub{font-size:12px;color:var(--tx2);margin-top:2px}.s-hint{font-size:11px;color:var(--tx3);margin-top:5px}
+.s-section{margin:0 16px 14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden}
+.s-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(--gb);cursor:pointer;transition:background .12s}
+.s-row:last-child{border-bottom:none}.s-row:active{background:var(--gs)}
+.s-row-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.s-row-t{font-size:15px;font-weight:500}.s-row-s{font-size:12px;color:var(--tx2);margin-top:1px}
+
+/* DETAIL */
+#page-detail{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
+#page-detail::-webkit-scrollbar{display:none}
+.detail-hdr{padding:52px 20px 16px;display:flex;align-items:flex-start;gap:12px}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--glass);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
+.back-btn:active{transform:scale(.88)}.back-btn svg{width:18px;height:18px;color:var(--ac)}
+.detail-title{font-family:var(--fd);font-size:28px;font-weight:800;line-height:1.2}.detail-date{font-size:12px;color:var(--tx2);margin-top:3px}
+.detail-hero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
+.detail-spd{font-family:var(--fd);font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
+.detail-spd-l{font-size:13px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
+.dstat{padding:15px;background:var(--glass);border:.5px solid var(--gb);border-radius:16px}
+.dstat-v{font-family:var(--fd);font-size:30px;font-weight:800;color:var(--tx);line-height:1}.dstat-l{font-size:11px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
+.sec-lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
+.dmap-wrap{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:240px}
+#detail-map{width:100%;height:100%;background:#0a0d12}
+.chart-wrap{margin:0 16px 14px;padding:14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px}
+.fall-list{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
+.fall-item{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
+.fall-item-t{font-size:14px;font-weight:600}.fall-item-s{font-size:12px;color:var(--tx2);margin-top:1px}
+.del-btn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(--red);font-family:var(--fb);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.del-btn:active{transform:scale(.97)}
 
 /* WATER LOCK */
 #water-lock{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
 #water-lock.on{display:flex;animation:fadeIn .25s ease both}
+.wl-ico{font-size:58px;margin-bottom:14px}.wl-title{font-family:var(--fd);font-size:36px;font-weight:900;margin-bottom:8px}
+.wl-sub{font-size:15px;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
 .wl-btn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
-.wl-progress{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0}
+.wl-progress{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0;border-radius:2px}
+.wl-progress.go{animation:lockFill 2s linear both}
+.wl-waves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.wl-wave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);opacity:0}
+.wl-btn.pressing .wl-wave  {animation:ripple 1s ease-out infinite}
+.wl-btn.pressing .wl-wave:nth-child(2){animation-delay:.3s}
+.wl-btn.pressing .wl-wave:nth-child(3){animation-delay:.6s}
+.wl-hint{font-size:14px;color:var(--tx2);margin-top:12px}
 
-/* LEAFLET DARK MODE */
+/* SHEETS */
+.overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb) + 16px);animation:fadeIn .2s ease both}
+.sheet{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:slideUp .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
+.sheet-hdr{padding:18px 20px 12px;border-bottom:.5px solid var(--gb)}
+.sheet-hdr-t{font-size:17px;font-weight:700}.sheet-hdr-s{font-size:12px;color:var(--tx2);margin-top:2px}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
+.srow:last-child{border-bottom:none}.srow:active{background:var(--gs)}
+.srow.red{color:var(--red)}.srow.cancel{color:var(--tx2);border-top:.5px solid var(--gb)}
+.srow-ico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.srow-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.srow-check{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
+.swatch.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
+.swatch.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.confirm-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb) + 20px);animation:fadeIn .2s ease both}
+.confirm-sheet{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:slideUp .3s cubic-bezier(.34,1.3,.64,1) both}
+.confirm-t{font-size:18px;font-weight:700;margin-bottom:5px}.confirm-s{font-size:14px;color:var(--tx2);margin-bottom:18px}
+#toast{position:fixed;top:58px;left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.95);border:.5px solid var(--gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+
+/* LEAFLET DARK */
 .leaflet-container{background:#0a0d12 !important}
 .leaflet-tile{filter:brightness(.65) saturate(.7) hue-rotate(200deg)}
+.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(--gb);border-radius:10px;color:var(--tx)}
+.leaflet-popup-tip{background:rgba(10,13,20,.95)}
+.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(--tx) !important;border-color:var(--gb) !important}
 .leaflet-control-attribution{display:none}
 </style>
+
 </head>
 <body>
 
 <div id="screen-perm">
   <div class="perm-logo">WakeSki</div>
-  <div class="perm-tag">Wasserski · Wakeboard · Pro v3.5</div>
+  <div class="perm-tag">Wasserski · Wakeboard · Wakesurf</div>
   <div class="perm-list">
     <div class="perm-item">
-      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></div>
-      <div><div class="perm-t">GPS & Standort</div><div class="perm-s">Echtzeit-Speed & Tracking</div></div>
+      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div>
+      <div><div class="perm-t">GPS & Standort</div><div class="perm-s">Geschwindigkeit, Distanz, Strecke</div></div>
     </div>
     <div class="perm-item">
-      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12L7 7M12 12l5-5"/></svg></div>
-      <div><div class="perm-t">Bewegung</div><div class="perm-s">Sturzerkennung via Sensor</div></div>
+      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12L7 7M12 12l5-5M2 17l5-3M17 14l5 3"/></svg></div>
+      <div><div class="perm-t">Bewegungssensoren</div><div class="perm-s">Sturzerkennung via Beschleunigungssensor</div></div>
+    </div>
+    <div class="perm-item">
+      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div>
+      <div><div class="perm-t">Lokaler Speicher</div><div class="perm-s">Fahrten offline speichern & exportieren</div></div>
     </div>
   </div>
   <div class="perm-btn-wrap">
-    <button class="btn btn-primary" id="perm-btn">Berechtigungen erteilen</button>
+    <button class="btn btn-primary" id="perm-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Berechtigungen erteilen
+    </button>
   </div>
 </div>
 
 <div id="app" style="display:none;">
-  <div id="page-track" class="page active">
+  <div id="toast"></div>
+
+  <div id="page-track" class="page">
     <div class="track-hdr">
       <div class="track-title">Track</div>
-      <div class="gps-badge"><div class="gps-dot" id="gps-dot"></div><span id="gps-label">Suche Satellit...</span></div>
+      <div class="gps-badge"><div class="gps-dot" id="gps-dot"></div><span id="gps-label">Warte…</span></div>
     </div>
     <div class="speed-wrap">
       <div class="speed-ring">
         <svg class="ring-svg" viewBox="0 0 200 200">
-          <circle class="ring-bg" cx="100" cy="100" r="96"/>
+          <circle class="ring-bg"   cx="100" cy="100" r="96"/>
           <circle class="ring-fill" cx="100" cy="100" r="96" id="ring-fill"/>
         </svg>
         <div class="speed-inner">
@@ -175,179 +299,455 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
     <div class="metrics">
       <div class="mc"><div class="mv" id="m-max">0</div><div class="ml">Max</div></div>
       <div class="mc"><div class="mv" id="m-avg">0</div><div class="ml">Avg</div></div>
-      <div class="mc"><div class="mv" id="m-dist">0</div><div class="ml">m</div></div>
+      <div class="mc"><div class="mv" id="m-dist">0</div><div class="ml" id="m-dist-l">m</div></div>
       <div class="mc"><div class="mv" id="m-time">0:00</div><div class="ml">Zeit</div></div>
     </div>
     <div class="tbtn-wrap">
-      <button class="tbtn start" id="track-btn" disabled>Run starten</button>
+      <button class="tbtn start" id="track-btn" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        <span id="track-btn-lbl">Run starten</span>
+      </button>
     </div>
     <div style="padding:0 16px;margin-bottom:12px;">
-      <button class="btn btn-ghost" id="lock-btn">
+      <button class="btn btn-ghost" id="lock-btn" style="display:flex;align-items:center;gap:9px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         Wassergeschützt sperren
       </button>
     </div>
     <div class="map-wrap" id="map-wrap" style="display:none;">
       <div id="live-map"></div>
+      <div class="map-label">Live Track</div>
+    </div>
+    <div class="fall-alert" id="fall-alert" style="display:none;">
+      <div style="font-size:26px;flex-shrink:0">💥</div>
+      <div><div class="fall-t" id="fall-t">Sturz erkannt!</div><div class="fall-s" id="fall-s"></div></div>
+    </div>
+  </div>
+
+  <div id="page-history" class="page">
+    <div class="page-hdr">
+      <div class="page-hdr-t">Verlauf</div>
+      <button class="btn btn-sm btn-ghost" id="new-folder-btn" style="display:flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Ordner
+      </button>
+    </div>
+    <div class="ftabs" id="folder-tabs"></div>
+    <div id="runs-list"></div>
+  </div>
+
+  <div id="page-settings" class="page">
+    <div class="page-hdr" style="padding-bottom:16px;"><div class="page-hdr-t">Einstellungen</div></div>
+    <div class="profile-card" id="profile-card">
+      <div class="s-avatar" id="s-avatar">W</div>
+      <div style="flex:1;min-width:0;">
+        <div class="s-name" id="s-name">Fahrer</div>
+        <div class="s-sub" id="s-stats">0 Fahrten · 0 km</div>
+        <div class="s-hint">Tippen zum Bearbeiten</div>
+      </div>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx3)"><path d="M9 5l7 7-7 7"/></svg>
+    </div>
+    
+    <div class="s-section">
+      <div class="s-row" id="s-row-data">
+        <div class="s-row-ico" style="background:var(--ac-l);color:var(--ac)">📊</div>
+        <div style="flex:1">
+          <div class="s-row-t">Datenverwaltung</div>
+          <div class="s-row-s">Export/Import (JSON)</div>
+        </div>
+      </div>
+      <div class="s-row" id="s-row-reset">
+        <div class="s-row-ico" style="background:var(--red-g);color:var(--red)">🗑️</div>
+        <div style="flex:1">
+          <div class="s-row-t">Alle Daten löschen</div>
+          <div class="s-row-s">Nicht rückgängig zu machen</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:20px;opacity:.25;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase">
+      WakeSki Pro v3.5 · 2026
     </div>
   </div>
 
   <nav id="nav">
-    <button class="nav-btn active" onclick="goPage('track')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      <span>Track</span>
+    <button class="nav-btn active" data-page="track">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Track
     </button>
-    <button class="nav-btn" onclick="goPage('history')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <span>Verlauf</span>
+    <button class="nav-btn" data-page="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Verlauf
     </button>
-    <button class="nav-btn" onclick="goPage('settings')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      <span>Settings</span>
+    <button class="nav-btn" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Setup
     </button>
   </nav>
+</div>
+
+<div id="page-detail">
+  <div class="detail-hdr">
+    <div class="back-btn" id="detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></div>
+    <div style="flex:1">
+      <div class="detail-title" id="d-title">Run #1</div>
+      <div class="detail-date" id="d-date">24. Mai 2026, 14:30</div>
+    </div>
+  </div>
+  <div class="detail-hero">
+    <div class="detail-spd" id="d-max-spd">0.0</div>
+    <div class="detail-spd-l">km/h Max</div>
+  </div>
+  <div class="detail-grid">
+    <div class="dstat"><div class="dstat-v" id="d-avg-spd">0.0</div><div class="dstat-l">Avg km/h</div></div>
+    <div class="dstat"><div class="dstat-v" id="d-dist">0.0</div><div class="dstat-l">Distanz</div></div>
+    <div class="dstat"><div class="dstat-v" id="d-time">0:00</div><div class="dstat-l">Dauer</div></div>
+    <div class="dstat"><div class="dstat-v" id="d-falls">0</div><div class="dstat-l">Stürze</div></div>
+  </div>
+  <div class="sec-lbl">Strecke</div>
+  <div class="dmap-wrap"><div id="detail-map"></div></div>
+  <div id="d-fall-sec" style="display:none">
+    <div class="sec-lbl">Stürze</div>
+    <div class="fall-list" id="d-fall-list"></div>
+  </div>
+  <button class="del-btn" id="d-del-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
+    Eintrag löschen
+  </button>
 </div>
 
 <div id="water-lock">
   <div class="wl-ico">💧</div>
   <div class="wl-title">Wasser-Lock</div>
-  <div class="wl-sub">Gesperrt gegen ungewollte Eingaben durch Wasser.</div>
-  <div class="wl-btn" id="wl-btn">
-    <div class="wl-progress" id="wl-prog"></div>
-    <div style="font-weight:700;z-index:2">HALTEN</div>
-    <div style="font-size:12px;opacity:.6;z-index:2">ZUM ENTSPERREN</div>
+  <div class="wl-sub">Halte den Button 2 Sekunden gedrückt, um den Bildschirm zu entsperren.</div>
+  <div class="wl-btn" id="wl-unlock-btn">
+    <div class="wl-waves"><div class="wl-wave"></div><div class="wl-wave"></div><div class="wl-wave"></div></div>
+    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx);position:relative;z-index:2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    <div class="wl-progress" id="wl-progress"></div>
   </div>
+  <div class="wl-hint">Drücken & Halten</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+/* ─── SETUP & STATE ──────────────────────────────── */
 const $ = id => document.getElementById(id);
-let S = { tracking:false, maxSpeed:0, distance:0, avgSpeed:0, elapsed:0, t0:0, path:[], currentSpeed:0 };
-let map, poly, watchId;
+const S = {
+  tracking: false, locked: false,
+  maxSpeed: 0, avgSpeed: 0, distance: 0, elapsed: 0,
+  t0: 0, timer: null,
+  path: [], falls: [],
+  map: null, mapPoly: null, mapMarker: null,
+  dMap: null, dPoly: null,
+  activeFolder: 'default',
+  folders: { default: { name: 'Alle Runs', color: '#0a84ff' } },
+  user: { name: 'Fahrer', avatar: 'W', color: '#0a84ff' },
+  lastPos: null // Für Live-Speed Fallback
+};
 
-/* GPS INITIALISIERUNG - SPEED FIX */
+/* ─── DATABASE (Local Storage) ───────────────────── */
+const DB = {
+  saveRuns: (r) => localStorage.setItem('ws_runs', JSON.stringify(r)),
+  getRuns: () => JSON.parse(localStorage.getItem('ws_runs') || '[]'),
+  saveFolders: (f) => localStorage.setItem('ws_folders', JSON.stringify(f)),
+  getFolders: () => JSON.parse(localStorage.getItem('ws_folders') || '{"default":{"name":"Alle Runs","color":"#0a84ff"}}'),
+  saveUser: (u) => localStorage.setItem('ws_user', JSON.stringify(u)),
+  getUser: () => JSON.parse(localStorage.getItem('ws_user') || '{"name":"Fahrer","avatar":"W","color":"#0a84ff"}'),
+  saveSession: (s) => localStorage.setItem('ws_sess', JSON.stringify(s)),
+  getSession: () => JSON.parse(localStorage.getItem('ws_sess') || 'null'),
+  clear: () => localStorage.clear()
+};
+
+/* ─── GPS & SPEED LOGIC ──────────────────────────── */
+function getDist(p1, p2) {
+  const R = 6371e3, dLat = (p2.lat - p1.lat) * Math.PI / 180, dLon = (p2.lon - p1.lon) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function initGPS() {
-  if(!navigator.geolocation) return;
-  watchId = navigator.geolocation.watchPosition(pos => {
-    // Echtzeit-Speed vom GPS-Sensor (m/s zu km/h)
-    let spd = pos.coords.speed ? (pos.coords.speed * 3.6) : 0;
-    S.currentSpeed = Math.max(0, spd);
-    
-    $('gps-dot').className = 'gps-dot ready';
-    $('gps-label').innerText = 'Bereit';
-    $('track-btn').disabled = false;
+  if (!navigator.geolocation) return updateGPSStatus('error', 'Kein GPS');
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      updateGPSStatus('ready', 'Signal OK');
+      if (S.tracking) updateTracking(pos);
+    },
+    () => updateGPSStatus('error', 'GPS Fehler'),
+    { enableHighAccuracy: true, maximumAge: 1000 }
+  );
+}
 
-    if(S.tracking) {
-      updateTracking(pos);
-    } else {
-      $('speed-num').innerText = Math.round(S.currentSpeed);
-      updateRing(S.currentSpeed);
-    }
-  }, err => {
-    $('gps-dot').className = 'gps-dot error';
-    $('gps-label').innerText = 'Kein Signal';
-  }, { enableHighAccuracy:true, maximumAge:0 });
+function updateGPSStatus(st, txt) {
+  const dot = $('gps-dot');
+  dot.className = 'gps-dot ' + st;
+  $('gps-label').textContent = txt;
+  if (st === 'ready') $('track-btn').disabled = false;
 }
 
 function updateTracking(pos) {
-  const {latitude:lat, longitude:lng} = pos.coords;
-  const p = [lat, lng];
+  const c = pos.coords;
+  const now = { lat: c.latitude, lon: c.longitude, t: Date.now() };
+
+  // LIVE SPEED FIX: Fallback falls coords.speed fehlt oder 0 ist
+  let speedKmh = (c.speed || 0) * 3.6;
+  if ((!c.speed || c.speed < 0.1) && S.lastPos) {
+      const d = getDist(S.lastPos, now);
+      const dt = (now.t - S.lastPos.t) / 1000;
+      if (dt > 0.5 && d < 100) speedKmh = (d / dt) * 3.6;
+  }
+  S.lastPos = now;
+
+  if (speedKmh < 1.5) speedKmh = 0; 
+
+  if (speedKmh > S.maxSpeed) S.maxSpeed = speedKmh;
+  S.path.push(now);
+
+  if (S.path.length > 1) {
+    const d = getDist(S.path[S.path.length - 2], now);
+    if (d > 0.5 && d < 50) S.distance += d;
+  }
+
+  refreshMetrics(speedKmh);
+  if (S.map) {
+    const latlng = [c.latitude, c.longitude];
+    S.mapPoly.addLatLng(latlng);
+    S.mapMarker.setLatLng(latlng);
+    S.map.panTo(latlng);
+  }
+}
+
+function refreshMetrics(curSpd = 0) {
+  $('speed-num').textContent = curSpd.toFixed(curSpd >= 10 ? 0 : 1);
+  const ring = $('ring-fill');
+  const dash = 603 - (Math.min(curSpd, 60) / 60 * 603);
+  ring.style.strokeDashoffset = dash;
+  ring.className = curSpd > 45 ? 'ring-fill danger' : (curSpd > 35 ? 'ring-fill warn' : 'ring-fill');
+  $('speed-num').className = curSpd > 45 ? 'speed-num danger' : (curSpd > 35 ? 'speed-num warn' : 'speed-num');
+
+  $('m-max').textContent = S.maxSpeed.toFixed(1);
+  const avg = S.elapsed > 0 ? (S.distance / S.elapsed) * 3.6 : 0;
+  $('m-avg').textContent = avg.toFixed(1);
   
-  if(S.path.length > 0) {
-    const lastP = S.path[S.path.length-1];
-    const d = getDist(lastP[0], lastP[1], lat, lng);
-    if(d > 2) { // Nur bei Bewegung von > 2m zählen
-       S.distance += d;
-       S.path.push(p);
-       poly.addLatLng(p);
-       map.panTo(p);
-    }
+  if (S.distance < 1000) {
+    $('m-dist').textContent = Math.round(S.distance);
+    $('m-dist-l').textContent = 'm';
   } else {
-    S.path.push(p);
+    $('m-dist').textContent = (S.distance / 1000).toFixed(2);
+    $('m-dist-l').textContent = 'km';
   }
-
-  if(S.currentSpeed > S.maxSpeed) S.maxSpeed = S.currentSpeed;
-  refreshMetrics();
 }
 
-function refreshMetrics() {
-  $('speed-num').innerText = Math.round(S.currentSpeed);
-  $('m-max').innerText = Math.round(S.maxSpeed);
-  $('m-dist').innerText = S.distance > 1000 ? (S.distance/1000).toFixed(2) : Math.round(S.distance);
-  $('m-dist-l').innerText = S.distance > 1000 ? 'km' : 'm';
-  updateRing(S.currentSpeed);
-}
-
-function updateRing(v) {
-  const offset = 603 - (Math.min(v, 60) / 60) * 603;
-  $('ring-fill').style.strokeDashoffset = offset;
-}
-
+/* ─── TRACKING CONTROL ───────────────────────────── */
 function startTracking() {
-  S = { ...S, tracking:true, t0:Date.now(), path:[], distance:0, maxSpeed:0 };
-  $('track-btn').className = 'tbtn stop';
-  $('track-btn-lbl').innerText = 'Run stoppen';
-  $('map-wrap').style.display = 'block';
+  S.tracking = true;
+  S.t0 = Date.now() - (S.elapsed * 1000);
+  S.path = []; S.falls = []; S.distance = 0; S.maxSpeed = 0;
   
-  // MAP FIX: Invalidate Size, damit Karte nicht grau bleibt
-  if(!map) {
-    map = L.map('live-map', {zoomControl:false, attributionControl:false}).setView([0,0], 16);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    poly = L.polyline([], {color:'var(--ac)', weight:4}).addTo(map);
+  $('track-btn').className = 'tbtn stop';
+  $('track-btn-lbl').textContent = 'Stoppen';
+  $('map-wrap').style.display = 'block';
+
+  // MAP FIX: Erst Karte initialisieren, dann invalidateSize
+  if (!S.map) {
+    S.map = L.map('live-map', { zoomControl: false, attributionControl: false }).setView([0,0], 16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(S.map);
+    S.mapPoly = L.polyline([], { color: '#0a84ff', weight: 4 }).addTo(S.map);
+    S.mapMarker = L.circleMarker([0,0], { radius: 6, fillColor: '#fff', fillOpacity: 1, color: '#0a84ff', weight: 2 }).addTo(S.map);
   }
-  setTimeout(() => map.invalidateSize(), 100);
+  setTimeout(() => S.map.invalidateSize(), 300);
+
+  S.timer = setInterval(() => {
+    S.elapsed = Math.floor((Date.now() - S.t0) / 1000);
+    const m = Math.floor(S.elapsed / 60), s = S.elapsed % 60;
+    $('m-time').textContent = `${m}:${s < 10 ? '0' + s : s}`;
+  }, 1000);
 }
 
 function stopTracking() {
   S.tracking = false;
+  clearInterval(S.timer);
+  const avg = S.elapsed > 0 ? (S.distance / S.elapsed) * 3.6 : 0;
+  
+  if (S.distance > 5) {
+    const runs = DB.getRuns();
+    runs.unshift({
+      id: Date.now(),
+      date: new Date().toISOString(),
+      maxSpeed: S.maxSpeed,
+      avgSpeed: avg,
+      distance: S.distance,
+      duration: S.elapsed,
+      path: S.path,
+      falls: S.falls,
+      folder: S.activeFolder
+    });
+    DB.saveRuns(runs);
+    showToast('Run gespeichert');
+  }
+
+  // Reset
+  S.elapsed = 0; S.distance = 0; S.maxSpeed = 0; S.path = []; S.falls = [];
   $('track-btn').className = 'tbtn start';
-  $('track-btn-lbl').innerText = 'Run starten';
-  // Hier Speicher-Logik hinzufügen (localStorage etc.)
+  $('track-btn-lbl').textContent = 'Run starten';
+  $('m-time').textContent = '0:00';
+  $('map-wrap').style.display = 'none';
+  refreshMetrics(0);
+  renderHistory();
+  updateProfileStats();
 }
 
-/* NAVIGATION & UI */
-function goPage(p) {
-  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-  $(`page-${p}`).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', (p==='track' && i===0) || (p==='history' && i===1) || (p==='settings' && i===2));
+/* ─── FALL DETECTION ─────────────────────────────── */
+let lastA = 0;
+function initMotion() {
+  window.addEventListener('devicemotion', (e) => {
+    if (!S.tracking) return;
+    const { x, y, z } = e.accelerationIncludingGravity;
+    const a = Math.sqrt(x*x + y*y + z*z);
+    const diff = Math.abs(a - lastA);
+    if (diff > 28) {
+      triggerFall();
+    }
+    lastA = a;
   });
 }
 
-$('track-btn').addEventListener('click', () => S.tracking ? stopTracking() : startTracking());
+function triggerFall() {
+  if (S.falls.length > 0 && Date.now() - S.falls[S.falls.length-1].t < 5000) return;
+  const fall = { t: Date.now(), pos: S.path[S.path.length-1] || null };
+  S.falls.push(fall);
+  const el = $('fall-alert');
+  el.style.display = 'flex'; el.style.animation = 'shake .5s ease';
+  $('fall-s').textContent = `Sturz #${S.falls.length} erfasst`;
+  navigator.vibrate?.([200, 100, 200]);
+  setTimeout(() => el.style.display = 'none', 4000);
+}
 
-$('perm-btn').addEventListener('click', async () => {
-  $('screen-perm').style.display = 'none';
-  $('app').style.display = 'flex';
-  initGPS();
-  // Motion Permission Logic hier...
+/* ─── NAVIGATION & UI ────────────────────────────── */
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  $(`page-${id}`).classList.add('active');
+  document.querySelector(`.nav-btn[data-page="${id}"]`).classList.add('active');
+  if (id === 'history') renderHistory();
+  if (id === 'settings') updateProfileStats();
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (S.locked) return;
+    goPage(btn.dataset.page);
+  });
 });
 
-$('lock-btn').addEventListener('click', () => $('water-lock').classList.add('on'));
+function showToast(txt) {
+  const t = $('toast'); t.textContent = txt; t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2500);
+}
 
-// Entsperr-Logik (Halten für 2 Sek)
+/* ─── HISTORY & FOLDERS ──────────────────────────── */
+function renderHistory() {
+  const runs = DB.getRuns();
+  const folders = DB.getFolders();
+  const container = $('runs-list');
+  const tabs = $('folder-tabs');
+
+  // Tabs
+  tabs.innerHTML = '';
+  Object.keys(folders).forEach(fid => {
+    const f = folders[fid];
+    const tab = document.createElement('div');
+    tab.className = `ftab ${S.activeFolder === fid ? 'active' : ''}`;
+    tab.innerHTML = `<div class="ftab-dot" style="background:${f.color}"></div>${f.name}`;
+    tab.onclick = () => { S.activeFolder = fid; renderHistory(); };
+    tabs.appendChild(tab);
+  });
+
+  const filtered = S.activeFolder === 'default' ? runs : runs.filter(r => r.folder === S.activeFolder);
+  
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-ico">🌊</div><div>Noch keine Fahrten hier</div></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => `
+    <div class="run-card">
+      <div class="run-card-top">
+        <div class="run-card-left" onclick="showDetail(${r.id})">
+          <div class="run-name">${new Date(r.date).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}</div>
+          <div class="run-date">${new Date(r.date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</div>
+        </div>
+        <div>
+          <div class="run-spd-big">${r.maxSpeed.toFixed(1)}</div>
+          <div class="run-spd-unit">km/h Max</div>
+        </div>
+        <div class="run-menu" onclick="showRunOptions(${r.id})">⋮</div>
+      </div>
+      <div class="run-stats">
+        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${(r.distance / 1000).toFixed(2)}</div><div class="rs-l">km</div></div>
+        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${Math.floor(r.duration / 60)}:${(r.duration % 60).toString().padStart(2, '0')}</div><div class="rs-l">Zeit</div></div>
+        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${r.avgSpeed.toFixed(1)}</div><div class="rs-l">Avg</div></div>
+        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${r.falls?.length || 0}</div><div class="rs-l">Stürze</div></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ─── WATER LOCK ─────────────────────────────────── */
 let wlTimer;
-$('wl-btn').addEventListener('touchstart', () => {
-  $('wl-prog').style.width = '100%';
-  $('wl-prog').style.transition = 'width 2s linear';
-  wlTimer = setTimeout(() => {
-    $('water-lock').classList.remove('on');
-    $('wl-prog').style.width = '0';
-    $('wl-prog').style.transition = 'none';
-  }, 2000);
-});
-$('wl-btn').addEventListener('touchend', () => {
-  clearTimeout(wlTimer);
-  $('wl-prog').style.width = '0';
-  $('wl-prog').style.transition = 'none';
+$('lock-btn').addEventListener('click', () => {
+  S.locked = true;
+  $('water-lock').classList.add('on');
 });
 
-function getDist(lat1, lon1, lat2, lon2) {
-  const R = 6371e3;
-  const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
-  const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
-  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+const wlb = $('wl-unlock-btn');
+const wlp = $('wl-progress');
+
+['mousedown', 'touchstart'].forEach(e => wlb.addEventListener(e, (ev) => {
+  ev.preventDefault();
+  wlb.classList.add('pressing');
+  wlp.className = 'wl-progress go';
+  wlTimer = setTimeout(() => {
+    S.locked = false;
+    $('water-lock').classList.remove('on');
+    wlb.classList.remove('pressing');
+    wlp.className = 'wl-progress';
+    showToast('Entsperrt');
+  }, 2000);
+}));
+
+['mouseup', 'mouseleave', 'touchend'].forEach(e => wlb.addEventListener(e, () => {
+  clearTimeout(wlTimer);
+  wlb.classList.remove('pressing');
+  wlp.className = 'wl-progress';
+}));
+
+/* ─── START ──────────────────────────────────────── */
+function launchApp(){
+  $('screen-perm').style.display='none';
+  const app=$('app'); app.style.display='flex'; app.style.flexDirection='column';
+  goPage('track');
+  initGPS();
+  initMotion();
+  const sess=DB.getSession();
+  if(sess&&sess.maxSpeed){S.maxSpeed=sess.maxSpeed;S.distance=sess.distance||0;refreshMetrics();}
+}
+
+$('perm-btn').addEventListener('click',async()=>{
+  const btn=$('perm-btn'); btn.disabled=true;
+  btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0110 10"/></svg> Aktiviere…';
+  for(const E of [window.DeviceMotionEvent, window.DeviceOrientationEvent]){
+    if(typeof E?.requestPermission==='function') await E.requestPermission().catch(()=>{});
+  }
+  setTimeout(()=>launchApp(), 800);
+});
+
+// Dummy Funktionen für fehlende Referenzen im Original
+function showDetail(id) { showToast('Details für Run ' + id); }
+function showRunOptions(id) { showToast('Optionen für Run ' + id); }
+function updateProfileStats() {
+  const runs = DB.getRuns();
+  const totalDist = runs.reduce((a, b) => a + b.distance, 0);
+  $('s-stats').textContent = `${runs.length} Fahrten · ${(totalDist / 1000).toFixed(1)} km`;
 }
 </script>
 </body>
