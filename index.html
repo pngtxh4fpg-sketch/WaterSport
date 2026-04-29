@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="WakeSki"/>
 <meta name="theme-color" content="#000000"/>
 <meta name="color-scheme" content="dark"/>
-<title>WakeSki Pro</title>
+<title>WakeSki Pro v2.2</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
@@ -289,7 +289,7 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
         <svg class="ring-svg" viewBox="0 0 200 200">
           <circle class="ring-bg"   cx="100" cy="100" r="96"/>
    
-        <circle class="ring-fill" cx="100" cy="100" r="96" id="ring-fill"/>
+       <circle class="ring-fill" cx="100" cy="100" r="96" id="ring-fill"/>
         </svg>
         <div class="speed-inner">
           <div class="speed-num" id="speed-num">0</div>
@@ -301,7 +301,7 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
       <div class="mc"><div class="mv" id="m-max">0</div><div class="ml">Max</div></div>
       <div class="mc"><div class="mv" id="m-avg">0</div><div class="ml">Avg</div></div>
      
-      <div class="mc"><div class="mv" id="m-dist">0</div><div class="ml" id="m-dist-l">m</div></div>
+  <div class="mc"><div class="mv" id="m-dist">0</div><div class="ml" id="m-dist-l">m</div></div>
       <div class="mc"><div class="mv" id="m-time">0:00</div><div class="ml">Zeit</div></div>
     </div>
     <div class="tbtn-wrap">
@@ -371,7 +371,7 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
       <div class="s-row" style="cursor:default;">
       
         <div class="s-row-ico" style="background:rgba(255,255,255,.06)">ℹ️</div>
-        <div><div class="s-row-t">WakeSki Pro v2.1</div><div class="s-row-s">GPS-Tracker · Sturzerkennung · Ordnersystem</div></div>
+        <div><div class="s-row-t">WakeSki Pro v2.2</div><div class="s-row-s">GPS-Tracker · Sturzerkennung · Ordnersystem</div></div>
       </div>
     </div>
     <div style="height:20px;"></div>
@@ -397,6 +397,7 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
     <button class="nav-btn" data-pg="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       Mehr
+  
     </button>
   </nav>
 </div>
@@ -421,6 +422,7 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
       <button class="btn btn-ghost" id="confirm-no">Abbrechen</button>
       <button class="btn btn-danger" id="confirm-yes">Bestätigen</button>
     </div>
+  
   </div>
 </div>
 
@@ -465,11 +467,11 @@ const DB={
   saveProfile: p=>DB._s('ws_profile',p),
   getSession:  ()=>DB._g('ws_session'),
   saveSession: s=>DB._s('ws_session',s),
+ 
   clearSession:()=>localStorage.removeItem('ws_session'),
   exportAll:   ()=>({profile:DB.getProfile(),folders:DB.getFolders(),runs:DB.getRuns(),at:Date.now()}),
   importAll:   d=>{if(d.profile)DB.saveProfile(d.profile);if(d.folders)DB.saveFolders(d.folders);if(d.runs)DB.saveRuns(d.runs);},
 };
-
 /* ─── UTILS ──────────────────────────────────────── */
 function haversine(a,b){
   const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;
@@ -486,23 +488,21 @@ const $=id=>document.getElementById(id);
 document.addEventListener('contextmenu',e=>e.preventDefault(),{passive:false});
 document.addEventListener('selectstart',e=>{if(!(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement))e.preventDefault();},{passive:false});
 document.addEventListener('dragstart',e=>e.preventDefault(),{passive:false});
-
 /* ─── STATE ──────────────────────────────────────── */
 const S={
   page:'track', gps:'idle', tracking:false,
   speed:0, maxSpeed:0, avgSpeed:0, distance:0, elapsed:0, t0:null,
-  speedBuf:[],         
-  speedHistory:[],     
-  trackPoints:[],      
+  speedBuf:[],         // gleitender Mittelwert (3 Punkte)
+  speedHistory:[],     // [{s, t}]
+  trackPoints:[],      // [{lat, lon, time}]
   falls:[], fallCount:0, lastPt:null,
   watchId:null, timerID:null,
-  
+  /* Leaflet Objekte */
   map:null, segments:[], prevMapPt:null, startMarker:null, posMarker:null,
   detailMap:null,
   locked:false, activeFolderID:null,
   currentLat:null, currentLon:null
 };
-
 /* ─── TOAST ──────────────────────────────────────── */
 let _tt;
 function toast(msg,dur=2600){const el=$('toast');el.textContent=msg;el.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('on'),dur);}
@@ -513,7 +513,7 @@ function goPage(pg){
   document.querySelectorAll('.page').forEach(el=>el.classList.toggle('active',el.id==='page-'+pg));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.pg===pg));
   if(pg==='history') renderHistory();
-  if(pg==='settings') renderSettings();
+if(pg==='settings') renderSettings();
 }
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>goPage(b.dataset.pg)));
 
@@ -521,7 +521,7 @@ document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>
 function initGPS(){
   if(!navigator.geolocation){setGPS('error');return;}
   setGPS('waiting');
-  S.watchId=navigator.geolocation.watchPosition(
+S.watchId=navigator.geolocation.watchPosition(
     pos=>{setGPS('ready');onPosition(pos);},
     err=>{console.warn('GPS:',err.code,err.message);setGPS('error');},
     {enableHighAccuracy:true,timeout:20000,maximumAge:0}
@@ -529,9 +529,10 @@ function initGPS(){
 }
 function setGPS(s){
   S.gps=s;
-  const dot=$('gps-dot'),lbl=$('gps-label'),btn=$('track-btn');
+const dot=$('gps-dot'),lbl=$('gps-label'),btn=$('track-btn');
   dot.className='gps-dot'+(s==='ready'?' ready':s==='waiting'?' waiting':s==='error'?' error':'');
   lbl.textContent={idle:'GPS',waiting:'Suche GPS…',ready:'GPS bereit',error:'GPS fehlt'}[s];
+  // Stop-Button nie deaktivieren während Tracking läuft
   if(!S.tracking) btn.disabled=(s!=='ready');
 }
 
@@ -540,37 +541,40 @@ function onPosition(pos){
   const now=Date.now();
   const lat=pos.coords.latitude, lon=pos.coords.longitude;
   const pt={lat,lon,time:now};
-
-  // Speichere aktuellste Position für Map-Init
+  
+  // Aktuelle Position für die Karte speichern
   S.currentLat = lat;
   S.currentLon = lon;
 
+// Karte vor Tracking-Start auf Position zentrieren
   if(S.map && !S.tracking){
     S.map.setView([lat,lon],16,{animate:false});
     return;
   }
   if(!S.tracking) return;
-
+// ── Geschwindigkeit ──
   let raw=0;
   if(typeof pos.coords.speed==='number' && pos.coords.speed>=0){
     raw=pos.coords.speed*3.6;
+// m/s → km/h
   }
 
+  // ── Distanz aus Positionsdelta ──
   if(S.lastPt!==null){
     const dt=(now-S.lastPt.time)/1000;
-    const dk=haversine(S.lastPt,pt);
-    // Plausibilitätsfilter: Max 60s Lücke (statt 20s) und max 2.0 km (statt 0.5km), 
-    // um Throttling oder kleine Hänger im Hintergrund aufzufangen.
+const dk=haversine(S.lastPt,pt);
+    // Plausibilitätsfilter: max 60s Lücke (vorher 20s), max 2.0 km pro Update (vorher 0.5km)
     if(dt>0 && dt<=60 && dk<2.0){
       S.distance+=dk;
-      if(raw===0) raw=(dk/dt)*3600; 
+if(raw===0) raw=(dk/dt)*3600; // Fallback-Speed
     }
   }
   S.lastPt=pt;
   S.trackPoints.push(pt);
 
+  // ── Gleitender Mittelwert ──
   S.speedBuf.push(raw);
-  if(S.speedBuf.length>3) S.speedBuf.shift();
+if(S.speedBuf.length>3) S.speedBuf.shift();
   S.speed=S.speedBuf.reduce((a,b)=>a+b,0)/S.speedBuf.length;
 
   S.maxSpeed=Math.max(S.maxSpeed,S.speed);
@@ -578,7 +582,9 @@ function onPosition(pos){
   const mov=S.speedHistory.filter(p=>p.s>2);
   S.avgSpeed=mov.length?mov.reduce((a,b)=>a+b.s,0)/mov.length:0;
 
+  // ── DOM sofort aktualisieren (kein rAF-Delay) ──
   refreshMetrics();
+// ── Karte aktualisieren ──
   if(S.map) drawLine(lat, lon, S.speed);
 }
 
@@ -586,13 +592,13 @@ function onPosition(pos){
 function refreshMetrics(){
   const spd=S.speed, MAX=80;
   const num=$('speed-num'), ring=$('ring-fill');
-  
+// Geschwindigkeit (Ganzzahl im Ring, sieht besser aus bei großer Schrift)
   num.textContent=Math.round(spd);
   num.className='speed-num'+(spd>60?' danger':spd>40?' warn':'');
 
   ring.style.strokeDashoffset=603*(1-Math.min(spd/MAX,1));
   ring.className='ring-fill'+(spd>60?' danger':spd>40?' warn':'');
-
+// 1 Nachkommastelle überall
   $('m-max').textContent=S.maxSpeed.toFixed(1);
   $('m-avg').textContent=S.avgSpeed.toFixed(1);
 
@@ -600,10 +606,10 @@ function refreshMetrics(){
   if(d<0.1){
     $('m-dist').textContent=(d*1000).toFixed(0);
     $('m-dist-l').textContent='m';
-  } else {
-    $('m-dist').textContent=d.toFixed(2);  
+} else {
+    $('m-dist').textContent=d.toFixed(2);  // 2 Stellen bei km ist sinnvoll
     $('m-dist-l').textContent='km';
-  }
+}
 }
 
 /* ─── TRACKING: START / STOP ─────────────────────── */
@@ -616,19 +622,21 @@ function startTracking(){
     speedBuf:[],speedHistory:[],trackPoints:[],falls:[],fallCount:0,lastPt:null,
     segments:[],prevMapPt:null,
   });
-
+// Sekunden-Timer
   S.timerID=setInterval(()=>{
     S.elapsed=Date.now()-S.t0;
     $('m-time').textContent=fmtTime(S.elapsed);
-    refreshMetrics(); 
+    refreshMetrics(); // Safety-net: Werte auch ohne GPS-Update frisch halten
   },1000);
-
+// Button-Zustand
   const btn=$('track-btn');
   btn.disabled=false;
   btn.className='tbtn stop';
   $('track-btn-lbl').textContent='Run beenden';
 
+  // Karte einblenden und initialisieren
   initLiveMap();
+// Metriken sofort auf 0 setzen
   refreshMetrics();
   toast('⏱ Run gestartet');
 }
@@ -638,7 +646,7 @@ function stopTracking(){
   clearInterval(S.timerID); S.timerID=null;
 
   const btn=$('track-btn');
-  btn.className='tbtn start';
+btn.className='tbtn start';
   $('track-btn-lbl').textContent='Run starten';
   btn.disabled=(S.gps!=='ready');
 
@@ -654,7 +662,7 @@ function saveRun(){
     maxSpeed:S.maxSpeed,avgSpeed:S.avgSpeed,distance:S.distance,
     speedHistory:S.speedHistory,trackPoints:S.trackPoints,falls:S.falls,
   });
-  DB.clearSession();
+DB.clearSession();
   toast(`✅ Gespeichert · ${S.maxSpeed.toFixed(1)} km/h max`);
 }
 
@@ -662,69 +670,78 @@ function saveRun(){
 function initLiveMap(){
   const wrap=$('map-wrap');
   wrap.style.display='block';
+  // Synchroner Force-Reflow
   void wrap.getBoundingClientRect();
   
-  if(!S.map){
+if(!S.map){
+    // Erste Initialisierung
     const map=L.map('live-map',{
       zoomControl:false, attributionControl:false,
       fadeAnimation:false, markerZoomAnimation:false,
-      preferCanvas:true, 
+      preferCanvas:true, // Canvas schneller auf Mobile als SVG
     });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       maxZoom:19, updateWhenIdle:false, keepBuffer:2,
     }).addTo(map);
-    // Zentriere exakt auf aktuelle Position, anstatt starr auf 48.2, 13.5
+    // Zentrieren auf aktuelle Position anstelle von fixem Punkt
     map.setView([S.currentLat || 48.2, S.currentLon || 13.5], 16);
     S.map=map;
-  }
+}
 
+  // Alte Elemente entfernen
   S.segments.forEach(seg=>seg.remove());
   S.segments=[];
   S.prevMapPt=null;
   if(S.startMarker){S.startMarker.remove();S.startMarker=null;}
-  if(S.posMarker)  {S.posMarker.remove();S.posMarker=null;}
+  if(S.posMarker)  {S.posMarker.remove();
+S.posMarker=null;}
 
-  // SetTimeout erzwingt sicheres Neu-Rendern, nachdem Display-Block aktiv ist
+  // invalidateSize nach erstem Browser-Paint sichern
   setTimeout(()=>{ if(S.map) S.map.invalidateSize(); }, 150);
 }
 
 function speedColor(spd){
-  const t=Math.min(Math.max(spd,0)/50,1); 
+  const t=Math.min(Math.max(spd,0)/50,1); // 0..1
+  // #ff453a = rgb(255,69,58)  →  #30d158 = rgb(48,209,88)
   const r=Math.round(255+(48-255)*t);
-  const g=Math.round(69 +(209-69)*t);
+const g=Math.round(69 +(209-69)*t);
   const b=Math.round(58 +(88-58)*t);
   return`rgb(${r},${g},${b})`;
 }
 
 function drawLine(lat,lon,spd){
   const col=speedColor(spd);
+// Erster Punkt: Start-Marker setzen und Karte zentrieren
   if(!S.startMarker){
     S.startMarker=L.circleMarker([lat,lon],{
       radius:8, color:'#fff', weight:2.5,
       fillColor:'#30d158', fillOpacity:1,
     }).addTo(S.map).bindTooltip('Start',{permanent:false});
-    S.map.setView([lat,lon],17,{animate:false});
+S.map.setView([lat,lon],17,{animate:false});
   }
 
+  // Segment vom vorherigen Punkt zum aktuellen zeichnen
   if(S.prevMapPt){
     const seg=L.polyline([S.prevMapPt,[lat,lon]],{
       color:col, weight:5, opacity:1,
       lineCap:'round', lineJoin:'round',
     }).addTo(S.map);
-    S.segments.push(seg);
+S.segments.push(seg);
   }
   S.prevMapPt=[lat,lon];
 
+  // Aktuelle Positions-Punkt (weiß umrandet, innen Geschwindigkeitsfarbe)
   if(!S.posMarker){
     S.posMarker=L.circleMarker([lat,lon],{
       radius:9, color:'#fff', weight:2.5,
       fillColor:col, fillOpacity:1,
     }).addTo(S.map);
-  } else {
+} else {
     S.posMarker.setLatLng([lat,lon]);
     S.posMarker.setStyle({fillColor:col});
   }
 
+  // Karte folgt der Position
   S.map.panTo([lat,lon],{animate:true,duration:1.0,easeLinearity:0.4});
 }
 
@@ -734,13 +751,13 @@ function initMotion(){
   const handler=e=>{
     if(!S.tracking) return;
     const ag=e.accelerationIncludingGravity||e.acceleration; if(!ag) return;
-    const g=Math.sqrt((ag.x||0)**2+(ag.y||0)**2+(ag.z||0)**2)/9.81;
+const g=Math.sqrt((ag.x||0)**2+(ag.y||0)**2+(ag.z||0)**2)/9.81;
     if(g>2.5&&S.speed>8){
       const now=Date.now(), last=S.falls[S.falls.length-1];
       if(!last||now-last.time>3000) triggerFall(g,now);
     }
   };
-  if(typeof DeviceMotionEvent.requestPermission==='function'){
+if(typeof DeviceMotionEvent.requestPermission==='function'){
     DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')window.addEventListener('devicemotion',handler,{passive:true});}).catch(()=>{});
   } else {
     window.addEventListener('devicemotion',handler,{passive:true});
@@ -749,7 +766,7 @@ function initMotion(){
 function triggerFall(g,time){
   S.falls.push({time,speed:S.speed,gForce:g.toFixed(2)});
   S.fallCount++;
-  $('fall-t').textContent=`💥 Sturz #${S.fallCount} erkannt!`;
+$('fall-t').textContent=`💥 Sturz #${S.fallCount} erkannt!`;
   $('fall-s').textContent=`${g.toFixed(1)}g · ${S.speed.toFixed(1)} km/h`;
   const el=$('fall-alert');
   el.style.display='flex';
@@ -767,7 +784,7 @@ function renderFolderTabs(){
   const all=document.createElement('div');
   all.className='ftab'+(S.activeFolderID===null?' active':'');
   all.textContent='Alle';
-  all.addEventListener('click',()=>{S.activeFolderID=null;renderHistory();});
+all.addEventListener('click',()=>{S.activeFolderID=null;renderHistory();});
   wrap.appendChild(all);
   folders.forEach(f=>{
     const t=document.createElement('div');
@@ -782,9 +799,9 @@ function renderHistory(){
   renderFolderTabs();
   const all=DB.getRuns(), runs=S.activeFolderID===null?all:all.filter(r=>r.folderId===S.activeFolderID);
   const list=$('runs-list'); list.innerHTML='';
-  if(!runs.length){list.innerHTML=`<div class="empty-state"><div class="empty-ico">🌊</div><div>${S.activeFolderID?'Keine Fahrten in diesem Ordner':'Noch keine Fahrten'}</div></div>`;return;}
+if(!runs.length){list.innerHTML=`<div class="empty-state"><div class="empty-ico">🌊</div><div>${S.activeFolderID?'Keine Fahrten in diesem Ordner':'Noch keine Fahrten'}</div></div>`;return;}
   const fmap=Object.fromEntries(DB.getFolders().map(f=>[f.id,f]));
-  runs.forEach((r,i)=>{
+runs.forEach((r,i)=>{
     const f=r.folderId?fmap[r.folderId]:null;
     const d=r.distance||0, distStr=d<0.1?Math.round(d*1000)+'m':d.toFixed(2), distLbl=d<0.1?'Meter':'km';
     const card=document.createElement('div');
@@ -798,7 +815,7 @@ function renderHistory(){
         </div>
         <div style="display:flex;align-items:flex-start;gap:6px;flex-shrink:0;margin-left:10px;">
       
-          <button class="run-menu"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    <button class="run-menu"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
           <div><div class="run-spd-big">${Math.round(r.maxSpeed||0)}</div><div class="run-spd-unit">km/h max</div></div>
         </div>
       </div>
@@ -820,7 +837,7 @@ $('new-folder-btn').addEventListener('click',()=>showFolderCreate());
 
 function showFolderCreate(existing){
   const isEdit=!!existing;
-  let selColor=existing?existing.color:COLORS[0];
+let selColor=existing?existing.color:COLORS[0];
   const ov=mkOv(`<div class="sheet" style="padding:22px 20px calc(22px + var(--sb))">
     <div style="font-size:19px;font-weight:700;margin-bottom:16px">${isEdit?'Ordner bearbeiten':'Neuer Ordner'}</div>
     <div class="lbl">Name</div>
@@ -832,7 +849,7 @@ function showFolderCreate(existing){
       <button class="btn btn-primary" id="fn-s">${isEdit?'Speichern':'Erstellen'}</button>
     </div>
   </div>`);
-  const inp=ov.querySelector('#fn-inp'); setTimeout(()=>inp.focus(),80);
+const inp=ov.querySelector('#fn-inp'); setTimeout(()=>inp.focus(),80);
   ov.querySelectorAll('.swatch').forEach(sw=>sw.addEventListener('click',()=>{selColor=sw.dataset.c;ov.querySelectorAll('.swatch').forEach(s=>s.classList.remove('on'));sw.classList.add('on');}));
   ov.querySelector('#fn-c').addEventListener('click',()=>ov.remove());
   ov.querySelector('#fn-s').addEventListener('click',()=>{
@@ -840,7 +857,7 @@ function showFolderCreate(existing){
     if(isEdit)DB.updateFolder(existing.id,{name,color:selColor}); else DB.addFolder({id:'f'+Date.now(),name,color:selColor});
     ov.remove(); renderHistory(); toast(isEdit?'Ordner aktualisiert':'Ordner erstellt');
   });
-  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
 
 function showFolderOpts(folder){
@@ -850,7 +867,7 @@ function showFolderOpts(folder){
     <div class="srow red" id="fo-d"><div class="srow-ico" style="background:rgba(255,69,58,.1)">🗑️</div>Ordner löschen</div>
     <div class="srow cancel" id="fo-c">Abbrechen</div>
   </div>`);
-  ov.querySelector('#fo-r').addEventListener('click',()=>{ov.remove();showFolderCreate(folder);});
+ov.querySelector('#fo-r').addEventListener('click',()=>{ov.remove();showFolderCreate(folder);});
   ov.querySelector('#fo-d').addEventListener('click',()=>{ov.remove();confirm2('Ordner löschen?','Fahrten bleiben erhalten.',()=>{DB.deleteFolder(folder.id);if(S.activeFolderID===folder.id)S.activeFolderID=null;renderHistory();toast('Ordner gelöscht');});});
   ov.querySelector('#fo-c').addEventListener('click',()=>ov.remove());
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
@@ -864,7 +881,7 @@ function showRunOpts(run){
     <div class="srow red" id="ro-d"><div class="srow-ico" style="background:rgba(255,69,58,.1)">🗑️</div>Fahrt löschen</div>
     <div class="srow cancel" id="ro-c">Abbrechen</div>
   </div>`);
-  ov.querySelector('#ro-r').addEventListener('click',()=>{ov.remove();showRename(run);});
+ov.querySelector('#ro-r').addEventListener('click',()=>{ov.remove();showRename(run);});
   ov.querySelector('#ro-m').addEventListener('click',()=>{ov.remove();showFolderPicker(run);});
   ov.querySelector('#ro-d').addEventListener('click',()=>{ov.remove();confirm2('Fahrt löschen?','Nicht rückgängig machbar.',()=>{DB.deleteRun(run.id);renderHistory();toast('Fahrt gelöscht');});});
   ov.querySelector('#ro-c').addEventListener('click',()=>ov.remove());
@@ -880,7 +897,7 @@ function showRename(run){
       <button class="btn btn-primary" id="rn-s">Speichern</button>
     </div>
   </div>`);
-  const inp=ov.querySelector('#rn-inp'); setTimeout(()=>{inp.focus();inp.select();},80);
+const inp=ov.querySelector('#rn-inp'); setTimeout(()=>{inp.focus();inp.select();},80);
   ov.querySelector('#rn-c').addEventListener('click',()=>ov.remove());
   ov.querySelector('#rn-s').addEventListener('click',()=>{const name=inp.value.trim();if(!name)return;DB.updateRun(run.id,{name});ov.remove();renderHistory();toast('Umbenannt');});
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
@@ -888,7 +905,7 @@ function showRename(run){
 
 function showFolderPicker(run){
   const folders=DB.getFolders();
-  const rows=folders.map(f=>`<div class="srow fp-r" data-id="${f.id}"><div class="srow-dot" style="background:${f.color}"></div>${esc(f.name)}${run.folderId===f.id?'<div class="srow-check" style="margin-left:auto">✓</div>':''}</div>`).join('');
+const rows=folders.map(f=>`<div class="srow fp-r" data-id="${f.id}"><div class="srow-dot" style="background:${f.color}"></div>${esc(f.name)}${run.folderId===f.id?'<div class="srow-check" style="margin-left:auto">✓</div>':''}</div>`).join('');
   const ov=mkOv(`<div class="sheet">
     <div class="sheet-hdr"><div class="sheet-hdr-t">In Ordner verschieben</div></div>
     <div class="srow fp-r" data-id="__none__"><div class="srow-dot" style="background:#48484a"></div>Kein Ordner${!run.folderId?'<div class="srow-check" style="margin-left:auto;background:#48484a">✓</div>':''}</div>
@@ -896,13 +913,13 @@ function showFolderPicker(run){
     <div class="srow" id="fp-new"><div class="srow-ico">➕</div>Neuen Ordner erstellen</div>
     <div class="srow cancel" id="fp-can">Abbrechen</div>
   </div>`);
-  ov.querySelectorAll('.fp-r').forEach(row=>row.addEventListener('click',()=>{
+ov.querySelectorAll('.fp-r').forEach(row=>row.addEventListener('click',()=>{
     const id=row.dataset.id;
     DB.updateRun(run.id,{folderId:id==='__none__'?null:id});
     ov.remove(); renderHistory();
     toast(`Verschoben → ${id==='__none__'?'Allgemein':folders.find(f=>f.id===id)?.name}`);
   }));
-  ov.querySelector('#fp-new').addEventListener('click',()=>{ov.remove();showFolderCreate();});
+ov.querySelector('#fp-new').addEventListener('click',()=>{ov.remove();showFolderCreate();});
   ov.querySelector('#fp-can').addEventListener('click',()=>ov.remove());
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
@@ -912,7 +929,7 @@ function openDetail(run){
   const d=run.distance||0, distStr=d<0.1?Math.round(d*1000)+'m':d.toFixed(2), distLbl=d<0.1?'Meter':'Distanz km';
   const hasFalls=(run.falls||[]).length>0, hasTrack=(run.trackPoints||[]).length>2;
   $('detail-title').textContent=run.name||'Run'; $('detail-date').textContent=fmtDate(run.startTime);
-  $('detail-content').innerHTML=`
+$('detail-content').innerHTML=`
     <div class="detail-hero" style="animation:fadeUp .32s cubic-bezier(.34,1.28,.64,1) both">
       <div class="detail-spd">${Math.round(run.maxSpeed||0)}</div>
       <div class="detail-spd-l">km/h Maximalgeschwindigkeit</div>
@@ -931,12 +948,12 @@ function openDetail(run){
     ${hasTrack?`<div class="sec-lbl">Strecke</div><div class="dmap-wrap" style="animation:fadeUp .32s .13s cubic-bezier(.34,1.28,.64,1) both"><div id="detail-map"></div></div>`:''}
     ${hasFalls?`<div class="sec-lbl">Stürze</div><div class="fall-list">${run.falls.map((f,i)=>`<div class="fall-item" style="animation:fadeUp .32s ${.16+i*.04}s cubic-bezier(.34,1.28,.64,1) both"><div style="font-size:22px">💥</div><div><div class="fall-item-t">Sturz #${i+1}</div><div class="fall-item-s">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
     <button class="del-btn" id="detail-del"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
-  $('page-detail').style.display='block';
+$('page-detail').style.display='block';
   requestAnimationFrame(()=>{
     if(hasTrack) initDetailMap(run.trackPoints,run.falls||[]);
     const cv=$('detail-chart'); if(cv) setTimeout(()=>drawChart(cv,run.speedHistory),120);
   });
-  $('detail-del').addEventListener('click',()=>confirm2('Fahrt löschen?','Nicht rückgängig machbar.',()=>{DB.deleteRun(run.id);closeDetail();renderHistory();toast('Fahrt gelöscht');}));
+$('detail-del').addEventListener('click',()=>confirm2('Fahrt löschen?','Nicht rückgängig machbar.',()=>{DB.deleteRun(run.id);closeDetail();renderHistory();toast('Fahrt gelöscht');}));
 }
 function closeDetail(){if(S.detailMap){S.detailMap.remove();S.detailMap=null;}$('page-detail').style.display='none';}
 $('back-btn').addEventListener('click',closeDetail);
@@ -947,7 +964,7 @@ function initDetailMap(pts,falls){
   const map=L.map(el,{zoomControl:true,attributionControl:false,preferCanvas:true});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
   S.detailMap=map;
-  const lls=pts.map(p=>[p.lat,p.lon]);
+const lls=pts.map(p=>[p.lat,p.lon]);
   const poly=L.polyline(lls,{color:'#0a84ff',weight:4.5,opacity:.95,lineCap:'round'}).addTo(map);
   map.fitBounds(poly.getBounds(),{padding:[20,20]});
   const mk=(col,sz=11)=>L.divIcon({html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''});
@@ -964,13 +981,13 @@ function drawChart(canvas,history){
   canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
   ctx.scale(devicePixelRatio,devicePixelRatio);
   const vals=history.map(p=>p.s!==undefined?p.s:p.speed), max=Math.max(...vals,1);
-  const step=Math.max(1,Math.floor(vals.length/120)), pts=vals.filter((_,i)=>i%step===0);
+const step=Math.max(1,Math.floor(vals.length/120)), pts=vals.filter((_,i)=>i%step===0);
   ctx.clearRect(0,0,W,H);
   const grad=ctx.createLinearGradient(0,0,0,H);
   grad.addColorStop(0,'rgba(10,132,255,.35)'); grad.addColorStop(1,'rgba(10,132,255,0)');
   ctx.beginPath(); pts.forEach((v,i)=>{const x=(i/(pts.length-1))*W,y=H-(v/max)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
   ctx.beginPath(); pts.forEach((v,i)=>{const x=(i/(pts.length-1))*W,y=H-(v/max)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.strokeStyle='#0a84ff';
-  ctx.lineWidth=2; ctx.stroke();
+ctx.lineWidth=2; ctx.stroke();
 }
 
 /* ─── PROFIL & SETTINGS ──────────────────────────── */
@@ -979,14 +996,14 @@ function renderSettings(){
   const av=$('s-avatar');
   av.textContent=p.initial||'?';
   av.style.background=`linear-gradient(135deg,${p.color},${shadeHex(p.color,-40)})`;
-  av.style.boxShadow=`0 4px 20px ${p.color}55`;
+av.style.boxShadow=`0 4px 20px ${p.color}55`;
   $('s-name').textContent=p.name;
   $('s-stats').textContent=`${runs.length} Fahrten · ${dist<0.1?Math.round(dist*1000)+'m':dist.toFixed(1)+' km'}`;
 }
 $('profile-card').addEventListener('click',()=>showProfileEdit());
 function showProfileEdit(){
   const p=DB.getProfile(); let selColor=p.color;
-  const ov=mkOv(`<div class="sheet" style="padding:22px 20px calc(22px + var(--sb))">
+const ov=mkOv(`<div class="sheet" style="padding:22px 20px calc(22px + var(--sb))">
     <div style="font-size:19px;font-weight:700;margin-bottom:16px">Profil bearbeiten</div>
     <div class="lbl">Name</div>
     <input class="inp" id="pn" value="${esc(p.name)}" style="margin-bottom:12px"/>
@@ -999,7 +1016,7 @@ function showProfileEdit(){
       <button class="btn btn-primary" id="pe-s">Speichern</button>
     </div>
   </div>`);
-  setTimeout(()=>ov.querySelector('#pn').focus(),80);
+setTimeout(()=>ov.querySelector('#pn').focus(),80);
   ov.querySelectorAll('.swatch').forEach(sw=>sw.addEventListener('click',()=>{selColor=sw.dataset.c;ov.querySelectorAll('.swatch').forEach(s=>s.classList.remove('on'));sw.classList.add('on');}));
   ov.querySelector('#pe-c').addEventListener('click',()=>ov.remove());
   ov.querySelector('#pe-s').addEventListener('click',()=>{
@@ -1007,7 +1024,7 @@ function showProfileEdit(){
     const initial=(ov.querySelector('#pi').value.trim()||name[0]).toUpperCase().slice(0,2);
     DB.saveProfile({...p,name,initial,color:selColor}); ov.remove(); renderSettings(); toast('Profil gespeichert ✓');
   });
-  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
 $('s-export').addEventListener('click',()=>{
   const blob=new Blob([JSON.stringify(DB.exportAll(),null,2)],{type:'application/json'});
@@ -1036,7 +1053,7 @@ $('s-clear').addEventListener('click',()=>confirm2('Alle Fahrten löschen?','Ord
 function confirm2(title,sub,onYes){
   $('confirm-t').textContent=title; $('confirm-s').textContent=sub;
   $('confirm-ov').style.display='flex';
-  const hide=()=>$('confirm-ov').style.display='none';
+const hide=()=>$('confirm-ov').style.display='none';
   const y=$('confirm-yes'),n=$('confirm-no');
   const yc=y.cloneNode(true),nc=n.cloneNode(true);
   y.parentNode.replaceChild(yc,y); n.parentNode.replaceChild(nc,n);
@@ -1059,7 +1076,6 @@ wlb.addEventListener('pointerdown',e=>{
 
 /* ─── AUTO-SAVE SESSION ──────────────────────────── */
 setInterval(()=>{if(!S.tracking)return;DB.saveSession({maxSpeed:S.maxSpeed,avgSpeed:S.avgSpeed,distance:S.distance,elapsed:S.elapsed,t0:S.t0});},10000);
-
 /* ─── START ──────────────────────────────────────── */
 function launchApp(){
   $('screen-perm').style.display='none';
@@ -1068,7 +1084,7 @@ function launchApp(){
   initGPS();
   initMotion();
   const sess=DB.getSession();
-  if(sess&&sess.maxSpeed){S.maxSpeed=sess.maxSpeed;S.distance=sess.distance||0;refreshMetrics();}
+if(sess&&sess.maxSpeed){S.maxSpeed=sess.maxSpeed;S.distance=sess.distance||0;refreshMetrics();}
 }
 
 $('perm-btn').addEventListener('click',async()=>{
@@ -1079,7 +1095,6 @@ $('perm-btn').addEventListener('click',async()=>{
   }
   setTimeout(()=>{$('screen-perm').style.opacity='0';$('screen-perm').style.transition='opacity .35s';setTimeout(launchApp,350);},400);
 });
-
 // Wenn GPS schon erteilt → direkt starten
 (async()=>{
   if(!navigator.permissions)return;
