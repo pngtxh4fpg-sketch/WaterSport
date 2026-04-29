@@ -8,238 +8,234 @@
 <meta name="apple-mobile-web-app-title" content="WakeSki"/>
 <meta name="theme-color" content="#000000"/>
 <meta name="color-scheme" content="dark"/>
-<title>WakeSki Pro v3.5</title>
+<title>WakeSki Pro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 
-*,*::before,*::after{
-box-sizing:border-box;margin:0;padding:0;
-user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 input,textarea{user-select:text;-webkit-user-select:text}
 
 :root{
---bg:#000;--bg2:#111;
---glass:rgba(255,255,255,.05);--gb:rgba(255,255,255,.10);--gs:rgba(255,255,255,.08);
---ac:#0a84ff;--ac-g:rgba(10,132,255,.30);--ac-l:rgba(10,132,255,.13);
---green:#30d158;--green-g:rgba(48,209,88,.25);
---red:#ff453a;--red-g:rgba(255,69,58,.30);
---yellow:#ffd60a;--yellow-g:rgba(255,214,10,.25);
---tx:rgba(255,255,255,.92);--tx2:rgba(255,255,255,.55);--tx3:rgba(255,255,255,.28);
---fd:'Barlow Condensed',sans-serif;--fb:'DM Sans',sans-serif;
---nav:82px;--sb:env(safe-area-inset-bottom,0px);
-color-scheme:dark;
+  --bg:#000;--glass:rgba(255,255,255,.05);--gb:rgba(255,255,255,.10);--gs:rgba(255,255,255,.08);
+  --ac:#0a84ff;--acg:rgba(10,132,255,.30);--acl:rgba(10,132,255,.13);
+  --green:#30d158;--gg:rgba(48,209,88,.25);
+  --red:#ff453a;--rg:rgba(255,69,58,.30);
+  --yellow:#ffd60a;--yg:rgba(255,214,10,.25);
+  --tx:rgba(255,255,255,.92);--tx2:rgba(255,255,255,.55);--tx3:rgba(255,255,255,.28);
+  --fd:'Barlow Condensed',sans-serif;--fb:'DM Sans',sans-serif;
+  --nav:82px;--sb:env(safe-area-inset-bottom,0px);
+  color-scheme:dark;
 }
-html,body{
-height:100%;width:100%;
-background:#000;background:var(--bg);
-color:rgba(255,255,255,.92);color:var(--tx);
-font-family:var(--fb);-webkit-font-smoothing:antialiased;
-overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
-}
-#app{
-height:100vh;height:100dvh;
-display:flex;flex-direction:column;
-position:relative;overflow:hidden;
-max-width:430px;margin:0 auto;
-}
-#app::before{
-content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:.3;
-background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
-}
-.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav) + 16px);display:none;}
-.page.active{display:block;animation:fadeUp .38s cubic-bezier(.34,1.28,.64,1) both;}
+
+html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);font-family:var(--fb);-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+
+.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav)+16px);display:none}
+.page.on{display:block;animation:fup .35s cubic-bezier(.34,1.28,.64,1) both}
 .page::-webkit-scrollbar{display:none}
 
-@keyframes fadeUp  {from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
-@keyframes fadeIn  {from{opacity:0}to{opacity:1}}
-@keyframes slideUp {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
-@keyframes pulse   {0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes ripple  {0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.4);opacity:0}}
-@keyframes spin    {to{transform:rotate(360deg)}}
-@keyframes shake   {0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-@keyframes glow    {0%,100%{box-shadow:0 0 20px var(--ac-g)}50%{box-shadow:0 0 44px var(--ac-g),0 0 70px rgba(10,132,255,.10)}}
-@keyframes lockFill{from{width:0}to{width:100%}}
+/* ── Animations ── */
+@keyframes fup  {from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes fin  {from{opacity:0}to{opacity:1}}
+@keyframes sup  {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes rip  {0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.4);opacity:0}}
+@keyframes spin {to{transform:rotate(360deg)}}
+@keyframes shk  {0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes glow {0%,100%{box-shadow:0 0 20px var(--acg)}50%{box-shadow:0 0 44px var(--acg)}}
+@keyframes lfill{from{width:0}to{width:100%}}
 
-/* NAV */
-#nav{
-position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-width:100%;max-width:430px;height:var(--nav);
-background:rgba(8,8,8,.90);
-backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);
-border-top:.5px solid var(--gb);
-display:flex;align-items:flex-start;justify-content:space-around;
-z-index:200;padding:10px 0 calc(10px + var(--sb));
-}
-.nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:var(--fb);font-size:10px;font-weight:500;transition:color .2s}
-.nav-btn svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
-.nav-btn.active{color:var(--ac)}.nav-btn.active svg{transform:scale(1.1)}
+/* ── Nav ── */
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav);background:rgba(8,8,8,.92);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-top:.5px solid var(--gb);display:flex;align-items:flex-start;justify-content:space-around;z-index:200;padding:10px 0 calc(10px + var(--sb))}
+.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:var(--fb);font-size:10px;font-weight:500;transition:color .2s}
+.nbt svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
+.nbt.on{color:var(--ac)}.nbt.on svg{transform:scale(1.1)}
 
-/* BUTTONS */
+/* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:var(--fb);font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
 .btn:active{transform:scale(.965)}
-.btn-primary{background:var(--ac);color:#fff;box-shadow:0 4px 24px var(--ac-g)}
-.btn-danger {background:var(--red);color:#fff;box-shadow:0 4px 24px var(--red-g)}
-.btn-ghost  {background:var(--gs);border:.5px solid var(--gb);color:var(--tx)}
-.btn-sm     {padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
+.bp{background:var(--ac);color:#fff;box-shadow:0 4px 24px var(--acg)}
+.bd{background:var(--red);color:#fff;box-shadow:0 4px 24px var(--rg)}
+.bg{background:var(--gs);border:.5px solid var(--gb);color:var(--tx)}
+.bsm{padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
 .inp{width:100%;background:var(--gs);border:.5px solid var(--gb);border-radius:14px;padding:14px 16px;color:var(--tx);font-family:var(--fb);font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
-.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-l)}.inp::placeholder{color:var(--tx3)}
+.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}.inp::placeholder{color:var(--tx3)}
 
-/* PERMISSION */
-#screen-perm{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fadeIn .4s ease both}
-.perm-logo{font-family:var(--fd);font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
-.perm-tag{font-size:14px;color:var(--tx2);margin-bottom:44px}
-.perm-list{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
-.perm-item{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;animation:fadeUp .4s cubic-bezier(.34,1.2,.64,1) both}
-.perm-item:nth-child(1){animation-delay:.08s}.perm-item:nth-child(2){animation-delay:.16s}.perm-item:nth-child(3){animation-delay:.24s}
-.perm-ico{width:42px;height:42px;border-radius:11px;background:var(--ac-l);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.perm-ico svg{width:20px;height:20px;color:var(--ac)}
-.perm-t{font-size:15px;font-weight:600;margin-bottom:2px}.perm-s{font-size:12px;color:var(--tx2)}
-.perm-btn-wrap{width:100%;animation:fadeUp .4s .32s cubic-bezier(.34,1.2,.64,1) both}
+/* ── Permission ── */
+#sp{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fin .4s ease both}
+.plogo{font-family:var(--fd);font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
+.ptag{font-size:14px;color:var(--tx2);margin-bottom:44px}
+.plist{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
+.pit:nth-child(1){animation-delay:.08s}.pit:nth-child(2){animation-delay:.16s}.pit:nth-child(3){animation-delay:.24s}
+.pico{width:42px;height:42px;border-radius:11px;background:var(--acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pico svg{width:20px;height:20px;color:var(--ac)}
+.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(--tx2)}
+.pbw{width:100%;animation:fup .4s .32s cubic-bezier(.34,1.2,.64,1) both}
 
-/* TRACK PAGE */
-.track-hdr{padding:52px 20px 0;display:flex;align-items:center;justify-content:space-between}
-.track-title{font-family:var(--fd);font-size:34px;font-weight:900}
-.gps-badge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--glass);border:.5px solid var(--gb);font-size:12px;font-weight:500}
-.gps-dot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
-.gps-dot.waiting{background:var(--yellow);animation:pulse 1.4s ease-in-out infinite}
-.gps-dot.ready  {background:var(--green);box-shadow:0 0 8px var(--green-g)}
-.gps-dot.error  {background:var(--red)}
+/* ── Track page ── */
+.thdr{padding:52px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.ttl{font-family:var(--fd);font-size:34px;font-weight:900}
+.gbadge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--glass);border:.5px solid var(--gb);font-size:12px;font-weight:500}
+.gdot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
+.gdot.w{background:var(--yellow);animation:pulse 1.4s ease-in-out infinite}
+.gdot.r{background:var(--green);box-shadow:0 0 8px var(--gg)}
+.gdot.e{background:var(--red)}
 
 /* Speed ring */
-.speed-wrap{display:flex;flex-direction:column;align-items:center;padding:24px 20px 16px}
-.speed-ring{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
-.speed-ring .ring-svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
-.ring-bg  {fill:none;stroke:rgba(255,255,255,.07);stroke-width:3}
-.ring-fill{fill:none;stroke:var(--ac);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:603;stroke-dashoffset:603;transition:stroke-dashoffset .5s cubic-bezier(.34,1.2,.64,1),stroke .3s ease;filter:drop-shadow(0 0 7px var(--ac))}
-.ring-fill.warn  {stroke:var(--yellow);filter:drop-shadow(0 0 7px var(--yellow-g))}
-.ring-fill.danger{stroke:var(--red);filter:drop-shadow(0 0 7px var(--red-g))}
-.speed-inner{display:flex;flex-direction:column;align-items:center;z-index:1}
-.speed-num{font-family:var(--fd);font-size:90px;font-weight:900;line-height:1;color:#fff;transition:color .3s;letter-spacing:-2px}
-.speed-num.warn  {color:var(--yellow)}.speed-num.danger{color:var(--red)}
-.speed-unit{font-size:14px;color:var(--tx2);margin-top:-4px;letter-spacing:1px}
+.swrap{display:flex;justify-content:center;padding:24px 20px 16px}
+.sring{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
+.sring .rsvg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.rbg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:3}
+.rfill{fill:none;stroke:var(--ac);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:603;stroke-dashoffset:603;transition:stroke-dashoffset .5s cubic-bezier(.34,1.2,.64,1),stroke .3s;filter:drop-shadow(0 0 7px var(--ac))}
+.rfill.w{stroke:var(--yellow);filter:drop-shadow(0 0 7px var(--yg))}
+.rfill.d{stroke:var(--red);filter:drop-shadow(0 0 7px var(--rg))}
+.sinn{display:flex;flex-direction:column;align-items:center;z-index:1}
+.snum{font-family:var(--fd);font-size:90px;font-weight:900;line-height:1;color:#fff;transition:color .3s;letter-spacing:-2px}
+.snum.w{color:var(--yellow)}.snum.d{color:var(--red)}
+.sunit{font-size:14px;color:var(--tx2);margin-top:-4px;letter-spacing:1px}
 
-/* Metrics strip */
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 16px;margin-bottom:14px}
+/* Metrics */
+.mstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 16px;margin-bottom:14px}
 .mc{background:var(--glass);border:.5px solid var(--gb);border-radius:14px;padding:10px 6px 9px;text-align:center}
 .mv{font-family:var(--fd);font-size:22px;font-weight:800;line-height:1;color:var(--tx)}
 .ml{font-size:9px;color:var(--tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
 
 /* Track button */
-.tbtn-wrap{padding:0 16px;margin-bottom:12px}
+.tbw{padding:0 16px;margin-bottom:12px}
 .tbtn{width:100%;height:64px;border-radius:18px;border:none;cursor:pointer;font-family:var(--fb);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
-.tbtn.start{background:var(--ac);color:#fff;box-shadow:0 6px 28px var(--ac-g);animation:glow 3s ease-in-out infinite}
-.tbtn.stop {background:var(--red);color:#fff;box-shadow:0 6px 28px var(--red-g);animation:none}
+.tbtn.go{background:var(--ac);color:#fff;box-shadow:0 6px 28px var(--acg);animation:glow 3s ease-in-out infinite}
+.tbtn.st{background:var(--red);color:#fff;box-shadow:0 6px 28px var(--rg);animation:none}
 .tbtn:active{transform:scale(.96)}
 .tbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;animation:none;box-shadow:none}
 
 /* Map */
-.map-wrap{margin:0 16px 12px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:220px;position:relative;width:calc(100% - 32px)}
-#live-map{width:100%;height:100%;background:#0a0d12}
-.map-label{position:absolute;bottom:8px;right:8px;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border:.5px solid var(--gb);border-radius:8px;padding:3px 8px;font-size:10px;color:var(--tx2)}
+/* Map-Wrapper: Karte ist IMMER mit korrekter Höhe im DOM.
+   max-height:0 + overflow:hidden versteckt sie visuell, aber
+   das Kind-Element #lmap hat trotzdem height:220px – Leaflet liest die Kind-Größe. */
+.mwrap{
+  margin:0 16px;border-radius:18px;border:.5px solid var(--gb);position:relative;
+  overflow:hidden;
+  max-height:0;margin-bottom:0;opacity:0;pointer-events:none;
+  transition:max-height .35s ease, margin-bottom .35s ease, opacity .35s ease;
+}
+.mwrap.visible{
+  max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
+}
+/* #lmap hat IMMER feste Höhe – egal ob Wrapper max-height:0 ist.
+   Leaflet initialisiert sich gegen dieses Element, nicht den Wrapper. */
+#lmap{width:100%;height:220px;background:#0a0d12;display:block;}
+.mlbl{position:absolute;bottom:8px;right:8px;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border:.5px solid var(--gb);border-radius:8px;padding:3px 8px;font-size:10px;color:var(--tx2)}
+
+/* Map legend */
+.mleg{position:absolute;top:8px;right:8px;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);border:.5px solid var(--gb);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
+.mleg-row{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--tx2)}
+.mleg-dot{width:8px;height:5px;border-radius:2px;flex-shrink:0}
 
 /* Fall alert */
-.fall-alert{margin:0 16px 12px;padding:13px 16px;background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.35);border-radius:16px;display:flex;align-items:center;gap:12px}
-.fall-t{font-weight:700;color:var(--red);font-size:15px}.fall-s{font-size:12px;color:var(--tx2);margin-top:1px}
+.falert{margin:0 16px 12px;padding:13px 16px;background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.35);border-radius:16px;display:flex;align-items:center;gap:12px}
+.fat{font-weight:700;color:var(--red);font-size:15px}.fas{font-size:12px;color:var(--tx2);margin-top:1px}
 
-/* HISTORY */
-.page-hdr{padding:52px 20px 12px;display:flex;align-items:center;justify-content:space-between}
-.page-hdr-t{font-family:var(--fd);font-size:34px;font-weight:900}
+/* ── History ── */
+.phdr{padding:52px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.phdt{font-family:var(--fd);font-size:34px;font-weight:900}
 .ftabs{padding:0 16px 12px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .ftabs::-webkit-scrollbar{display:none}
 .ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--glass);border:.5px solid var(--gb);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
-.ftab.active{background:var(--ac);border-color:var(--ac);color:#fff}
-.ftab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.run-card{margin:0 16px 10px;padding:16px;background:var(--glass);border:.5px solid var(--gb);border-radius:24px;animation:fadeUp .38s cubic-bezier(.34,1.2,.64,1) both}
-.run-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.run-card-left{flex:1;min-width:0;cursor:pointer}
-.run-name{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.run-date{font-size:12px;color:var(--tx2)}
-.run-fbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
-.run-fbadge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.run-spd-big {font-family:var(--fd);font-size:34px;font-weight:800;line-height:1;text-align:right}
-.run-spd-unit{font-size:11px;color:var(--tx2);text-align:right}
-.run-menu{width:28px;height:28px;border-radius:50%;background:var(--gs);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);flex-shrink:0;margin-left:8px}
-.run-menu:active{opacity:.5}
-.run-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ftab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rcard{margin:0 16px 10px;padding:16px;background:var(--glass);border:.5px solid var(--gb);border-radius:24px;animation:fup .38s cubic-bezier(.34,1.2,.64,1) both}
+.rctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.rcl{flex:1;min-width:0;cursor:pointer}
+.rname{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.rdate{font-size:12px;color:var(--tx2)}
+.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
+.rfbd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.rsb{font-family:var(--fd);font-size:34px;font-weight:800;line-height:1;text-align:right}
+.rsu{font-size:11px;color:var(--tx2);text-align:right}
+.rmenu{width:28px;height:28px;border-radius:50%;background:var(--gs);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);flex-shrink:0;margin-left:8px}
+.rmenu:active{opacity:.5}
+.rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .rs{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
-.rs-v{font-size:14px;font-weight:600}.rs-l{font-size:9px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-.empty-state{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--tx2)}
-.empty-ico{font-size:52px;margin-bottom:12px;opacity:.45}
+.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--tx2)}
+.emico{font-size:52px;margin-bottom:12px;opacity:.45}
 
-/* SETTINGS */
-.profile-card{margin:0 16px 14px;padding:18px;background:var(--glass);border:.5px solid var(--gb);border-radius:28px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
-.profile-card:active{border-color:rgba(10,132,255,.4)}
-.s-avatar{width:58px;height:58px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:26px;font-weight:800;color:#fff}
-.s-name{font-size:18px;font-weight:700}.s-sub{font-size:12px;color:var(--tx2);margin-top:2px}.s-hint{font-size:11px;color:var(--tx3);margin-top:5px}
-.s-section{margin:0 16px 14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden}
-.s-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(--gb);cursor:pointer;transition:background .12s}
-.s-row:last-child{border-bottom:none}.s-row:active{background:var(--gs)}
-.s-row-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
-.s-row-t{font-size:15px;font-weight:500}.s-row-s{font-size:12px;color:var(--tx2);margin-top:1px}
-
-/* DETAIL */
-#page-detail{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
-#page-detail::-webkit-scrollbar{display:none}
-.detail-hdr{padding:52px 20px 16px;display:flex;align-items:flex-start;gap:12px}
-.back-btn{width:36px;height:36px;border-radius:50%;background:var(--glass);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
-.back-btn:active{transform:scale(.88)}.back-btn svg{width:18px;height:18px;color:var(--ac)}
-.detail-title{font-family:var(--fd);font-size:28px;font-weight:800;line-height:1.2}.detail-date{font-size:12px;color:var(--tx2);margin-top:3px}
-.detail-hero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
-.detail-spd{font-family:var(--fd);font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
-.detail-spd-l{font-size:13px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase}
-.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
-.dstat{padding:15px;background:var(--glass);border:.5px solid var(--gb);border-radius:16px}
-.dstat-v{font-family:var(--fd);font-size:30px;font-weight:800;color:var(--tx);line-height:1}.dstat-l{font-size:11px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
-.sec-lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
-.dmap-wrap{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:240px}
-#detail-map{width:100%;height:100%;background:#0a0d12}
-.chart-wrap{margin:0 16px 14px;padding:14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px}
-.fall-list{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
-.fall-item{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
-.fall-item-t{font-size:14px;font-weight:600}.fall-item-s{font-size:12px;color:var(--tx2);margin-top:1px}
-.del-btn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(--red);font-family:var(--fb);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
-.del-btn:active{transform:scale(.97)}
-
-/* WATER LOCK */
-#water-lock{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
-#water-lock.on{display:flex;animation:fadeIn .25s ease both}
-.wl-ico{font-size:58px;margin-bottom:14px}.wl-title{font-family:var(--fd);font-size:36px;font-weight:900;margin-bottom:8px}
-.wl-sub{font-size:15px;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
-.wl-btn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
-.wl-progress{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0;border-radius:2px}
-.wl-progress.go{animation:lockFill 2s linear both}
-.wl-waves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
-.wl-wave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);opacity:0}
-.wl-btn.pressing .wl-wave  {animation:ripple 1s ease-out infinite}
-.wl-btn.pressing .wl-wave:nth-child(2){animation-delay:.3s}
-.wl-btn.pressing .wl-wave:nth-child(3){animation-delay:.6s}
-.wl-hint{font-size:14px;color:var(--tx2);margin-top:12px}
-
-/* SHEETS */
-.overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb) + 16px);animation:fadeIn .2s ease both}
-.sheet{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:slideUp .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
-.sheet-hdr{padding:18px 20px 12px;border-bottom:.5px solid var(--gb)}
-.sheet-hdr-t{font-size:17px;font-weight:700}.sheet-hdr-s{font-size:12px;color:var(--tx2);margin-top:2px}
-.srow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
+/* ── Settings ── */
+.pcard{margin:0 16px 14px;padding:18px;background:var(--glass);border:.5px solid var(--gb);border-radius:28px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
+.pcard:active{border-color:rgba(10,132,255,.4)}
+.sav{width:58px;height:58px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:26px;font-weight:800;color:#fff}
+.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(--tx2);margin-top:2px}.shi{font-size:11px;color:var(--tx3);margin-top:5px}
+.ssec{margin:0 16px 14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(--gb);cursor:pointer;transition:background .12s}
 .srow:last-child{border-bottom:none}.srow:active{background:var(--gs)}
-.srow.red{color:var(--red)}.srow.cancel{color:var(--tx2);border-top:.5px solid var(--gb)}
-.srow-ico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
-.srow-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.srow-check{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.srico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(--tx2);margin-top:1px}
+
+/* ── Detail ── */
+#pd{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
+#pd::-webkit-scrollbar{display:none}
+.dhdr{padding:52px 20px 16px;display:flex;align-items:flex-start;gap:12px}
+.bbtn{width:36px;height:36px;border-radius:50%;background:var(--glass);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
+.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(--ac)}
+.dtitle{font-family:var(--fd);font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(--tx2);margin-top:3px}
+.dhero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
+.dspd{font-family:var(--fd);font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
+.dspdl{font-size:13px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
+.dst{padding:15px;background:var(--glass);border:.5px solid var(--gb);border-radius:16px}
+.dstv{font-family:var(--fd);font-size:30px;font-weight:800;color:var(--tx);line-height:1}
+.dstl{font-size:11px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
+.slbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
+.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:240px}
+.dmw #dmap{width:100%;height:100%;background:#0a0d12}
+.cwrap{margin:0 16px 14px;padding:14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px}
+.flist{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
+.fit{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
+.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(--tx2);margin-top:1px}
+.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(--red);font-family:var(--fb);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.delbtn:active{transform:scale(.97)}
+
+/* ── Water lock ── */
+#wl{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
+#wl.on{display:flex;animation:fin .25s ease both}
+.wlico{font-size:58px;margin-bottom:14px}.wltitle{font-family:var(--fd);font-size:36px;font-weight:900;margin-bottom:8px}
+.wlsub{font-size:15px;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
+.wlbtn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
+.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0;border-radius:2px}
+.wlprog.go{animation:lfill 2s linear both}
+.wlwaves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);opacity:0}
+.wlbtn.p .wlwave{animation:rip 1s ease-out infinite}
+.wlbtn.p .wlwave:nth-child(2){animation-delay:.3s}
+.wlbtn.p .wlwave:nth-child(3){animation-delay:.6s}
+.wlhint{font-size:14px;color:var(--tx2);margin-top:12px}
+
+/* ── Sheets ── */
+.ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb)+16px);animation:fin .2s ease both}
+.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
+.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(--gb)}
+.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(--tx2);margin-top:2px}
+.shrow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
+.shrow:last-child{border-bottom:none}.shrow:active{background:var(--gs)}
+.shrow.r{color:var(--red)}.shrow.c{color:var(--tx2);border-top:.5px solid var(--gb)}
+.shico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.shdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .swatches{display:flex;gap:10px;flex-wrap:wrap}
-.swatch{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
-.swatch.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
-.swatch.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
-.confirm-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb) + 20px);animation:fadeIn .2s ease both}
-.confirm-sheet{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:slideUp .3s cubic-bezier(.34,1.3,.64,1) both}
-.confirm-t{font-size:18px;font-weight:700;margin-bottom:5px}.confirm-s{font-size:14px;color:var(--tx2);margin-bottom:18px}
+.sw{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
+.sw.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
+.sw.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.cov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb)+20px);animation:fin .2s ease both}
+.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
+.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(--tx2);margin-bottom:18px}
 #toast{position:fixed;top:58px;left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.95);border:.5px solid var(--gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
 
-/* LEAFLET DARK */
+/* ── Leaflet dark ── */
 .leaflet-container{background:#0a0d12 !important}
 .leaflet-tile{filter:brightness(.65) saturate(.7) hue-rotate(200deg)}
 .leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(--gb);border-radius:10px;color:var(--tx)}
@@ -247,508 +243,904 @@ z-index:200;padding:10px 0 calc(10px + var(--sb));
 .leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(--tx) !important;border-color:var(--gb) !important}
 .leaflet-control-attribution{display:none}
 </style>
-
 </head>
 <body>
 
-<div id="screen-perm">
-  <div class="perm-logo">WakeSki</div>
-  <div class="perm-tag">Wasserski · Wakeboard · Wakesurf</div>
-  <div class="perm-list">
-    <div class="perm-item">
-      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div>
-      <div><div class="perm-t">GPS & Standort</div><div class="perm-s">Geschwindigkeit, Distanz, Strecke</div></div>
-    </div>
-    <div class="perm-item">
-      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12L7 7M12 12l5-5M2 17l5-3M17 14l5 3"/></svg></div>
-      <div><div class="perm-t">Bewegungssensoren</div><div class="perm-s">Sturzerkennung via Beschleunigungssensor</div></div>
-    </div>
-    <div class="perm-item">
-      <div class="perm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div>
-      <div><div class="perm-t">Lokaler Speicher</div><div class="perm-s">Fahrten offline speichern & exportieren</div></div>
-    </div>
+<!-- Permission screen -->
+<div id="sp">
+  <div class="plogo">WakeSki</div>
+  <div class="ptag">Wasserski · Wakeboard · Wakesurf</div>
+  <div class="plist">
+    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div><div><div class="pt">GPS & Standort</div><div class="ps">Geschwindigkeit, Distanz, Strecke</div></div></div>
+    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12L7 7M12 12l5-5M2 17l5-3M17 14l5 3"/></svg></div><div><div class="pt">Bewegungssensoren</div><div class="ps">Sturzerkennung via Beschleunigungssensor</div></div></div>
+    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div><div><div class="pt">Lokaler Speicher</div><div class="ps">Fahrten offline speichern & exportieren</div></div></div>
   </div>
-  <div class="perm-btn-wrap">
-    <button class="btn btn-primary" id="perm-btn">
+  <div class="pbw">
+    <button class="btn bp" id="perm-btn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       Berechtigungen erteilen
     </button>
   </div>
 </div>
 
-<div id="app" style="display:none;">
+<!-- App -->
+<div id="app" style="display:none">
   <div id="toast"></div>
 
+  <!-- Track -->
   <div id="page-track" class="page">
-    <div class="track-hdr">
-      <div class="track-title">Track</div>
-      <div class="gps-badge"><div class="gps-dot" id="gps-dot"></div><span id="gps-label">Warte…</span></div>
+    <div class="thdr">
+      <div class="ttl">Track</div>
+      <div class="gbadge"><div class="gdot" id="gdot"></div><span id="glbl">Warte…</span></div>
     </div>
-    <div class="speed-wrap">
-      <div class="speed-ring">
-        <svg class="ring-svg" viewBox="0 0 200 200">
-          <circle class="ring-bg"   cx="100" cy="100" r="96"/>
-          <circle class="ring-fill" cx="100" cy="100" r="96" id="ring-fill"/>
+    <div class="swrap">
+      <div class="sring">
+        <svg class="rsvg" viewBox="0 0 200 200">
+          <circle class="rbg"   cx="100" cy="100" r="96"/>
+          <circle class="rfill" cx="100" cy="100" r="96" id="rfill"/>
         </svg>
-        <div class="speed-inner">
-          <div class="speed-num" id="speed-num">0</div>
-          <div class="speed-unit">km/h</div>
+        <div class="sinn">
+          <div class="snum" id="snum">0</div>
+          <div class="sunit">km/h</div>
         </div>
       </div>
     </div>
-    <div class="metrics">
-      <div class="mc"><div class="mv" id="m-max">0</div><div class="ml">Max</div></div>
-      <div class="mc"><div class="mv" id="m-avg">0</div><div class="ml">Avg</div></div>
-      <div class="mc"><div class="mv" id="m-dist">0</div><div class="ml" id="m-dist-l">m</div></div>
-      <div class="mc"><div class="mv" id="m-time">0:00</div><div class="ml">Zeit</div></div>
+    <div class="mstrip">
+      <div class="mc"><div class="mv" id="mmax">0.0</div><div class="ml">Max</div></div>
+      <div class="mc"><div class="mv" id="mavg">0.0</div><div class="ml">Avg</div></div>
+      <div class="mc"><div class="mv" id="mdist">0</div><div class="ml" id="mdistl">m</div></div>
+      <div class="mc"><div class="mv" id="mtime">0:00</div><div class="ml">Zeit</div></div>
     </div>
-    <div class="tbtn-wrap">
-      <button class="tbtn start" id="track-btn" disabled>
+    <div class="tbw">
+      <button class="tbtn go" id="tbtn" disabled>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-        <span id="track-btn-lbl">Run starten</span>
+        <span id="tbtl">Run starten</span>
       </button>
     </div>
-    <div style="padding:0 16px;margin-bottom:12px;">
-      <button class="btn btn-ghost" id="lock-btn" style="display:flex;align-items:center;gap:9px;">
+    <div style="padding:0 16px;margin-bottom:12px">
+      <button class="btn bg" id="lbtn" style="display:flex;align-items:center;gap:9px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         Wassergeschützt sperren
       </button>
     </div>
-    <div class="map-wrap" id="map-wrap" style="display:none;">
-      <div id="live-map"></div>
-      <div class="map-label">Live Track</div>
+    <!-- Map: immer 220px hoch im DOM (Leaflet braucht korrekte Größe beim Init).
+         Vor Tracking visuell versteckt via CSS-Klasse (opacity:0, max-height:0).
+         Kein display:none / height:0 – das macht Leaflet kaputt. -->
+    <div class="mwrap" id="mwrap">
+      <div id="lmap"></div>
+      <div class="mlbl">Live Track</div>
+      <div class="mleg">
+        <div class="mleg-row"><div class="mleg-dot" style="background:#30d158"></div>Schnell</div>
+        <div class="mleg-row"><div class="mleg-dot" style="background:#ffd60a"></div>Mittel</div>
+        <div class="mleg-row"><div class="mleg-dot" style="background:#ff453a"></div>Langsam</div>
+      </div>
     </div>
-    <div class="fall-alert" id="fall-alert" style="display:none;">
+    <div class="falert" id="falert" style="display:none">
       <div style="font-size:26px;flex-shrink:0">💥</div>
-      <div><div class="fall-t" id="fall-t">Sturz erkannt!</div><div class="fall-s" id="fall-s"></div></div>
+      <div><div class="fat" id="fat">Sturz erkannt!</div><div class="fas" id="fas"></div></div>
     </div>
   </div>
 
+  <!-- History -->
   <div id="page-history" class="page">
-    <div class="page-hdr">
-      <div class="page-hdr-t">Verlauf</div>
-      <button class="btn btn-sm btn-ghost" id="new-folder-btn" style="display:flex;align-items:center;gap:6px;">
+    <div class="phdr">
+      <div class="phdt">Verlauf</div>
+      <button class="btn bsm bg" id="nfbtn" style="display:flex;align-items:center;gap:6px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
         Ordner
       </button>
     </div>
-    <div class="ftabs" id="folder-tabs"></div>
-    <div id="runs-list"></div>
+    <div class="ftabs" id="ftabs"></div>
+    <div id="rlist"></div>
   </div>
 
+  <!-- Settings -->
   <div id="page-settings" class="page">
-    <div class="page-hdr" style="padding-bottom:16px;"><div class="page-hdr-t">Einstellungen</div></div>
-    <div class="profile-card" id="profile-card">
-      <div class="s-avatar" id="s-avatar">W</div>
-      <div style="flex:1;min-width:0;">
-        <div class="s-name" id="s-name">Fahrer</div>
-        <div class="s-sub" id="s-stats">0 Fahrten · 0 km</div>
-        <div class="s-hint">Tippen zum Bearbeiten</div>
+    <div class="phdr" style="padding-bottom:16px"><div class="phdt">Einstellungen</div></div>
+    <div class="pcard" id="pcrd">
+      <div class="sav" id="sav">W</div>
+      <div style="flex:1;min-width:0">
+        <div class="snm" id="snm">Fahrer</div>
+        <div class="sst" id="sst">0 Fahrten · 0 km</div>
+        <div class="shi">Tippen zum Bearbeiten</div>
       </div>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx3)"><path d="M9 5l7 7-7 7"/></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx3);flex-shrink:0"><polyline points="9,18 15,12 9,6"/></svg>
     </div>
-    
-    <div class="s-section">
-      <div class="s-row" id="s-row-data">
-        <div class="s-row-ico" style="background:var(--ac-l);color:var(--ac)">📊</div>
-        <div style="flex:1">
-          <div class="s-row-t">Datenverwaltung</div>
-          <div class="s-row-s">Export/Import (JSON)</div>
-        </div>
-      </div>
-      <div class="s-row" id="s-row-reset">
-        <div class="s-row-ico" style="background:var(--red-g);color:var(--red)">🗑️</div>
-        <div style="flex:1">
-          <div class="s-row-t">Alle Daten löschen</div>
-          <div class="s-row-s">Nicht rückgängig zu machen</div>
-        </div>
-      </div>
+    <div class="ssec">
+      <div class="srow" id="sexport"><div class="srico" style="background:rgba(10,132,255,.15)">📤</div><div><div class="srt">Daten exportieren</div><div class="srs">Profil + Fahrten als JSON</div></div></div>
+      <div class="srow" id="simport"><div class="srico" style="background:rgba(48,209,88,.15)">📥</div><div><div class="srt">Daten importieren</div><div class="srs">JSON-Backup laden</div></div></div>
     </div>
-
-    <div style="text-align:center;padding:20px;opacity:.25;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase">
-      WakeSki Pro v3.5 · 2026
+    <div class="ssec">
+      <div class="srow" id="sclear"><div class="srico" style="background:rgba(255,69,58,.15)">🗑️</div><div><div class="srt">Alle Fahrten löschen</div><div class="srs">Ordner und Profil bleiben</div></div></div>
     </div>
+    <div class="ssec">
+      <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.06)">ℹ️</div><div><div class="srt">WakeSki Pro v2.2</div><div class="srs">GPS-Tracker · Farbkarte · Sturzerkennung</div></div></div>
+    </div>
+    <div style="height:20px"></div>
   </div>
 
+  <!-- Detail -->
+  <div id="pd">
+    <div class="dhdr">
+      <button class="bbtn" id="bbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div><div class="dtitle" id="dtitle">Run</div><div class="ddate" id="ddate"></div></div>
+    </div>
+    <div id="dcont"></div>
+  </div>
+
+  <!-- Nav -->
   <nav id="nav">
-    <button class="nav-btn active" data-page="track">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    <button class="nbt on" data-pg="track">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
       Track
     </button>
-    <button class="nav-btn" data-page="history">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <button class="nbt" data-pg="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       Verlauf
     </button>
-    <button class="nav-btn" data-page="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      Setup
+    <button class="nbt" data-pg="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Mehr
     </button>
   </nav>
 </div>
 
-<div id="page-detail">
-  <div class="detail-hdr">
-    <div class="back-btn" id="detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></div>
-    <div style="flex:1">
-      <div class="detail-title" id="d-title">Run #1</div>
-      <div class="detail-date" id="d-date">24. Mai 2026, 14:30</div>
-    </div>
+<!-- Water lock -->
+<div id="wl">
+  <div class="wlico">💧</div>
+  <div class="wltitle">Gesperrt</div>
+  <div class="wlsub">Bildschirm gesperrt. Kreis 2 Sekunden halten zum Entsperren.</div>
+  <div class="wlbtn" id="wlbtn">
+    <div class="wlwaves"><div class="wlwave"></div><div class="wlwave"></div><div class="wlwave"></div></div>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    <div class="wlprog" id="wlprog"></div>
   </div>
-  <div class="detail-hero">
-    <div class="detail-spd" id="d-max-spd">0.0</div>
-    <div class="detail-spd-l">km/h Max</div>
-  </div>
-  <div class="detail-grid">
-    <div class="dstat"><div class="dstat-v" id="d-avg-spd">0.0</div><div class="dstat-l">Avg km/h</div></div>
-    <div class="dstat"><div class="dstat-v" id="d-dist">0.0</div><div class="dstat-l">Distanz</div></div>
-    <div class="dstat"><div class="dstat-v" id="d-time">0:00</div><div class="dstat-l">Dauer</div></div>
-    <div class="dstat"><div class="dstat-v" id="d-falls">0</div><div class="dstat-l">Stürze</div></div>
-  </div>
-  <div class="sec-lbl">Strecke</div>
-  <div class="dmap-wrap"><div id="detail-map"></div></div>
-  <div id="d-fall-sec" style="display:none">
-    <div class="sec-lbl">Stürze</div>
-    <div class="fall-list" id="d-fall-list"></div>
-  </div>
-  <button class="del-btn" id="d-del-btn">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
-    Eintrag löschen
-  </button>
+  <div class="wlhint">Gedrückt halten</div>
 </div>
 
-<div id="water-lock">
-  <div class="wl-ico">💧</div>
-  <div class="wl-title">Wasser-Lock</div>
-  <div class="wl-sub">Halte den Button 2 Sekunden gedrückt, um den Bildschirm zu entsperren.</div>
-  <div class="wl-btn" id="wl-unlock-btn">
-    <div class="wl-waves"><div class="wl-wave"></div><div class="wl-wave"></div><div class="wl-wave"></div></div>
-    <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx);position:relative;z-index:2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-    <div class="wl-progress" id="wl-progress"></div>
+<!-- Confirm -->
+<div class="cov" id="cov" style="display:none">
+  <div class="csh">
+    <div class="ct" id="ctxt"></div>
+    <div class="cs" id="cstxt"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn bg" id="cno">Abbrechen</button>
+      <button class="btn bd" id="cyes">Bestätigen</button>
+    </div>
   </div>
-  <div class="wl-hint">Drücken & Halten</div>
 </div>
+
+<input type="file" id="fimp" accept=".json" style="display:none"/>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* ─── SETUP & STATE ──────────────────────────────── */
-const $ = id => document.getElementById(id);
-const S = {
-  tracking: false, locked: false,
-  maxSpeed: 0, avgSpeed: 0, distance: 0, elapsed: 0,
-  t0: 0, timer: null,
-  path: [], falls: [],
-  map: null, mapPoly: null, mapMarker: null,
-  dMap: null, dPoly: null,
-  activeFolder: 'default',
-  folders: { default: { name: 'Alle Runs', color: '#0a84ff' } },
-  user: { name: 'Fahrer', avatar: 'W', color: '#0a84ff' },
-  lastPos: null // Für Live-Speed Fallback
-};
+'use strict';
 
-/* ─── DATABASE (Local Storage) ───────────────────── */
-const DB = {
-  saveRuns: (r) => localStorage.setItem('ws_runs', JSON.stringify(r)),
-  getRuns: () => JSON.parse(localStorage.getItem('ws_runs') || '[]'),
-  saveFolders: (f) => localStorage.setItem('ws_folders', JSON.stringify(f)),
-  getFolders: () => JSON.parse(localStorage.getItem('ws_folders') || '{"default":{"name":"Alle Runs","color":"#0a84ff"}}'),
-  saveUser: (u) => localStorage.setItem('ws_user', JSON.stringify(u)),
-  getUser: () => JSON.parse(localStorage.getItem('ws_user') || '{"name":"Fahrer","avatar":"W","color":"#0a84ff"}'),
-  saveSession: (s) => localStorage.setItem('ws_sess', JSON.stringify(s)),
-  getSession: () => JSON.parse(localStorage.getItem('ws_sess') || 'null'),
-  clear: () => localStorage.clear()
-};
-
-/* ─── GPS & SPEED LOGIC ──────────────────────────── */
-function getDist(p1, p2) {
-  const R = 6371e3, dLat = (p2.lat - p1.lat) * Math.PI / 180, dLon = (p2.lon - p1.lon) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+/* ═══ SERVICE WORKER ════════════════════════════ */
+if('serviceWorker' in navigator){
+  const sw=`const C='ws-v5';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.add(location.href)).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',e=>{
+  e.waitUntil(
+    caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k))))
+    .then(()=>clients.claim())
+  );
+});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  // Network-first für HTML (immer aktuellste Version), Cache-first für Assets
+  const isHtml=e.request.headers.get('accept')&&e.request.headers.get('accept').includes('text/html');
+  if(isHtml){
+    e.respondWith(fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;}).catch(()=>caches.match(e.request)));
+  } else {
+    e.respondWith(caches.match(e.request).then(h=>h||fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;})));
+  }
+});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
 }
 
-function initGPS() {
-  if (!navigator.geolocation) return updateGPSStatus('error', 'Kein GPS');
-  navigator.geolocation.watchPosition(
-    (pos) => {
-      updateGPSStatus('ready', 'Signal OK');
-      if (S.tracking) updateTracking(pos);
+/* ═══ DB ════════════════════════════════════════ */
+const DB={
+  g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
+  s:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+  getRuns:    ()=>DB.g('ws_runs')||[],
+  saveRuns:   r=>DB.s('ws_runs',r),
+  addRun:     r=>{const a=DB.getRuns();a.unshift(r);DB.saveRuns(a);},
+  updateRun:  (id,p)=>{const a=DB.getRuns(),i=a.findIndex(r=>r.id===id);if(i>=0){a[i]={...a[i],...p};DB.saveRuns(a);}},
+  deleteRun:  id=>DB.saveRuns(DB.getRuns().filter(r=>r.id!==id)),
+  clearRuns:  ()=>localStorage.removeItem('ws_runs'),
+  getFolders:   ()=>DB.g('ws_folders')||[],
+  saveFolders:  f=>DB.s('ws_folders',f),
+  addFolder:    f=>{const a=DB.getFolders();a.push(f);DB.saveFolders(a);},
+  updateFolder: (id,p)=>{const a=DB.getFolders(),i=a.findIndex(x=>x.id===id);if(i>=0){a[i]={...a[i],...p};DB.saveFolders(a);}},
+  deleteFolder: id=>{DB.saveFolders(DB.getFolders().filter(x=>x.id!==id));const r=DB.getRuns();r.forEach(x=>{if(x.folderId===id)x.folderId=null;});DB.saveRuns(r);},
+  getProfile:  ()=>DB.g('ws_profile')||{name:'Fahrer',initial:'F',color:'#0a84ff'},
+  saveProfile: p=>DB.s('ws_profile',p),
+  getSession:  ()=>DB.g('ws_session'),
+  saveSession: s=>DB.s('ws_session',s),
+  clearSession:()=>localStorage.removeItem('ws_session'),
+  exportAll:   ()=>({profile:DB.getProfile(),folders:DB.getFolders(),runs:DB.getRuns(),at:Date.now()}),
+  importAll:   d=>{if(d.profile)DB.saveProfile(d.profile);if(d.folders)DB.saveFolders(d.folders);if(d.runs)DB.saveRuns(d.runs);},
+};
+
+/* ═══ UTILS ══════════════════════════════════════ */
+function hav(a,b){
+  const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+const fmtT=ms=>{const s=Math.floor(ms/1e3),m=Math.floor(s/60);return`${m}:${(s%60).toString().padStart(2,'0')}`;};
+const fmtD=ts=>new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const shd=(col,a)=>{const n=parseInt(col.slice(1),16),c=v=>Math.min(255,Math.max(0,v));return'#'+[c((n>>16)+a),c(((n>>8)&0xff)+a),c((n&0xff)+a)].map(v=>v.toString(16).padStart(2,'0')).join('');};
+const $=id=>document.getElementById(id);
+
+/* ═══ BLOCK SELECTION ════════════════════════════ */
+document.addEventListener('contextmenu',e=>e.preventDefault(),{passive:false});
+document.addEventListener('selectstart',e=>{if(!(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement))e.preventDefault();},{passive:false});
+document.addEventListener('dragstart',e=>e.preventDefault(),{passive:false});
+
+/* ═══ STATE ══════════════════════════════════════ */
+// Einzige State-Variable – übersichtlich und ohne Doppelungen
+const S={
+  gps:'idle', tracking:false,
+  speed:0, maxSpd:0, avgSpd:0, dist:0, elapsed:0, t0:null,
+  buf:[], hist:[], pts:[], falls:[], fc:0, lastPt:null,
+  timerID:null, watchID:null,
+  map:null, segs:[], prevLL:null, smkr:null, pmkr:null, dmkr:null,
+  dmap:null,
+  locked:false, folderID:null, page:'track',
+};
+
+/* ═══ TOAST ══════════════════════════════════════ */
+let _tt;
+const toast=(m,d=2600)=>{const e=$('toast');e.textContent=m;e.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('on'),d);};
+
+/* ═══ NAVIGATION ════════════════════════════════ */
+function goPage(pg){
+  S.page=pg;
+  document.querySelectorAll('.page').forEach(el=>el.classList.toggle('on',el.id==='page-'+pg));
+  document.querySelectorAll('.nbt').forEach(b=>b.classList.toggle('on',b.dataset.pg===pg));
+  if(pg==='history') renderHistory();
+  if(pg==='settings') renderSettings();
+}
+document.querySelectorAll('.nbt').forEach(b=>b.addEventListener('click',()=>goPage(b.dataset.pg)));
+
+/* ═══ GPS ════════════════════════════════════════ */
+function initGPS(){
+  if(!navigator.geolocation){setGPS('error');return;}
+  setGPS('waiting');
+
+  let lastProcessed=0;
+  const MIN_INTERVAL=2000; // Mindestens 2 Sekunden zwischen zwei verarbeiteten Punkten
+
+  S.watchID=navigator.geolocation.watchPosition(
+    pos=>{
+      setGPS('ready');
+      // Throttle: GPS-Updates kommen auf iOS manchmal 10x/Sek.
+      // Nur verarbeiten wenn MIN_INTERVAL seit letzter Verarbeitung vergangen.
+      const now=Date.now();
+      if(now-lastProcessed < MIN_INTERVAL) return;
+      lastProcessed=now;
+      onPos(pos);
     },
-    () => updateGPSStatus('error', 'GPS Fehler'),
-    { enableHighAccuracy: true, maximumAge: 1000 }
+    e=>{ console.warn('GPS Fehler:',e.code); setGPS('error'); },
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 2000,  // Gecachte Position bis zu 2 Sek. alt akzeptieren → reduziert Callback-Frequenz
+    }
   );
 }
 
-function updateGPSStatus(st, txt) {
-  const dot = $('gps-dot');
-  dot.className = 'gps-dot ' + st;
-  $('gps-label').textContent = txt;
-  if (st === 'ready') $('track-btn').disabled = false;
+function setGPS(s){
+  S.gps=s;
+  const d=$('gdot'),l=$('glbl'),b=$('tbtn');
+  d.className='gdot'+(s==='r'||s==='ready'?'r':s==='waiting'?'w':s==='error'?'e':'');
+  // reset className properly
+  d.className='gdot';
+  if(s==='ready'||s==='r') d.classList.add('r');
+  else if(s==='waiting')   d.classList.add('w');
+  else if(s==='error')     d.classList.add('e');
+  l.textContent={idle:'GPS',waiting:'Suche GPS…',ready:'GPS bereit',error:'GPS fehlt'}[s]||s;
+  if(!S.tracking) b.disabled=(s!=='ready');
 }
 
-function updateTracking(pos) {
-  const c = pos.coords;
-  const now = { lat: c.latitude, lon: c.longitude, t: Date.now() };
+/* ═══ POSITION HANDLER ═══════════════════════════
+   Hier passiert die gesamte Live-Berechnung.
+   Wird bei JEDEM GPS-Update aufgerufen.
+   Speed + Distanz + Karte + Metriken – alles hier.
+════════════════════════════════════════════════ */
+function onPos(pos){
+  const now=Date.now();
+  const lat=pos.coords.latitude, lon=pos.coords.longitude;
 
-  // LIVE SPEED FIX: Fallback falls coords.speed fehlt oder 0 ist
-  let speedKmh = (c.speed || 0) * 3.6;
-  if ((!c.speed || c.speed < 0.1) && S.lastPos) {
-      const d = getDist(S.lastPos, now);
-      const dt = (now.t - S.lastPos.t) / 1000;
-      if (dt > 0.5 && d < 100) speedKmh = (d / dt) * 3.6;
-  }
-  S.lastPos = now;
-
-  if (speedKmh < 1.5) speedKmh = 0; 
-
-  if (speedKmh > S.maxSpeed) S.maxSpeed = speedKmh;
-  S.path.push(now);
-
-  if (S.path.length > 1) {
-    const d = getDist(S.path[S.path.length - 2], now);
-    if (d > 0.5 && d < 50) S.distance += d;
-  }
-
-  refreshMetrics(speedKmh);
-  if (S.map) {
-    const latlng = [c.latitude, c.longitude];
-    S.mapPoly.addLatLng(latlng);
-    S.mapMarker.setLatLng(latlng);
-    S.map.panTo(latlng);
-  }
-}
-
-function refreshMetrics(curSpd = 0) {
-  $('speed-num').textContent = curSpd.toFixed(curSpd >= 10 ? 0 : 1);
-  const ring = $('ring-fill');
-  const dash = 603 - (Math.min(curSpd, 60) / 60 * 603);
-  ring.style.strokeDashoffset = dash;
-  ring.className = curSpd > 45 ? 'ring-fill danger' : (curSpd > 35 ? 'ring-fill warn' : 'ring-fill');
-  $('speed-num').className = curSpd > 45 ? 'speed-num danger' : (curSpd > 35 ? 'speed-num warn' : 'speed-num');
-
-  $('m-max').textContent = S.maxSpeed.toFixed(1);
-  const avg = S.elapsed > 0 ? (S.distance / S.elapsed) * 3.6 : 0;
-  $('m-avg').textContent = avg.toFixed(1);
-  
-  if (S.distance < 1000) {
-    $('m-dist').textContent = Math.round(S.distance);
-    $('m-dist-l').textContent = 'm';
-  } else {
-    $('m-dist').textContent = (S.distance / 1000).toFixed(2);
-    $('m-dist-l').textContent = 'km';
-  }
-}
-
-/* ─── TRACKING CONTROL ───────────────────────────── */
-function startTracking() {
-  S.tracking = true;
-  S.t0 = Date.now() - (S.elapsed * 1000);
-  S.path = []; S.falls = []; S.distance = 0; S.maxSpeed = 0;
-  
-  $('track-btn').className = 'tbtn stop';
-  $('track-btn-lbl').textContent = 'Stoppen';
-  $('map-wrap').style.display = 'block';
-
-  // MAP FIX: Erst Karte initialisieren, dann invalidateSize
-  if (!S.map) {
-    S.map = L.map('live-map', { zoomControl: false, attributionControl: false }).setView([0,0], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(S.map);
-    S.mapPoly = L.polyline([], { color: '#0a84ff', weight: 4 }).addTo(S.map);
-    S.mapMarker = L.circleMarker([0,0], { radius: 6, fillColor: '#fff', fillOpacity: 1, color: '#0a84ff', weight: 2 }).addTo(S.map);
-  }
-  setTimeout(() => S.map.invalidateSize(), 300);
-
-  S.timer = setInterval(() => {
-    S.elapsed = Math.floor((Date.now() - S.t0) / 1000);
-    const m = Math.floor(S.elapsed / 60), s = S.elapsed % 60;
-    $('m-time').textContent = `${m}:${s < 10 ? '0' + s : s}`;
-  }, 1000);
-}
-
-function stopTracking() {
-  S.tracking = false;
-  clearInterval(S.timer);
-  const avg = S.elapsed > 0 ? (S.distance / S.elapsed) * 3.6 : 0;
-  
-  if (S.distance > 5) {
-    const runs = DB.getRuns();
-    runs.unshift({
-      id: Date.now(),
-      date: new Date().toISOString(),
-      maxSpeed: S.maxSpeed,
-      avgSpeed: avg,
-      distance: S.distance,
-      duration: S.elapsed,
-      path: S.path,
-      falls: S.falls,
-      folder: S.activeFolder
-    });
-    DB.saveRuns(runs);
-    showToast('Run gespeichert');
-  }
-
-  // Reset
-  S.elapsed = 0; S.distance = 0; S.maxSpeed = 0; S.path = []; S.falls = [];
-  $('track-btn').className = 'tbtn start';
-  $('track-btn-lbl').textContent = 'Run starten';
-  $('m-time').textContent = '0:00';
-  $('map-wrap').style.display = 'none';
-  refreshMetrics(0);
-  renderHistory();
-  updateProfileStats();
-}
-
-/* ─── FALL DETECTION ─────────────────────────────── */
-let lastA = 0;
-function initMotion() {
-  window.addEventListener('devicemotion', (e) => {
-    if (!S.tracking) return;
-    const { x, y, z } = e.accelerationIncludingGravity;
-    const a = Math.sqrt(x*x + y*y + z*z);
-    const diff = Math.abs(a - lastA);
-    if (diff > 28) {
-      triggerFall();
-    }
-    lastA = a;
-  });
-}
-
-function triggerFall() {
-  if (S.falls.length > 0 && Date.now() - S.falls[S.falls.length-1].t < 5000) return;
-  const fall = { t: Date.now(), pos: S.path[S.path.length-1] || null };
-  S.falls.push(fall);
-  const el = $('fall-alert');
-  el.style.display = 'flex'; el.style.animation = 'shake .5s ease';
-  $('fall-s').textContent = `Sturz #${S.falls.length} erfasst`;
-  navigator.vibrate?.([200, 100, 200]);
-  setTimeout(() => el.style.display = 'none', 4000);
-}
-
-/* ─── NAVIGATION & UI ────────────────────────────── */
-function goPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  $(`page-${id}`).classList.add('active');
-  document.querySelector(`.nav-btn[data-page="${id}"]`).classList.add('active');
-  if (id === 'history') renderHistory();
-  if (id === 'settings') updateProfileStats();
-}
-
-document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (S.locked) return;
-    goPage(btn.dataset.page);
-  });
-});
-
-function showToast(txt) {
-  const t = $('toast'); t.textContent = txt; t.classList.add('on');
-  setTimeout(() => t.classList.remove('on'), 2500);
-}
-
-/* ─── HISTORY & FOLDERS ──────────────────────────── */
-function renderHistory() {
-  const runs = DB.getRuns();
-  const folders = DB.getFolders();
-  const container = $('runs-list');
-  const tabs = $('folder-tabs');
-
-  // Tabs
-  tabs.innerHTML = '';
-  Object.keys(folders).forEach(fid => {
-    const f = folders[fid];
-    const tab = document.createElement('div');
-    tab.className = `ftab ${S.activeFolder === fid ? 'active' : ''}`;
-    tab.innerHTML = `<div class="ftab-dot" style="background:${f.color}"></div>${f.name}`;
-    tab.onclick = () => { S.activeFolder = fid; renderHistory(); };
-    tabs.appendChild(tab);
-  });
-
-  const filtered = S.activeFolder === 'default' ? runs : runs.filter(r => r.folder === S.activeFolder);
-  
-  if (filtered.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-ico">🌊</div><div>Noch keine Fahrten hier</div></div>`;
+  // Karte vor Tracking-Start zentrieren
+  if(!S.tracking){
+    if(S.map) S.map.setView([lat,lon],16,{animate:false});
     return;
   }
 
-  container.innerHTML = filtered.map(r => `
-    <div class="run-card">
-      <div class="run-card-top">
-        <div class="run-card-left" onclick="showDetail(${r.id})">
-          <div class="run-name">${new Date(r.date).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}</div>
-          <div class="run-date">${new Date(r.date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</div>
-        </div>
-        <div>
-          <div class="run-spd-big">${r.maxSpeed.toFixed(1)}</div>
-          <div class="run-spd-unit">km/h Max</div>
-        </div>
-        <div class="run-menu" onclick="showRunOptions(${r.id})">⋮</div>
-      </div>
-      <div class="run-stats">
-        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${(r.distance / 1000).toFixed(2)}</div><div class="rs-l">km</div></div>
-        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${Math.floor(r.duration / 60)}:${(r.duration % 60).toString().padStart(2, '0')}</div><div class="rs-l">Zeit</div></div>
-        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${r.avgSpeed.toFixed(1)}</div><div class="rs-l">Avg</div></div>
-        <div class="rs" onclick="showDetail(${r.id})"><div class="rs-v">${r.falls?.length || 0}</div><div class="rs-l">Stürze</div></div>
-      </div>
-    </div>
-  `).join('');
+  // ── Speed: nativer GPS-Wert (m/s → km/h) ──────────────────────
+  let raw=0;
+  if(typeof pos.coords.speed==='number' && pos.coords.speed>=0){
+    raw=pos.coords.speed*3.6;
+  }
+
+  // ── Distanz aus Positionsdelta + Fallback-Speed ─────────────────
+  const curPt={lat,lon,time:now};
+  if(S.lastPt){
+    const dt=(now-S.lastPt.time)/1e3;
+    const dk=hav(S.lastPt,curPt);
+    if(dt>0 && dt<=20 && dk<0.5){
+      S.dist+=dk;
+      if(raw===0) raw=(dk/dt)*3600;
+    }
+  }
+  S.lastPt=curPt;
+  S.pts.push(curPt);
+
+  // ── 3-Punkt gleitender Mittelwert ──────────────────────────────
+  S.buf.push(raw);
+  if(S.buf.length>3) S.buf.shift();
+  S.speed=S.buf.reduce((a,b)=>a+b,0)/S.buf.length;
+
+  // Max / Avg (immer aktualisieren, auch bei 0)
+  if(S.speed>S.maxSpd) S.maxSpd=S.speed;
+  S.hist.push({s:+(S.speed.toFixed(1)),t:now});
+  const mv=S.hist.filter(p=>p.s>2);
+  S.avgSpd=mv.length?mv.reduce((a,b)=>a+b.s,0)/mv.length:0;
+
+  // ── DOM-Update synchron ────────────────────────────────────────
+  updateDOM();
+
+  // ── Kartenlinie ────────────────────────────────────────────────
+  if(S.map) mapAddPoint(lat,lon,S.speed);
 }
 
-/* ─── WATER LOCK ─────────────────────────────────── */
-let wlTimer;
-$('lock-btn').addEventListener('click', () => {
-  S.locked = true;
-  $('water-lock').classList.add('on');
+/* ═══ DOM UPDATE ════════════════════════════════
+   Aktualisiert Speed-Ring + alle 4 Metriken.
+   Wird sekündlich vom Timer UND bei jedem GPS-Update aufgerufen.
+════════════════════════════════════════════════ */
+function updateDOM(){
+  const spd=S.speed, MAX=80;
+
+  // Ring
+  const num=$('snum'), ring=$('rfill');
+  num.textContent=Math.round(spd);
+  const cls='snum'+(spd>60?' d':spd>40?' w':'');
+  if(num.className!==cls) num.className=cls;
+  ring.style.strokeDashoffset=603*(1-Math.min(spd/MAX,1));
+  const rc='rfill'+(spd>60?' d':spd>40?' w':'');
+  if(ring.className!==rc) ring.className=rc;
+
+  // Metrics – immer 1 Nachkommastelle
+  $('mmax').textContent=S.maxSpd.toFixed(1);
+  $('mavg').textContent=S.avgSpd.toFixed(1);
+
+  const d=S.dist;
+  if(d<0.1){
+    $('mdist').textContent=Math.round(d*1000);
+    $('mdistl').textContent='m';
+  } else {
+    $('mdist').textContent=d.toFixed(2);
+    $('mdistl').textContent='km';
+  }
+  // Zeit wird vom Timer gesetzt
+}
+
+/* ═══ MAP ════════════════════════════════════════
+
+   STRATEGIE (iOS Safari getestet):
+   - #lmap hat IMMER height:220px in CSS → Leaflet liest korrekte Größe
+   - Visuell versteckt über .mwrap CSS (opacity:0; max-height:0) ohne Größe zu ändern
+   - Leaflet wird einmalig mit setTimeout(150) initialisiert NACH dem ersten Browser-Paint
+   - invalidateSize() beim ersten GPS-Punkt für sicheres Re-Render
+════════════════════════════════════════════════ */
+function initMap(){
+  if(S.map) return;
+
+  // Kein getBoundingClientRect-Hack nötig – #lmap hat per CSS immer 220px Höhe
+  const map=L.map('lmap',{
+    zoomControl:false,
+    attributionControl:false,
+    fadeAnimation:false,
+    markerZoomAnimation:false,
+    // KEIN preferCanvas – CircleMarker funktioniert mit SVG-Renderer zuverlässiger auf iOS
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19, updateWhenIdle:false, keepBuffer:4,
+  }).addTo(map);
+
+  map.setView([48.2,13.5],15);
+  S.map=map;
+
+  // invalidateSize nach Paint – stellt sicher dass Leaflet die tatsächliche Größe kennt
+  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); }, 200);
+  console.log('[MAP] Leaflet initialized. Container size:', document.getElementById('lmap').getBoundingClientRect().width, 'x', document.getElementById('lmap').getBoundingClientRect().height);
+}
+
+// Farbe für Geschwindigkeit: rot (0 km/h) → gelb (25 km/h) → grün (50+ km/h)
+// Interpoliert zwischen #ff453a → #ffd60a → #30d158
+function spdColor(spd){
+  const t=Math.min(Math.max(spd,0)/50,1);
+  let r,g,b;
+  if(t<0.5){
+    // rot → gelb (t=0..0.5)
+    const u=t*2;
+    r=255; g=Math.round(69+(214-69)*u); b=Math.round(58+(10-58)*u);
+  } else {
+    // gelb → grün (t=0.5..1)
+    const u=(t-0.5)*2;
+    r=Math.round(255+(48-255)*u); g=Math.round(214+(209-214)*u); b=Math.round(10+(88-10)*u);
+  }
+  return`rgb(${r},${g},${b})`;
+}
+
+function mapAddPoint(lat,lon,spd){
+  if(!S.map) return;
+
+  // Start-Marker beim ersten Punkt
+  if(!S.smkr){
+    // invalidateSize vor erstem Render – stellt sicher dass Map-Größe korrekt ist
+    S.map.invalidateSize();
+    S.smkr=L.circleMarker([lat,lon],{
+      radius:8, color:'#fff', weight:2.5,
+      fillColor:'#30d158', fillOpacity:1,
+    }).addTo(S.map);
+    S.map.setView([lat,lon], 17, {animate:false});
+  }
+
+  // Farbiges Segment vom letzten zum aktuellen Punkt
+  if(S.prevLL){
+    const col=spdColor(spd);
+    const seg=L.polyline([S.prevLL,[lat,lon]],{
+      color:col, weight:5, opacity:1, lineCap:'round', lineJoin:'round',
+    }).addTo(S.map);
+    S.segs.push(seg);
+  }
+  S.prevLL=[lat,lon];
+
+  // Positions-Marker (zeigt aktuelle Geschwindigkeitsfarbe)
+  const col=spdColor(spd);
+  if(!S.pmkr){
+    S.pmkr=L.circleMarker([lat,lon],{radius:9,color:'#fff',weight:2.5,fillColor:col,fillOpacity:1}).addTo(S.map);
+  } else {
+    S.pmkr.setLatLng([lat,lon]);
+    S.pmkr.setStyle({fillColor:col});
+  }
+
+  // Karte folgt sanft
+  S.map.panTo([lat,lon],{animate:true,duration:1.0,easeLinearity:0.4});
+}
+
+function clearMapSession(){
+  S.segs.forEach(s=>s.remove()); S.segs=[];
+  if(S.smkr){S.smkr.remove();S.smkr=null;}
+  if(S.pmkr){S.pmkr.remove();S.pmkr=null;}
+  S.prevLL=null;
+}
+
+/* ═══ TRACKING ══════════════════════════════════ */
+$('tbtn').addEventListener('click',()=>S.tracking?stopT():startT());
+
+function startT(){
+  // State zurücksetzen
+  S.tracking=true; S.t0=Date.now();
+  S.speed=0; S.maxSpd=0; S.avgSpd=0; S.dist=0; S.elapsed=0;
+  S.buf=[]; S.hist=[]; S.pts=[]; S.falls=[]; S.fc=0; S.lastPt=null;
+
+  // Map Session leeren und Karte einblenden
+  clearMapSession();
+  $('mwrap').classList.add('visible');
+
+  // invalidateSize JETZT – nach dem CSS-Klassen-Wechsel hat der Browser die richtige Größe
+  // Kleines Timeout damit der CSS-Transition-Paint abgeschlossen ist
+  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); }, 350);
+
+  // Timer: Zeit + alle Metriken sekündlich aktualisieren
+  S.timerID=setInterval(()=>{
+    S.elapsed=Date.now()-S.t0;
+    $('mtime').textContent=fmtT(S.elapsed);
+    updateDOM();
+  },1000);
+
+  // Button
+  const b=$('tbtn');
+  b.disabled=false; b.className='tbtn st';
+  $('tbtl').textContent='Run beenden';
+
+  // Metriken sofort auf 0 rendern
+  updateDOM();
+  toast('⏱ Run gestartet');
+}
+
+function stopT(){
+  S.tracking=false;
+  clearInterval(S.timerID); S.timerID=null;
+
+  const b=$('tbtn');
+  b.className='tbtn go'; b.disabled=(S.gps!=='ready');
+  $('tbtl').textContent='Run starten';
+
+  if(S.hist.length>3) saveRun();
+  else toast('Zu kurz – nicht gespeichert');
+}
+
+function saveRun(){
+  DB.addRun({
+    id:Date.now().toString(),
+    name:`Run ${new Date().toLocaleDateString('de-DE')}`,
+    folderId:null, startTime:S.t0, duration:S.elapsed,
+    maxSpeed:S.maxSpd, avgSpeed:S.avgSpd, distance:S.dist,
+    speedHistory:S.hist, trackPoints:S.pts, falls:S.falls,
+  });
+  DB.clearSession();
+  toast(`✅ Gespeichert · ${S.maxSpd.toFixed(1)} km/h max`);
+}
+
+/* ═══ MOTION (Sturzerkennung) ════════════════════ */
+function initMotion(){
+  if(!window.DeviceMotionEvent) return;
+  const h=e=>{
+    if(!S.tracking) return;
+    const ag=e.accelerationIncludingGravity||e.acceleration; if(!ag) return;
+    const g=Math.sqrt((ag.x||0)**2+(ag.y||0)**2+(ag.z||0)**2)/9.81;
+    if(g>2.5&&S.speed>8){
+      const now=Date.now(), last=S.falls[S.falls.length-1];
+      if(!last||now-last.time>3000){
+        S.falls.push({time:now,speed:S.speed,gForce:g.toFixed(2)});
+        S.fc++;
+        $('fat').textContent=`💥 Sturz #${S.fc} erkannt!`;
+        $('fas').textContent=`${g.toFixed(1)}g · ${S.speed.toFixed(1)} km/h`;
+        const el=$('falert'); el.style.display='flex';
+        el.style.animation='shk .5s ease, fup .4s cubic-bezier(.34,1.4,.64,1)';
+        if(navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
+        setTimeout(()=>{el.style.display='none';},5000);
+      }
+    }
+  };
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+    DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')window.addEventListener('devicemotion',h,{passive:true});}).catch(()=>{});
+  } else {
+    window.addEventListener('devicemotion',h,{passive:true});
+  }
+}
+
+/* ═══ HISTORY + FOLDERS ═════════════════════════ */
+const COLS=['#0a84ff','#30d158','#ff9f0a','#ff2d55','#bf5af2','#5ac8fa','#ff6b35'];
+
+function renderFTabs(){
+  const flds=DB.getFolders(), w=$('ftabs'); w.innerHTML='';
+  const all=document.createElement('div'); all.className='ftab'+(S.folderID===null?' on':''); all.textContent='Alle';
+  all.addEventListener('click',()=>{S.folderID=null;renderHistory();});
+  w.appendChild(all);
+  flds.forEach(f=>{
+    const t=document.createElement('div');
+    t.className='ftab'+(S.folderID===f.id?' on':'');
+    t.innerHTML=`<div class="fdot" style="background:${f.color}"></div>${esc(f.name)}`;
+    t.addEventListener('click',()=>{if(S.folderID===f.id)showFolderOpts(f);else{S.folderID=f.id;renderHistory();}});
+    w.appendChild(t);
+  });
+}
+
+function renderHistory(){
+  renderFTabs();
+  const all=DB.getRuns(), runs=S.folderID===null?all:all.filter(r=>r.folderId===S.folderID);
+  const list=$('rlist'); list.innerHTML='';
+  if(!runs.length){list.innerHTML=`<div class="empty"><div class="emico">🌊</div><div>${S.folderID?'Keine Fahrten in diesem Ordner':'Noch keine Fahrten'}</div></div>`;return;}
+  const fm=Object.fromEntries(DB.getFolders().map(f=>[f.id,f]));
+  runs.forEach((r,i)=>{
+    const f=r.folderId?fm[r.folderId]:null;
+    const d=r.distance||0, ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2), dl=d<0.1?'Meter':'km';
+    const c=document.createElement('div'); c.className='rcard'; c.style.animationDelay=`${i*.04}s`;
+    c.innerHTML=`
+      <div class="rctop">
+        <div class="rcl">
+          ${f?`<div class="rfb"><div class="rfbd" style="background:${f.color}"></div>${esc(f.name)}</div>`:''}
+          <div class="rname">${esc(r.name||'Run')}</div>
+          <div class="rdate">${fmtD(r.startTime)}</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:6px;flex-shrink:0;margin-left:10px">
+          <button class="rmenu"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+          <div><div class="rsb">${Math.round(r.maxSpeed||0)}</div><div class="rsu">km/h max</div></div>
+        </div>
+      </div>
+      <div class="rstats">
+        <div class="rs"><div class="rsv">${(r.avgSpeed||0).toFixed(1)}</div><div class="rsl">Ø km/h</div></div>
+        <div class="rs"><div class="rsv">${ds}</div><div class="rsl">${dl}</div></div>
+        <div class="rs"><div class="rsv">${fmtT(r.duration||0)}</div><div class="rsl">Zeit</div></div>
+        <div class="rs" style="color:${(r.falls||[]).length?'var(--red)':'var(--green)'}"><div class="rsv">${(r.falls||[]).length}</div><div class="rsl">Stürze</div></div>
+      </div>`;
+    c.querySelector('.rcl').addEventListener('click',()=>openDetail(r));
+    c.querySelectorAll('.rs').forEach(s=>s.addEventListener('click',()=>openDetail(r)));
+    c.querySelector('.rmenu').addEventListener('click',e=>{e.stopPropagation();showRunOpts(r);});
+    list.appendChild(c);
+  });
+}
+
+$('nfbtn').addEventListener('click',()=>showFolderCreate());
+
+function showFolderCreate(ex){
+  const isEdit=!!ex; let sc=ex?ex.color:COLS[0];
+  const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + var(--sb))">
+    <div style="font-size:19px;font-weight:700;margin-bottom:16px">${isEdit?'Ordner bearbeiten':'Neuer Ordner'}</div>
+    <div class="lbl">Name</div><input class="inp" id="fni" placeholder="z. B. Training" value="${isEdit?esc(ex.name):''}"/>
+    <div class="lbl" style="margin-top:14px">Farbe</div>
+    <div class="swatches">${COLS.map(c=>`<div class="sw${c===sc?' on':''}" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn bg" id="fnc">Abbrechen</button>
+      <button class="btn bp" id="fns">${isEdit?'Speichern':'Erstellen'}</button>
+    </div>
+  </div>`);
+  const inp=ov.querySelector('#fni'); setTimeout(()=>inp.focus(),80);
+  ov.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{sc=s.dataset.c;ov.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));s.classList.add('on');}));
+  ov.querySelector('#fnc').addEventListener('click',()=>ov.remove());
+  ov.querySelector('#fns').addEventListener('click',()=>{
+    const nm=inp.value.trim(); if(!nm){inp.style.borderColor='var(--red)';inp.focus();return;}
+    if(isEdit)DB.updateFolder(ex.id,{name:nm,color:sc});else DB.addFolder({id:'f'+Date.now(),name:nm,color:sc});
+    ov.remove();renderHistory();toast(isEdit?'Ordner aktualisiert':'Ordner erstellt');
+  });
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showFolderOpts(f){
+  const ov=mkOv(`<div class="sh">
+    <div class="shhdr"><div class="shht">${esc(f.name)}</div></div>
+    <div class="shrow" id="for"><div class="shico" style="background:rgba(10,132,255,.12)">✏️</div>Umbenennen</div>
+    <div class="shrow r" id="fod"><div class="shico" style="background:rgba(255,69,58,.1)">🗑️</div>Ordner löschen</div>
+    <div class="shrow c" id="foc">Abbrechen</div>
+  </div>`);
+  ov.querySelector('#for').addEventListener('click',()=>{ov.remove();showFolderCreate(f);});
+  ov.querySelector('#fod').addEventListener('click',()=>{ov.remove();confirm2('Ordner löschen?','Fahrten bleiben erhalten.',()=>{DB.deleteFolder(f.id);if(S.folderID===f.id)S.folderID=null;renderHistory();toast('Ordner gelöscht');});});
+  ov.querySelector('#foc').addEventListener('click',()=>ov.remove());
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showRunOpts(r){
+  const ov=mkOv(`<div class="sh">
+    <div class="shhdr"><div class="shht">${esc(r.name||'Run')}</div><div class="shhs">${fmtD(r.startTime)}</div></div>
+    <div class="shrow" id="ror"><div class="shico" style="background:rgba(10,132,255,.12)">✏️</div>Umbenennen</div>
+    <div class="shrow" id="rom"><div class="shico" style="background:rgba(255,159,10,.12)">📁</div>In Ordner verschieben</div>
+    <div class="shrow r" id="rod"><div class="shico" style="background:rgba(255,69,58,.1)">🗑️</div>Fahrt löschen</div>
+    <div class="shrow c" id="roc">Abbrechen</div>
+  </div>`);
+  ov.querySelector('#ror').addEventListener('click',()=>{ov.remove();showRename(r);});
+  ov.querySelector('#rom').addEventListener('click',()=>{ov.remove();showFolderPicker(r);});
+  ov.querySelector('#rod').addEventListener('click',()=>{ov.remove();confirm2('Fahrt löschen?','Nicht rückgängig machbar.',()=>{DB.deleteRun(r.id);renderHistory();toast('Fahrt gelöscht');});});
+  ov.querySelector('#roc').addEventListener('click',()=>ov.remove());
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showRename(r){
+  const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + var(--sb))">
+    <div style="font-size:19px;font-weight:700;margin-bottom:14px">Umbenennen</div>
+    <input class="inp" id="rni" value="${esc(r.name||'Run')}"/>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn bg" id="rnc">Abbrechen</button>
+      <button class="btn bp" id="rns">Speichern</button>
+    </div>
+  </div>`);
+  const inp=ov.querySelector('#rni'); setTimeout(()=>{inp.focus();inp.select();},80);
+  ov.querySelector('#rnc').addEventListener('click',()=>ov.remove());
+  ov.querySelector('#rns').addEventListener('click',()=>{const nm=inp.value.trim();if(!nm)return;DB.updateRun(r.id,{name:nm});ov.remove();renderHistory();toast('Umbenannt');});
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showFolderPicker(r){
+  const flds=DB.getFolders();
+  const rows=flds.map(f=>`<div class="shrow fpr" data-id="${f.id}"><div class="shdot" style="background:${f.color}"></div>${esc(f.name)}${r.folderId===f.id?'<div class="shchk" style="margin-left:auto">✓</div>':''}</div>`).join('');
+  const ov=mkOv(`<div class="sh">
+    <div class="shhdr"><div class="shht">In Ordner verschieben</div></div>
+    <div class="shrow fpr" data-id="__none__"><div class="shdot" style="background:#48484a"></div>Kein Ordner${!r.folderId?'<div class="shchk" style="margin-left:auto;background:#48484a">✓</div>':''}</div>
+    ${rows}
+    <div class="shrow" id="fpn"><div class="shico">➕</div>Neuen Ordner erstellen</div>
+    <div class="shrow c" id="fpc">Abbrechen</div>
+  </div>`);
+  ov.querySelectorAll('.fpr').forEach(row=>row.addEventListener('click',()=>{
+    const id=row.dataset.id; DB.updateRun(r.id,{folderId:id==='__none__'?null:id});
+    ov.remove(); renderHistory(); toast(`Verschoben → ${id==='__none__'?'Allgemein':flds.find(f=>f.id===id)?.name}`);
+  }));
+  ov.querySelector('#fpn').addEventListener('click',()=>{ov.remove();showFolderCreate();});
+  ov.querySelector('#fpc').addEventListener('click',()=>ov.remove());
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+/* ═══ DETAIL ════════════════════════════════════ */
+function openDetail(r){
+  const d=r.distance||0, ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2), dl=d<0.1?'Meter':'Distanz km';
+  const hf=(r.falls||[]).length>0, ht=(r.trackPoints||[]).length>2;
+  $('dtitle').textContent=r.name||'Run'; $('ddate').textContent=fmtD(r.startTime);
+  $('dcont').innerHTML=`
+    <div class="dhero" style="animation:fup .32s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="dspd">${Math.round(r.maxSpeed||0)}</div>
+      <div class="dspdl">km/h Maximalgeschwindigkeit</div>
+    </div>
+    <div class="dgrid" style="animation:fup .32s .05s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="dst"><div class="dstv">${(r.avgSpeed||0).toFixed(1)}</div><div class="dstl">Ø Geschwindigkeit</div></div>
+      <div class="dst"><div class="dstv">${ds}</div><div class="dstl">${dl}</div></div>
+      <div class="dst"><div class="dstv">${fmtT(r.duration||0)}</div><div class="dstl">Fahrzeit</div></div>
+      <div class="dst" style="border-color:${hf?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}">
+        <div class="dstv" style="color:${hf?'var(--red)':'var(--green)'}">${(r.falls||[]).length}</div>
+        <div class="dstl">Stürze</div>
+      </div>
+    </div>
+    ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap" style="animation:fup .32s .1s cubic-bezier(.34,1.28,.64,1) both"><canvas id="dchrt" style="width:100%;height:80px;display:block"></canvas></div>`:''}
+    ${ht?`<div class="slbl">Strecke</div><div class="dmw" style="animation:fup .32s .13s cubic-bezier(.34,1.28,.64,1) both"><div id="dmap"></div></div>`:''}
+    ${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit" style="animation:fup .32s ${.16+i*.04}s cubic-bezier(.34,1.28,.64,1) both"><div style="font-size:22px">💥</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
+    <button class="delbtn" id="ddel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
+  $('pd').style.display='block';
+  requestAnimationFrame(()=>{
+    if(ht) initDMap(r.trackPoints,r.falls||[]);
+    const cv=$('dchrt'); if(cv) setTimeout(()=>drawChart(cv,r.speedHistory),120);
+  });
+  $('ddel').addEventListener('click',()=>confirm2('Fahrt löschen?','Nicht rückgängig machbar.',()=>{DB.deleteRun(r.id);closeDetail();renderHistory();toast('Fahrt gelöscht');}));
+}
+
+function closeDetail(){if(S.dmap){S.dmap.remove();S.dmap=null;}$('pd').style.display='none';}
+$('bbtn').addEventListener('click',closeDetail);
+
+function initDMap(pts,falls){
+  const el=$('dmap'); if(!el||pts.length<2) return;
+  if(S.dmap){S.dmap.remove();S.dmap=null;}
+  const map=L.map(el,{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  S.dmap=map;
+  // Farbige Segmente auch in der Detail-Ansicht
+  for(let i=1;i<pts.length;i++){
+    const spd=pts[i].speed||0;
+    L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{
+      color:spdColor(spd),weight:4.5,opacity:.95,lineCap:'round'
+    }).addTo(map);
+  }
+  // Wenn keine Speed-Daten: einfache blaue Linie als Fallback
+  if(!pts[1]||pts[1].speed===undefined){
+    const ll=pts.map(p=>[p.lat,p.lon]);
+    L.polyline(ll,{color:'#0a84ff',weight:4.5,opacity:.95,lineCap:'round'}).addTo(map);
+  }
+  const ll=pts.map(p=>[p.lat,p.lon]);
+  const mk=(col,sz=11)=>L.divIcon({html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''});
+  L.marker(ll[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Start');
+  L.marker(ll[ll.length-1],{icon:mk('#ff453a')}).addTo(map).bindPopup('Ende');
+  falls.forEach(f=>{const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);L.marker([cp.lat,cp.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map);});
+  const bounds=L.latLngBounds(ll);
+  map.fitBounds(bounds,{padding:[20,20]});
+  setTimeout(()=>{map.invalidateSize();map.fitBounds(bounds,{padding:[20,20]});},300);
+}
+
+/* ═══ CHART ══════════════════════════════════════ */
+function drawChart(cv,hist){
+  if(!cv||!hist||hist.length<2) return;
+  const ctx=cv.getContext('2d'), W=cv.offsetWidth||300, H=cv.offsetHeight||80;
+  cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio;
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+  const vals=hist.map(p=>p.s!==undefined?p.s:p.speed||0), mx=Math.max(...vals,1);
+  const step=Math.max(1,Math.floor(vals.length/120)), pts=vals.filter((_,i)=>i%step===0);
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(10,132,255,.35)'); grad.addColorStop(1,'rgba(10,132,255,0)');
+  ctx.clearRect(0,0,W,H);
+  ctx.beginPath(); pts.forEach((v,i)=>{const x=(i/(pts.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); pts.forEach((v,i)=>{const x=(i/(pts.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.strokeStyle='#0a84ff'; ctx.lineWidth=2; ctx.stroke();
+}
+
+/* ═══ PROFIL & SETTINGS ═════════════════════════ */
+function renderSettings(){
+  const p=DB.getProfile(), runs=DB.getRuns(), dist=runs.reduce((a,r)=>a+(r.distance||0),0);
+  const av=$('sav');
+  av.textContent=p.initial||'?';
+  av.style.background=`linear-gradient(135deg,${p.color},${shd(p.color,-40)})`;
+  av.style.boxShadow=`0 4px 20px ${p.color}55`;
+  $('snm').textContent=p.name;
+  $('sst').textContent=`${runs.length} Fahrten · ${dist<0.1?Math.round(dist*1000)+'m':dist.toFixed(1)+' km'}`;
+}
+
+$('pcrd').addEventListener('click',()=>showProfileEdit());
+function showProfileEdit(){
+  const p=DB.getProfile(); let sc=p.color;
+  const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + var(--sb))">
+    <div style="font-size:19px;font-weight:700;margin-bottom:16px">Profil bearbeiten</div>
+    <div class="lbl">Name</div><input class="inp" id="pni" value="${esc(p.name)}" style="margin-bottom:12px"/>
+    <div class="lbl">Kürzel (1–2 Zeichen)</div><input class="inp" id="pii" value="${esc(p.initial)}" maxlength="2" style="margin-bottom:12px"/>
+    <div class="lbl">Farbe</div>
+    <div class="swatches">${COLS.map(c=>`<div class="sw${c===sc?' on':''}" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn bg" id="pec">Abbrechen</button>
+      <button class="btn bp" id="pes">Speichern</button>
+    </div>
+  </div>`);
+  setTimeout(()=>ov.querySelector('#pni').focus(),80);
+  ov.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{sc=s.dataset.c;ov.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));s.classList.add('on');}));
+  ov.querySelector('#pec').addEventListener('click',()=>ov.remove());
+  ov.querySelector('#pes').addEventListener('click',()=>{
+    const nm=ov.querySelector('#pni').value.trim()||'Fahrer';
+    const init=(ov.querySelector('#pii').value.trim()||nm[0]).toUpperCase().slice(0,2);
+    DB.saveProfile({...p,name:nm,initial:init,color:sc}); ov.remove(); renderSettings(); toast('Profil gespeichert ✓');
+  });
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+$('sexport').addEventListener('click',()=>{
+  const b=new Blob([JSON.stringify(DB.exportAll(),null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b), a=document.createElement('a');
+  a.href=u; a.download=`wakeski-${Date.now()}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u);
+  toast('Export gestartet');
 });
+$('simport').addEventListener('click',()=>$('fimp').click());
+$('fimp').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);if(!d.runs&&!d.profile)throw 0;confirm2('Daten importieren?',`${(d.runs||[]).length} Fahrten werden geladen.`,()=>{DB.importAll(d);renderSettings();toast('Import abgeschlossen');});}
+    catch{toast('❌ Ungültige Datei');}
+    e.target.value='';
+  }; r.readAsText(f);
+});
+$('sclear').addEventListener('click',()=>confirm2('Alle Fahrten löschen?','Ordner und Profil bleiben.',()=>{DB.clearRuns();renderSettings();toast('Alle Fahrten gelöscht');}));
 
-const wlb = $('wl-unlock-btn');
-const wlp = $('wl-progress');
+/* ═══ CONFIRM ════════════════════════════════════ */
+function confirm2(t,s,fn){
+  $('ctxt').textContent=t; $('cstxt').textContent=s; $('cov').style.display='flex';
+  const hide=()=>$('cov').style.display='none';
+  const y=$('cyes'),n=$('cno'), yc=y.cloneNode(true),nc=n.cloneNode(true);
+  y.parentNode.replaceChild(yc,y); n.parentNode.replaceChild(nc,n);
+  $('cyes').addEventListener('click',()=>{hide();fn();}); $('cno').addEventListener('click',hide);
+}
 
-['mousedown', 'touchstart'].forEach(e => wlb.addEventListener(e, (ev) => {
-  ev.preventDefault();
-  wlb.classList.add('pressing');
-  wlp.className = 'wl-progress go';
-  wlTimer = setTimeout(() => {
-    S.locked = false;
-    $('water-lock').classList.remove('on');
-    wlb.classList.remove('pressing');
-    wlp.className = 'wl-progress';
-    showToast('Entsperrt');
-  }, 2000);
-}));
+/* ═══ OVERLAY HELPER ════════════════════════════ */
+function mkOv(html){const o=document.createElement('div');o.className='ov';o.innerHTML=html;document.body.appendChild(o);return o;}
 
-['mouseup', 'mouseleave', 'touchend'].forEach(e => wlb.addEventListener(e, () => {
-  clearTimeout(wlTimer);
-  wlb.classList.remove('pressing');
-  wlp.className = 'wl-progress';
-}));
+/* ═══ WATER LOCK ════════════════════════════════ */
+$('lbtn').addEventListener('click',()=>{$('wl').classList.add('on');S.locked=true;if(navigator.vibrate)navigator.vibrate(60);});
+let _lt=null; const wb=$('wlbtn'), wp=$('wlprog');
+wb.addEventListener('pointerdown',e=>{
+  if(!S.locked)return; e.preventDefault();
+  wb.classList.add('p'); wp.style.width='0'; wp.className='wlprog go';
+  _lt=setTimeout(()=>{$('wl').classList.remove('on');S.locked=false;wb.classList.remove('p');wp.className='wlprog';if(navigator.vibrate)navigator.vibrate([80,40,80]);},2000);
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>wb.addEventListener(ev,()=>{clearTimeout(_lt);_lt=null;wb.classList.remove('p');wp.className='wlprog';}));
 
-/* ─── START ──────────────────────────────────────── */
+/* ═══ AUTO SESSION SAVE ═════════════════════════ */
+setInterval(()=>{if(!S.tracking)return;DB.saveSession({maxSpd:S.maxSpd,avgSpd:S.avgSpd,dist:S.dist,elapsed:S.elapsed,t0:S.t0});},10000);
+
+/* ═══ APP START ══════════════════════════════════
+   WICHTIG: initMap() wird hier aufgerufen,
+   damit Leaflet die Container-Größe korrekt lesen kann.
+   Der Container ist sichtbar, weil wir ihn mit visibility:hidden
+   (statt display:none) versteckt haben – so hat er trotzdem eine Größe.
+════════════════════════════════════════════════ */
 function launchApp(){
-  $('screen-perm').style.display='none';
+  $('sp').style.display='none';
   const app=$('app'); app.style.display='flex'; app.style.flexDirection='column';
   goPage('track');
   initGPS();
   initMotion();
+
+  // Map NACH dem ersten Browser-Paint initialisieren (setTimeout 150ms).
+  // #lmap hat per CSS immer height:220px → Leaflet liest korrekte Größe.
+  // Der Container ist via .mwrap CSS visuell versteckt (opacity:0, max-height:0)
+  // ohne die tatsächliche Größe zu ändern.
+  setTimeout(()=>{ initMap(); }, 150);
+
+  // Session-Wiederherstellung
   const sess=DB.getSession();
-  if(sess&&sess.maxSpeed){S.maxSpeed=sess.maxSpeed;S.distance=sess.distance||0;refreshMetrics();}
+  if(sess&&sess.maxSpd){S.maxSpd=sess.maxSpd||0;S.dist=sess.dist||0;updateDOM();}
 }
 
 $('perm-btn').addEventListener('click',async()=>{
-  const btn=$('perm-btn'); btn.disabled=true;
-  btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0110 10"/></svg> Aktiviere…';
-  for(const E of [window.DeviceMotionEvent, window.DeviceOrientationEvent]){
+  const b=$('perm-btn'); b.disabled=true;
+  b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0110 10"/></svg> Aktiviere…';
+  for(const E of[window.DeviceMotionEvent,window.DeviceOrientationEvent]){
     if(typeof E?.requestPermission==='function') await E.requestPermission().catch(()=>{});
   }
-  setTimeout(()=>launchApp(), 800);
+  setTimeout(()=>{$('sp').style.opacity='0';$('sp').style.transition='opacity .35s';setTimeout(launchApp,350);},400);
 });
 
-// Dummy Funktionen für fehlende Referenzen im Original
-function showDetail(id) { showToast('Details für Run ' + id); }
-function showRunOptions(id) { showToast('Optionen für Run ' + id); }
-function updateProfileStats() {
-  const runs = DB.getRuns();
-  const totalDist = runs.reduce((a, b) => a + b.distance, 0);
-  $('s-stats').textContent = `${runs.length} Fahrten · ${(totalDist / 1000).toFixed(1)} km`;
-}
+// GPS bereits erteilt → direkt starten
+(async()=>{
+  if(!navigator.permissions) return;
+  try{const r=await navigator.permissions.query({name:'geolocation'});if(r.state==='granted')launchApp();}catch{}
+})();
 </script>
 </body>
 </html>
