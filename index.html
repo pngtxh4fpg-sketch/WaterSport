@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="de">
 <head>
 <meta charset="UTF-8"/>
@@ -10,32 +9,402 @@
 <meta name="theme-color" content="#000000"/>
 <meta name="color-scheme" content="dark"/>
 <title>WakeSki Pro</title>
+
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║  APP ICON – Eigenes Icon einbinden (Lesezeichen / Home Screen)  ║
+║                                                                  ║
+║  Schritt 1: Dein PNG-Icon (180×180 px) zu Base64 konvertieren:  ║
+║             https://www.base64encode.org  →  Tab "File to Base64"║
+║                                                                  ║
+║  Schritt 2: Das href-Attribut der nächsten Zeile ersetzen:      ║
+║             href="data:image/png;base64,DEIN_BASE64_STRING"     ║
+║             (Den kompletten Inhalt von href ersetzen!)           ║
+║                                                                  ║
+║  Schritt 3: Datei neu laden, dann:                              ║
+║             Safari → Teilen-Symbol → "Zum Home-Bildschirm"      ║
+║             → dein Icon erscheint                               ║
+║                                                                  ║
+║  Solange du kein eigenes Icon einbindest, wird ein generiertes  ║
+║  Platzhalter-Icon verwendet (blaues WS-Logo).                   ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
+<link rel="apple-touch-icon" id="ati" href=""/>
+
+<!-- PWA Manifest (inline, kein externer Server nötig) -->
+<link rel="manifest" id="mani" href=""/>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
+/* ── Google Fonts: Barlow Condensed für Zahlen / DM Sans für UI-Text ── */
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 
+/* ── Reset ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 input,textarea{user-select:text;-webkit-user-select:text}
 
+/* ── Tokens ── */
 :root{
-–bg:#000;–glass:rgba(255,255,255,.05);–gb:rgba(255,255,255,.10);–gs:rgba(255,255,255,.08);
-–ac:#0a84ff;–acg:rgba(10,132,255,.30);–acl:rgba(10,132,255,.13);
-–green:#30d158;–gg:rgba(48,209,88,.25);
-–red:#ff453a;–rg:rgba(255,69,58,.30);
-–yellow:#ffd60a;–yg:rgba(255,214,10,.25);
-–tx:rgba(255,255,255,.92);–tx2:rgba(255,255,255,.55);–tx3:rgba(255,255,255,.28);
-–fd:‘Barlow Condensed’,sans-serif;–fb:‘DM Sans’,sans-serif;
-–nav:82px;–sb:env(safe-area-inset-bottom,0px);
-color-scheme:dark;
+  --ac:#0a84ff;--acg:rgba(10,132,255,.30);--acl:rgba(10,132,255,.13);
+  --green:#30d158;--gg:rgba(48,209,88,.25);
+  --red:#ff453a;--rg:rgba(255,69,58,.30);
+  --yellow:#ffd60a;--yg:rgba(255,214,10,.25);
+  --tx:rgba(255,255,255,.92);--tx2:rgba(255,255,255,.55);--tx3:rgba(255,255,255,.28);
+  --glass:rgba(255,255,255,.06);--gb:rgba(255,255,255,.11);--gs:rgba(255,255,255,.09);
+  --nav:82px;--sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px);
+  color-scheme:dark;
 }
 
-html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);font-family:var(–fb);-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+/* ── Base ── */
+html,body{
+  height:100%;width:100%;background:#000;color:var(--tx);
+  /* Fonts werden DIREKT auf body gesetzt, nicht via CSS-Variable – vermeidet Parsing-Probleme */
+  font-family:'DM Sans',-apple-system,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
 
-#app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+/* ── App-Shell ── */
+#app{
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;
+  max-width:430px;margin:0 auto;
+  position:relative;overflow:hidden;
+  /* Kein background:#000 hier – damit die Karte durch den Track-Tab durchscheint */
+}
 
-.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(–nav)+16px);display:none}
-.page.on{display:block;animation:fup .35s cubic-bezier(.34,1.28,.64,1) both}
+/* ── Seiten-Basis ── */
+.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(var(--nav)+16px);display:none}
 .page::-webkit-scrollbar{display:none}
+
+/* Verlauf + Einstellungen: schwarzer Hintergrund deckt Karte ab */
+#page-history.on,#page-settings.on{
+  display:block;background:#000;
+  animation:fup .32s cubic-bezier(.34,1.28,.64,1) both;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TRACK-SEITE: position:fixed über alles
+   Die Karte (#lmap) ist absolute darin.
+   Das UI (.trk-ov) ist ein Flex-Overlay drüber.
+══════════════════════════════════════════════════════════════ */
+#page-track{
+  overflow:hidden;
+  padding-bottom:0;
+  background:transparent;
+  display:none;
+}
+#page-track.on{
+  display:block;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  z-index:2;
+  animation:none; /* kein fup – Karte soll sofort sichtbar sein */
+}
+
+/* Karte: füllt die gesamte Track-Seite */
+#lmap{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:#0a0d12;
+}
+
+/* Overlay: Flex-Column über der Karte */
+.trk-ov{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  pointer-events:none; /* Karte bleibt interaktiv */
+}
+/* Interaktive Elemente brauchen pointer-events zurück */
+.trk-top,.trk-hud,#falert{pointer-events:auto}
+/* Spacer = transparente Fläche zur Karte (tap-through) */
+.trk-spacer{flex:1;pointer-events:none}
+
+/* ── Top-Bar ── */
+.trk-top{
+  flex-shrink:0;
+  padding:calc(var(--st) + 14px) 16px 28px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  /* Gradient von oben nach unten: schwarz → transparent */
+  background:linear-gradient(to bottom,rgba(0,0,0,.82) 0%,transparent 100%);
+}
+.app-name{
+  font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;
+  font-size:26px;font-weight:900;letter-spacing:1px;color:#fff;
+  text-shadow:0 0 20px rgba(10,132,255,.4);
+  line-height:1;
+}
+.gbadge{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 11px;border-radius:20px;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:.5px solid rgba(255,255,255,.15);
+  font-size:11px;font-weight:500;color:var(--tx2);
+  margin-top:4px;
+}
+.gdot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
+.gdot.w{background:var(--yellow);animation:pulse 1.4s ease-in-out infinite}
+.gdot.r{background:var(--green);box-shadow:0 0 8px var(--gg)}
+.gdot.e{background:var(--red)}
+
+.lock-pill{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:20px;border:none;cursor:pointer;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:.5px solid rgba(255,255,255,.15);
+  color:var(--tx2);font-size:12px;font-weight:500;
+  font-family:'DM Sans',-apple-system,system-ui,sans-serif;
+}
+.lock-pill:active{opacity:.6}
+.lock-pill svg{width:13px;height:13px;flex-shrink:0}
+
+/* ── Crash Alert ── */
+#falert{
+  flex-shrink:0;
+  margin:0 14px 10px;
+  padding:13px 16px;
+  background:rgba(255,69,58,.12);
+  border:.5px solid rgba(255,69,58,.4);
+  border-radius:16px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;gap:12px;
+}
+.fat{font-weight:700;color:var(--red);font-size:15px}
+.fas{font-size:12px;color:var(--tx2);margin-top:1px}
+
+/* ── Bottom HUD ── */
+.trk-hud{
+  flex-shrink:0;
+  padding:32px 14px calc(var(--nav) + 10px + var(--sb));
+  /* Gradient von unten nach oben: schwarz → transparent */
+  background:linear-gradient(to top,
+    rgba(0,0,0,.97) 0%,
+    rgba(0,0,0,.90) 38%,
+    rgba(0,0,0,.65) 65%,
+    transparent 100%
+  );
+}
+
+/* Geschwindigkeits-Zahl */
+.trk-spd-wrap{text-align:center;margin-bottom:4px}
+.trk-spd-num{
+  font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;
+  font-size:108px;font-weight:900;line-height:1;
+  color:#fff;letter-spacing:-4px;
+  text-shadow:0 0 70px rgba(10,132,255,.35),0 4px 24px rgba(0,0,0,.7);
+  transition:color .28s,text-shadow .28s;
+  display:inline-block;
+  /* Mindestbreite verhindert Sprung beim Stellenwechsel */
+  min-width:3ch;
+}
+.trk-spd-num.w{color:var(--yellow);text-shadow:0 0 70px rgba(255,214,10,.4),0 4px 24px rgba(0,0,0,.7)}
+.trk-spd-num.d{color:var(--red);text-shadow:0 0 70px rgba(255,69,58,.4),0 4px 24px rgba(0,0,0,.7)}
+.trk-spd-unit{
+  font-size:13px;color:var(--tx2);letter-spacing:2px;
+  text-transform:uppercase;text-align:center;margin-top:-2px;
+}
+
+/* Geschwindigkeitsbalken (ersetzt SVG-Ring) */
+.trk-bar-wrap{
+  height:3px;background:rgba(255,255,255,.1);
+  border-radius:2px;margin:10px 0 16px;overflow:hidden;
+}
+.trk-bar{
+  height:100%;background:var(--ac);border-radius:2px;
+  width:0%;
+  transition:width .5s cubic-bezier(.34,1.2,.64,1),background .28s;
+  box-shadow:0 0 10px var(--ac);
+}
+
+/* Metriken */
+.trk-metrics{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:8px;margin-bottom:13px;
+}
+.trk-m{
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border:.5px solid rgba(255,255,255,.12);
+  border-radius:14px;padding:10px 6px 9px;text-align:center;
+}
+.trk-mv{
+  font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;
+  font-size:22px;font-weight:800;line-height:1;color:var(--tx);
+}
+.trk-ml{
+  font-size:9px;color:var(--tx2);margin-top:3px;
+  text-transform:uppercase;letter-spacing:.8px;
+}
+
+/* Track-Button */
+.tbtn{
+  width:100%;height:58px;border-radius:16px;border:none;cursor:pointer;
+  font-family:'DM Sans',-apple-system,system-ui,sans-serif;
+  font-size:17px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:all .22s cubic-bezier(.34,1.4,.64,1);
+}
+.tbtn.go{
+  background:rgba(10,132,255,.95);color:#fff;
+  box-shadow:0 6px 32px rgba(10,132,255,.5),inset 0 .5px 0 rgba(255,255,255,.2);
+  animation:glow 3s ease-in-out infinite;
+}
+.tbtn.st{
+  background:rgba(255,69,58,.95);color:#fff;
+  box-shadow:0 6px 32px rgba(255,69,58,.5),inset 0 .5px 0 rgba(255,255,255,.2);
+  animation:none;
+}
+.tbtn:active{transform:scale(.96)}
+.tbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;animation:none;box-shadow:none}
+
+/* ══════════════════════════════════════════════════════════════
+   VERLAUF + EINSTELLUNGEN (normale scroll-Seiten, schwarzer BG)
+══════════════════════════════════════════════════════════════ */
+.phdr{padding:calc(var(--st)+44px) 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.phdt{font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:34px;font-weight:900}
+.ftabs{padding:0 16px 12px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.ftabs::-webkit-scrollbar{display:none}
+.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--glass);border:.5px solid var(--gb);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.ftab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* Run-Karten */
+.rcard{margin:0 16px 10px;padding:16px;background:var(--glass);border:.5px solid var(--gb);border-radius:24px;animation:fup .38s cubic-bezier(.34,1.2,.64,1) both}
+.rctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.rcl{flex:1;min-width:0;cursor:pointer}
+.rname{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.rdate{font-size:12px;color:var(--tx2)}
+.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
+.rfbd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.rsb{font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:34px;font-weight:800;line-height:1;text-align:right}
+.rsu{font-size:11px;color:var(--tx2);text-align:right}
+.rmenu{width:28px;height:28px;border-radius:50%;background:var(--gs);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);flex-shrink:0;margin-left:8px}
+.rmenu:active{opacity:.5}
+.rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rs{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
+.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--tx2)}
+.emico{font-size:52px;margin-bottom:12px;opacity:.45}
+
+/* Einstellungen */
+.pcard{margin:0 16px 14px;padding:18px;background:var(--glass);border:.5px solid var(--gb);border-radius:28px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
+.pcard:active{border-color:rgba(10,132,255,.4)}
+.sav{width:58px;height:58px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:26px;font-weight:800;color:#fff}
+.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(--tx2);margin-top:2px}.shi{font-size:11px;color:var(--tx3);margin-top:5px}
+.ssec{margin:0 16px 14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(--gb);cursor:pointer;transition:background .12s}
+.srow:last-child{border-bottom:none}.srow:active{background:var(--gs)}
+.srico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(--tx2);margin-top:1px}
+
+/* Detail-Ansicht */
+#pd{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
+#pd::-webkit-scrollbar{display:none}
+.dhdr{padding:calc(var(--st)+44px) 20px 16px;display:flex;align-items:flex-start;gap:12px}
+.bbtn{width:36px;height:36px;border-radius:50%;background:var(--glass);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
+.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(--ac)}
+.dtitle{font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(--tx2);margin-top:3px}
+.dhero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
+.dspd{font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
+.dspdl{font-size:13px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
+.dst{padding:15px;background:var(--glass);border:.5px solid var(--gb);border-radius:16px}
+.dstv{font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:30px;font-weight:800;color:var(--tx);line-height:1}
+.dstl{font-size:11px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
+.slbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
+.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:240px}
+.dmw #dmap{width:100%;height:100%;background:#0a0d12}
+.cwrap{margin:0 16px 14px;padding:14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px}
+.flist{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
+.fit{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
+.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(--tx2);margin-top:1px}
+.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(--red);font-family:'DM Sans',-apple-system,sans-serif;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.delbtn:active{transform:scale(.97)}
+
+/* ── Nav ── */
+#nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;height:var(--nav);
+  background:rgba(8,8,8,.94);
+  backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);
+  border-top:.5px solid var(--gb);
+  display:flex;align-items:flex-start;justify-content:space-around;
+  z-index:200;padding:10px 0 calc(10px + var(--sb));
+}
+.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:'DM Sans',-apple-system,system-ui,sans-serif;font-size:10px;font-weight:500;transition:color .2s}
+.nbt svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
+.nbt.on{color:var(--ac)}.nbt.on svg{transform:scale(1.1)}
+
+/* ── Water Lock ── */
+#wl{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
+#wl.on{display:flex;animation:fin .25s ease both}
+.wlico{font-size:58px;margin-bottom:14px}
+.wltitle{font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:36px;font-weight:900;margin-bottom:8px}
+.wlsub{font-size:15px;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
+.wlbtn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
+.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0;border-radius:2px}
+.wlprog.go{animation:lfill 2s linear both}
+.wlwaves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);opacity:0}
+.wlbtn.p .wlwave{animation:rip 1s ease-out infinite}
+.wlbtn.p .wlwave:nth-child(2){animation-delay:.3s}
+.wlbtn.p .wlwave:nth-child(3){animation-delay:.6s}
+.wlhint{font-size:14px;color:var(--tx2);margin-top:12px}
+
+/* ── Sheets & Overlays ── */
+.ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb)+16px);animation:fin .2s ease both}
+.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
+.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(--gb)}
+.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(--tx2);margin-top:2px}
+.shrow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
+.shrow:last-child{border-bottom:none}.shrow:active{background:var(--gs)}
+.shrow.r{color:var(--red)}.shrow.c{color:var(--tx2);border-top:.5px solid var(--gb)}
+.shico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.shdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.sw{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
+.sw.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
+.sw.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.cov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb)+20px);animation:fin .2s ease both}
+.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
+.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(--tx2);margin-bottom:18px}
+
+/* Buttons (allgemein) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:'DM Sans',-apple-system,system-ui,sans-serif;font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
+.btn:active{transform:scale(.965)}
+.bp{background:var(--ac);color:#fff;box-shadow:0 4px 24px var(--acg)}
+.bd{background:var(--red);color:#fff;box-shadow:0 4px 24px var(--rg)}
+.bg{background:var(--gs);border:.5px solid var(--gb);color:var(--tx)}
+.bsm{padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
+.inp{width:100%;background:var(--gs);border:.5px solid var(--gb);border-radius:14px;padding:14px 16px;color:var(--tx);font-family:'DM Sans',-apple-system,system-ui,sans-serif;font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}.inp::placeholder{color:var(--tx3)}
+.lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+
+/* Toast */
+#toast{position:fixed;top:calc(var(--st)+50px);left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.95);border:.5px solid var(--gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Permission-Screen */
+#sp{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fin .4s ease both}
+.plogo{font-family:'Barlow Condensed',-apple-system,system-ui,sans-serif;font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
+.ptag{font-size:14px;color:var(--tx2);margin-bottom:44px}
+.plist{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
+.pit:nth-child(1){animation-delay:.08s}.pit:nth-child(2){animation-delay:.16s}.pit:nth-child(3){animation-delay:.24s}
+.pico{width:42px;height:42px;border-radius:11px;background:var(--acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pico svg{width:20px;height:20px;color:var(--ac)}
+.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(--tx2)}
+.pbw{width:100%;animation:fup .4s .32s cubic-bezier(.34,1.2,.64,1) both}
 
 /* ── Animations ── */
 @keyframes fup  {from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
@@ -45,211 +414,27 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
 @keyframes rip  {0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.4);opacity:0}}
 @keyframes spin {to{transform:rotate(360deg)}}
 @keyframes shk  {0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-@keyframes glow {0%,100%{box-shadow:0 0 20px var(–acg)}50%{box-shadow:0 0 44px var(–acg)}}
+@keyframes glow {0%,100%{box-shadow:0 6px 32px rgba(10,132,255,.5),inset 0 .5px 0 rgba(255,255,255,.2)}50%{box-shadow:0 6px 48px rgba(10,132,255,.75),inset 0 .5px 0 rgba(255,255,255,.2)}}
 @keyframes lfill{from{width:0}to{width:100%}}
 
-/* ── Nav ── */
-#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(–nav);background:rgba(8,8,8,.92);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-top:.5px solid var(–gb);display:flex;align-items:flex-start;justify-content:space-around;z-index:200;padding:10px 0 calc(10px + var(–sb))}
-.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:var(–fb);font-size:10px;font-weight:500;transition:color .2s}
-.nbt svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
-.nbt.on{color:var(–ac)}.nbt.on svg{transform:scale(1.1)}
-
-/* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:var(–fb);font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
-.btn:active{transform:scale(.965)}
-.bp{background:var(–ac);color:#fff;box-shadow:0 4px 24px var(–acg)}
-.bd{background:var(–red);color:#fff;box-shadow:0 4px 24px var(–rg)}
-.bg{background:var(–gs);border:.5px solid var(–gb);color:var(–tx)}
-.bsm{padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
-.inp{width:100%;background:var(–gs);border:.5px solid var(–gb);border-radius:14px;padding:14px 16px;color:var(–tx);font-family:var(–fb);font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
-.inp:focus{border-color:var(–ac);box-shadow:0 0 0 3px var(–acl)}.inp::placeholder{color:var(–tx3)}
-
-/* ── Permission ── */
-#sp{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fin .4s ease both}
-.plogo{font-family:var(–fd);font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
-.ptag{font-size:14px;color:var(–tx2);margin-bottom:44px}
-.plist{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
-.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
-.pit:nth-child(1){animation-delay:.08s}.pit:nth-child(2){animation-delay:.16s}.pit:nth-child(3){animation-delay:.24s}
-.pico{width:42px;height:42px;border-radius:11px;background:var(–acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pico svg{width:20px;height:20px;color:var(–ac)}
-.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(–tx2)}
-.pbw{width:100%;animation:fup .4s .32s cubic-bezier(.34,1.2,.64,1) both}
-
-/* ── Track page ── */
-.thdr{padding:52px 20px 0;display:flex;align-items:center;justify-content:space-between}
-.ttl{font-family:var(–fd);font-size:34px;font-weight:900}
-.gbadge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(–glass);border:.5px solid var(–gb);font-size:12px;font-weight:500}
-.gdot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
-.gdot.w{background:var(–yellow);animation:pulse 1.4s ease-in-out infinite}
-.gdot.r{background:var(–green);box-shadow:0 0 8px var(–gg)}
-.gdot.e{background:var(–red)}
-
-/* Speed ring */
-.swrap{display:flex;justify-content:center;padding:24px 20px 16px}
-.sring{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
-.sring .rsvg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
-.rbg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:3}
-.rfill{fill:none;stroke:var(–ac);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:603;stroke-dashoffset:603;transition:stroke-dashoffset .5s cubic-bezier(.34,1.2,.64,1),stroke .3s;filter:drop-shadow(0 0 7px var(–ac))}
-.rfill.w{stroke:var(–yellow);filter:drop-shadow(0 0 7px var(–yg))}
-.rfill.d{stroke:var(–red);filter:drop-shadow(0 0 7px var(–rg))}
-.sinn{display:flex;flex-direction:column;align-items:center;z-index:1}
-.snum{font-family:var(–fd);font-size:90px;font-weight:900;line-height:1;color:#fff;transition:color .3s;letter-spacing:-2px}
-.snum.w{color:var(–yellow)}.snum.d{color:var(–red)}
-.sunit{font-size:14px;color:var(–tx2);margin-top:-4px;letter-spacing:1px}
-
-/* Metrics */
-.mstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 16px;margin-bottom:14px}
-.mc{background:var(–glass);border:.5px solid var(–gb);border-radius:14px;padding:10px 6px 9px;text-align:center}
-.mv{font-family:var(–fd);font-size:22px;font-weight:800;line-height:1;color:var(–tx)}
-.ml{font-size:9px;color:var(–tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
-
-/* Track button */
-.tbw{padding:0 16px;margin-bottom:12px}
-.tbtn{width:100%;height:64px;border-radius:18px;border:none;cursor:pointer;font-family:var(–fb);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
-.tbtn.go{background:var(–ac);color:#fff;box-shadow:0 6px 28px var(–acg);animation:glow 3s ease-in-out infinite}
-.tbtn.st{background:var(–red);color:#fff;box-shadow:0 6px 28px var(–rg);animation:none}
-.tbtn:active{transform:scale(.96)}
-.tbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;animation:none;box-shadow:none}
-
-/* Map */
-.mwrap{
-margin:0 16px;border-radius:18px;border:.5px solid var(–gb);position:relative;
-overflow:hidden;
-max-height:0;margin-bottom:0;opacity:0;pointer-events:none;
-transition:max-height .35s ease, margin-bottom .35s ease, opacity .35s ease;
-}
-.mwrap.visible{
-max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
-}
-#lmap{width:100%;height:220px;background:#0a0d12;display:block;}
-.mlbl{position:absolute;bottom:8px;right:8px;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border:.5px solid var(–gb);border-radius:8px;padding:3px 8px;font-size:10px;color:var(–tx2)}
-
-/* Map legend */
-.mleg{position:absolute;top:8px;right:8px;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);border:.5px solid var(–gb);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
-.mleg-row{display:flex;align-items:center;gap:5px;font-size:9px;color:var(–tx2)}
-.mleg-dot{width:8px;height:5px;border-radius:2px;flex-shrink:0}
-
-/* Fall alert */
-.falert{margin:0 16px 12px;padding:13px 16px;background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.35);border-radius:16px;display:flex;align-items:center;gap:12px}
-.fat{font-weight:700;color:var(–red);font-size:15px}.fas{font-size:12px;color:var(–tx2);margin-top:1px}
-
-/* ── History ── */
-.phdr{padding:52px 20px 12px;display:flex;align-items:center;justify-content:space-between}
-.phdt{font-family:var(–fd);font-size:34px;font-weight:900}
-.ftabs{padding:0 16px 12px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
-.ftabs::-webkit-scrollbar{display:none}
-.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(–glass);border:.5px solid var(–gb);color:var(–tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
-.ftab.on{background:var(–ac);border-color:var(–ac);color:#fff}
-.fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.rcard{margin:0 16px 10px;padding:16px;background:var(–glass);border:.5px solid var(–gb);border-radius:24px;animation:fup .38s cubic-bezier(.34,1.2,.64,1) both}
-.rctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.rcl{flex:1;min-width:0;cursor:pointer}
-.rname{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.rdate{font-size:12px;color:var(–tx2)}
-.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(–tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
-.rfbd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.rsb{font-family:var(–fd);font-size:34px;font-weight:800;line-height:1;text-align:right}
-.rsu{font-size:11px;color:var(–tx2);text-align:right}
-.rmenu{width:28px;height:28px;border-radius:50%;background:var(–gs);border:.5px solid var(–gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(–tx2);flex-shrink:0;margin-left:8px}
-.rmenu:active{opacity:.5}
-.rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.rs{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
-.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(–tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(–tx2)}
-.emico{font-size:52px;margin-bottom:12px;opacity:.45}
-
-/* ── Settings ── */
-.pcard{margin:0 16px 14px;padding:18px;background:var(–glass);border:.5px solid var(–gb);border-radius:28px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
-.pcard:active{border-color:rgba(10,132,255,.4)}
-.sav{width:58px;height:58px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(–fd);font-size:26px;font-weight:800;color:#fff}
-.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(–tx2);margin-top:2px}.shi{font-size:11px;color:var(–tx3);margin-top:5px}
-.ssec{margin:0 16px 14px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px;overflow:hidden}
-.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(–gb);cursor:pointer;transition:background .12s}
-.srow:last-child{border-bottom:none}.srow:active{background:var(–gs)}
-.srico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
-.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(–tx2);margin-top:1px}
-
-/* ── Detail ── */
-#pd{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
-#pd::-webkit-scrollbar{display:none}
-.dhdr{padding:52px 20px 16px;display:flex;align-items:flex-start;gap:12px}
-.bbtn{width:36px;height:36px;border-radius:50%;background:var(–glass);border:.5px solid var(–gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
-.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(–ac)}
-.dtitle{font-family:var(–fd);font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(–tx2);margin-top:3px}
-.dhero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
-.dspd{font-family:var(–fd);font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
-.dspdl{font-size:13px;color:var(–tx2);letter-spacing:1px;text-transform:uppercase}
-.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
-.dst{padding:15px;background:var(–glass);border:.5px solid var(–gb);border-radius:16px}
-.dstv{font-family:var(–fd);font-size:30px;font-weight:800;color:var(–tx);line-height:1}
-.dstl{font-size:11px;color:var(–tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
-.slbl{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
-.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(–gb);height:240px}
-.dmw #dmap{width:100%;height:100%;background:#0a0d12}
-.cwrap{margin:0 16px 14px;padding:14px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px}
-.flist{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
-.fit{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
-.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(–tx2);margin-top:1px}
-.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(–red);font-family:var(–fb);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
-.delbtn:active{transform:scale(.97)}
-
-/* ── Water lock ── */
-#wl{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
-#wl.on{display:flex;animation:fin .25s ease both}
-.wlico{font-size:58px;margin-bottom:14px}.wltitle{font-family:var(–fd);font-size:36px;font-weight:900;margin-bottom:8px}
-.wlsub{font-size:15px;color:var(–tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
-.wlbtn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
-.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(–ac);width:0;border-radius:2px}
-.wlprog.go{animation:lfill 2s linear both}
-.wlwaves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
-.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(–ac);opacity:0}
-.wlbtn.p .wlwave{animation:rip 1s ease-out infinite}
-.wlbtn.p .wlwave:nth-child(2){animation-delay:.3s}
-.wlbtn.p .wlwave:nth-child(3){animation-delay:.6s}
-.wlhint{font-size:14px;color:var(–tx2);margin-top:12px}
-
-/* ── Sheets ── */
-.ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(–sb)+16px);animation:fin .2s ease both}
-.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(–gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
-.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(–gb)}
-.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(–tx2);margin-top:2px}
-.shrow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
-.shrow:last-child{border-bottom:none}.shrow:active{background:var(–gs)}
-.shrow.r{color:var(–red)}.shrow.c{color:var(–tx2);border-top:.5px solid var(–gb)}
-.shico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
-.shdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(–ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
-.swatches{display:flex;gap:10px;flex-wrap:wrap}
-.sw{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
-.sw.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
-.sw.on::after{content:‘✓’;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
-.cov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(–sb)+20px);animation:fin .2s ease both}
-.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(–gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
-.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(–tx2);margin-bottom:18px}
-#toast{position:fixed;top:58px;left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.95);border:.5px solid var(–gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
-#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.lbl{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
-
-/* ── Leaflet dark ── */
+/* ── Leaflet dark theme ── */
 .leaflet-container{background:#0a0d12 !important}
-.leaflet-tile{filter:brightness(.65) saturate(.7) hue-rotate(200deg)}
-.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(–gb);border-radius:10px;color:var(–tx)}
+.leaflet-tile{filter:brightness(.62) saturate(.65) hue-rotate(200deg)}
+.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(--gb);border-radius:10px;color:var(--tx)}
 .leaflet-popup-tip{background:rgba(10,13,20,.95)}
-.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(–tx) !important;border-color:var(–gb) !important}
+.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(--tx) !important;border-color:var(--gb) !important}
 .leaflet-control-attribution{display:none}
+.leaflet-control-zoom{margin-right:10px !important;margin-bottom:10px !important}
 </style>
-
 </head>
 <body>
 
-<!-- Permission screen -->
-
+<!-- ══ PERMISSION SCREEN ════════════════════════════════════════════ -->
 <div id="sp">
   <div class="plogo">WakeSki</div>
   <div class="ptag">Wasserski · Wakeboard · Wakesurf</div>
   <div class="plist">
-    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div><div><div class="pt">GPS & Standort</div><div class="ps">Geschwindigkeit, Distanz, Strecke</div></div></div>
+    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div><div><div class="pt">GPS & Standort</div><div class="ps">Geschwindigkeit, Distanz, Live-Karte</div></div></div>
     <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12L7 7M12 12l5-5M2 17l5-3M17 14l5 3"/></svg></div><div><div class="pt">Bewegungssensoren</div><div class="ps">Sturzerkennung via Beschleunigungssensor</div></div></div>
     <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div><div><div class="pt">Lokaler Speicher</div><div class="ps">Fahrten offline speichern & exportieren</div></div></div>
   </div>
@@ -261,65 +446,75 @@ max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
   </div>
 </div>
 
-<!-- App -->
-
+<!-- ══ APP ══════════════════════════════════════════════════════════ -->
 <div id="app" style="display:none">
   <div id="toast"></div>
 
-  <!-- Track -->
-
+  <!-- ── TRACK PAGE (Fullscreen Map + Glass HUD) ──────────────── -->
   <div id="page-track" class="page">
-    <div class="thdr">
-      <div class="ttl">Track</div>
-      <div class="gbadge"><div class="gdot" id="gdot"></div><span id="glbl">Warte…</span></div>
-    </div>
-    <div class="swrap">
-      <div class="sring">
-        <svg class="rsvg" viewBox="0 0 200 200">
-          <circle class="rbg"   cx="100" cy="100" r="96"/>
-          <circle class="rfill" cx="100" cy="100" r="96" id="rfill"/>
-        </svg>
-        <div class="sinn">
-          <div class="snum" id="snum">0</div>
-          <div class="sunit">km/h</div>
+
+    <!-- Karte füllt die gesamte Seite -->
+    <div id="lmap"></div>
+
+    <!-- UI-Overlay: alles über der Karte -->
+    <div class="trk-ov">
+
+      <!-- Top-Leiste: App-Name, GPS-Status, Sperr-Button -->
+      <div class="trk-top">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="app-name">WakeSki</div>
+          <div class="gbadge">
+            <div class="gdot" id="gdot"></div>
+            <span id="glbl">Warte…</span>
+          </div>
         </div>
+        <button class="lock-pill" id="lbtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Sperren
+        </button>
       </div>
-    </div>
-    <div class="mstrip">
-      <div class="mc"><div class="mv" id="mmax">0.0</div><div class="ml">Max</div></div>
-      <div class="mc"><div class="mv" id="mavg">0.0</div><div class="ml">Avg</div></div>
-      <div class="mc"><div class="mv" id="mdist">0</div><div class="ml" id="mdistl">m</div></div>
-      <div class="mc"><div class="mv" id="mtime">0:00</div><div class="ml">Zeit</div></div>
-    </div>
-    <div class="tbw">
-      <button class="tbtn go" id="tbtn" disabled>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-        <span id="tbtl">Run starten</span>
-      </button>
-    </div>
-    <div style="padding:0 16px;margin-bottom:12px">
-      <button class="btn bg" id="lbtn" style="display:flex;align-items:center;gap:9px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        Wassergeschützt sperren
-      </button>
-    </div>
-    <div class="mwrap" id="mwrap">
-      <div id="lmap"></div>
-      <div class="mlbl">Live Track</div>
-      <div class="mleg">
-        <div class="mleg-row"><div class="mleg-dot" style="background:#30d158"></div>Schnell</div>
-        <div class="mleg-row"><div class="mleg-dot" style="background:#ffd60a"></div>Mittel</div>
-        <div class="mleg-row"><div class="mleg-dot" style="background:#ff453a"></div>Langsam</div>
+
+      <!-- Spacer: Karte ist hier sichtbar und interaktiv -->
+      <div class="trk-spacer"></div>
+
+      <!-- Crash-Alert (erscheint bei Sturz) -->
+      <div id="falert" style="display:none">
+        <div style="font-size:26px;flex-shrink:0">💥</div>
+        <div><div class="fat" id="fat">Sturz erkannt!</div><div class="fas" id="fas"></div></div>
       </div>
-    </div>
-    <div class="falert" id="falert" style="display:none">
-      <div style="font-size:26px;flex-shrink:0">💥</div>
-      <div><div class="fat" id="fat">Sturz erkannt!</div><div class="fas" id="fas"></div></div>
-    </div>
-  </div>
 
-  <!-- History -->
+      <!-- HUD: Geschwindigkeit + Metriken + Button -->
+      <div class="trk-hud">
+        <!-- Große Geschwindigkeitszahl mit Glow -->
+        <div class="trk-spd-wrap">
+          <span class="trk-spd-num" id="snum">0</span>
+        </div>
+        <div class="trk-spd-unit">km/h</div>
 
+        <!-- Horizontaler Geschwindigkeitsbalken (ersetzt SVG-Ring) -->
+        <div class="trk-bar-wrap">
+          <div class="trk-bar" id="spd-bar"></div>
+        </div>
+
+        <!-- 4 Metriken -->
+        <div class="trk-metrics">
+          <div class="trk-m"><div class="trk-mv" id="mmax">0.0</div><div class="trk-ml">Max</div></div>
+          <div class="trk-m"><div class="trk-mv" id="mavg">0.0</div><div class="trk-ml">Avg</div></div>
+          <div class="trk-m"><div class="trk-mv" id="mdist">0</div><div class="trk-ml" id="mdistl">m</div></div>
+          <div class="trk-m"><div class="trk-mv" id="mtime">0:00</div><div class="trk-ml">Zeit</div></div>
+        </div>
+
+        <!-- Run starten/beenden -->
+        <button class="tbtn go" id="tbtn" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+          <span id="tbtl">Run starten</span>
+        </button>
+      </div>
+
+    </div><!-- /.trk-ov -->
+  </div><!-- /#page-track -->
+
+  <!-- ── VERLAUF ──────────────────────────────────────────────── -->
   <div id="page-history" class="page">
     <div class="phdr">
       <div class="phdt">Verlauf</div>
@@ -332,8 +527,7 @@ max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
     <div id="rlist"></div>
   </div>
 
-  <!-- Settings -->
-
+  <!-- ── EINSTELLUNGEN ────────────────────────────────────────── -->
   <div id="page-settings" class="page">
     <div class="phdr" style="padding-bottom:16px"><div class="phdt">Einstellungen</div></div>
     <div class="pcard" id="pcrd">
@@ -353,13 +547,12 @@ max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
       <div class="srow" id="sclear"><div class="srico" style="background:rgba(255,69,58,.15)">🗑️</div><div><div class="srt">Alle Fahrten löschen</div><div class="srs">Ordner und Profil bleiben</div></div></div>
     </div>
     <div class="ssec">
-      <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.06)">ℹ️</div><div><div class="srt">WakeSki Pro v2.3</div><div class="srs">GPS-Tracker · Farbkarte · Sturzerkennung</div></div></div>
+      <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.06)">ℹ️</div><div><div class="srt">WakeSki Pro v2.4</div><div class="srs">GPS · Fullscreen-Karte · Glassmorphism HUD</div></div></div>
     </div>
     <div style="height:20px"></div>
   </div>
 
-  <!-- Detail -->
-
+  <!-- ── DETAIL ────────────────────────────────────────────────── -->
   <div id="pd">
     <div class="dhdr">
       <button class="bbtn" id="bbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
@@ -368,8 +561,7 @@ max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
     <div id="dcont"></div>
   </div>
 
-  <!-- Nav -->
-
+  <!-- ── NAV ──────────────────────────────────────────────────── -->
   <nav id="nav">
     <button class="nbt on" data-pg="track">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
@@ -384,10 +576,9 @@ max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
       Mehr
     </button>
   </nav>
-</div>
+</div><!-- /#app -->
 
-<!-- Water lock -->
-
+<!-- ══ WATER LOCK ════════════════════════════════════════════════ -->
 <div id="wl">
   <div class="wlico">💧</div>
   <div class="wltitle">Gesperrt</div>
@@ -400,8 +591,7 @@ max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
   <div class="wlhint">Gedrückt halten</div>
 </div>
 
-<!-- Confirm -->
-
+<!-- ══ CONFIRM ═══════════════════════════════════════════════════ -->
 <div class="cov" id="cov" style="display:none">
   <div class="csh">
     <div class="ct" id="ctxt"></div>
@@ -416,30 +606,63 @@ max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
 <input type="file" id="fimp" accept=".json" style="display:none"/>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
 'use strict';
 
-/* ═══ SERVICE WORKER ════════════════════════════ */
+/* ═══ SERVICE WORKER ══════════════════════════════════════════════ */
 if('serviceWorker' in navigator){
-  const sw=`const C='ws-v6';
+  const sw=`const C='ws-v7';
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.add(location.href)).then(()=>self.skipWaiting()));});
-self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim()));
-});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim()));});
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
-  const isHtml=e.request.headers.get('accept')&&e.request.headers.get('accept').includes('text/html');
-  if(isHtml){
-    e.respondWith(fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;}).catch(()=>caches.match(e.request)));
-  } else {
-    e.respondWith(caches.match(e.request).then(h=>h||fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;})));
-  }
+  const isHtml=e.request.headers.get('accept')?.includes('text/html');
+  if(isHtml){e.respondWith(fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;}).catch(()=>caches.match(e.request)));}
+  else{e.respondWith(caches.match(e.request).then(h=>h||fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;})));}
 });`;
   navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
 }
 
-/* ═══ DB ════════════════════════════════════════ */
+/* ═══ APP ICON GENERATOR ══════════════════════════════════════════
+   Erzeugt ein Platzhalter-Icon als Canvas-PNG und setzt es auf
+   <link rel="apple-touch-icon">. Sobald du dein eigenes Icon
+   per href-Attribut einbindest (siehe Kommentar im <head>),
+   hat dieser Code keinen Effekt mehr.
+══════════════════════════════════════════════════════════════════ */
+(function generatePlaceholderIcon(){
+  const ati=document.getElementById('ati');
+  // Nur generieren wenn noch kein eigenes Icon gesetzt
+  if(ati&&!ati.href){
+    const c=document.createElement('canvas');c.width=c.height=180;
+    const x=c.getContext('2d');
+    // Rounded-Rect Hilfsfunktion (kein roundRect wegen älterer iOS-Versionen)
+    function rr(ctx,bx,by,w,h,r){ctx.beginPath();ctx.moveTo(bx+r,by);ctx.lineTo(bx+w-r,by);ctx.arcTo(bx+w,by,bx+w,by+r,r);ctx.lineTo(bx+w,by+h-r);ctx.arcTo(bx+w,by+h,bx+w-r,by+h,r);ctx.lineTo(bx+r,by+h);ctx.arcTo(bx,by+h,bx,by+h-r,r);ctx.lineTo(bx,by+r);ctx.arcTo(bx,by,bx+r,by,r);ctx.closePath();}
+    // Hintergrund
+    const g=x.createLinearGradient(0,0,180,180);
+    g.addColorStop(0,'#0a1628');g.addColorStop(1,'#000');
+    rr(x,0,0,180,180,38);x.fillStyle=g;x.fill();
+    // Glow
+    const rg=x.createRadialGradient(70,50,0,90,90,110);
+    rg.addColorStop(0,'rgba(10,132,255,.35)');rg.addColorStop(1,'transparent');
+    rr(x,0,0,180,180,38);x.fillStyle=rg;x.fill();
+    // Wellenlinien
+    x.strokeStyle='#0a84ff';x.lineWidth=5.5;x.lineCap='round';x.lineJoin='round';
+    x.beginPath();x.moveTo(22,96);x.bezierCurveTo(46,72,64,72,90,96);x.bezierCurveTo(116,120,134,120,158,96);x.stroke();
+    x.globalAlpha=.5;x.lineWidth=3.5;
+    x.beginPath();x.moveTo(22,114);x.bezierCurveTo(46,90,64,90,90,114);x.bezierCurveTo(116,138,134,138,158,114);x.stroke();
+    x.globalAlpha=1;
+    // Text
+    x.fillStyle='#fff';x.font='900 52px -apple-system,system-ui,sans-serif';
+    x.textAlign='center';x.textBaseline='middle';x.fillText('WS',90,72);
+    ati.href=c.toDataURL('image/png');
+    // Manifest mit Icon
+    const icon=c.toDataURL('image/png');
+    const mf=JSON.stringify({name:'WakeSki Pro',short_name:'WakeSki',theme_color:'#000000',background_color:'#000000',display:'standalone',orientation:'portrait',start_url:'.',icons:[{src:icon,sizes:'192x192',type:'image/png'},{src:icon,sizes:'512x512',type:'image/png'}]});
+    document.getElementById('mani').href='data:application/manifest+json,'+encodeURIComponent(mf);
+  }
+})();
+
+/* ═══ LOCAL DB ════════════════════════════════════════════════════ */
 const DB={
   g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
   s:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
@@ -463,7 +686,7 @@ const DB={
   importAll:   d=>{if(d.profile)DB.saveProfile(d.profile);if(d.folders)DB.saveFolders(d.folders);if(d.runs)DB.saveRuns(d.runs);},
 };
 
-/* ═══ UTILS ══════════════════════════════════════ */
+/* ═══ UTILS ═══════════════════════════════════════════════════════ */
 function hav(a,b){
   const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;
   const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
@@ -475,320 +698,276 @@ const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 const shd=(col,a)=>{const n=parseInt(col.slice(1),16),c=v=>Math.min(255,Math.max(0,v));return'#'+[c((n>>16)+a),c(((n>>8)&0xff)+a),c((n&0xff)+a)].map(v=>v.toString(16).padStart(2,'0')).join('');};
 const $=id=>document.getElementById(id);
 
-/* ═══ BLOCK SELECTION ════════════════════════════ */
+/* Block selection */
 document.addEventListener('contextmenu',e=>e.preventDefault(),{passive:false});
 document.addEventListener('selectstart',e=>{if(!(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement))e.preventDefault();},{passive:false});
 document.addEventListener('dragstart',e=>e.preventDefault(),{passive:false});
 
-/* ═══ STATE ══════════════════════════════════════ */
+/* ═══ STATE ═══════════════════════════════════════════════════════ */
 const S={
-  gps:'idle', tracking:false,
-  speed:0, maxSpd:0, avgSpd:0, dist:0, elapsed:0, t0:null,
-  buf:[], hist:[], pts:[], falls:[], fc:0, lastPt:null,
-  timerID:null, watchID:null,
-  map:null, segs:[], prevLL:null, smkr:null, pmkr:null,
+  gps:'idle',tracking:false,
+  speed:0,maxSpd:0,avgSpd:0,dist:0,elapsed:0,t0:null,
+  buf:[],hist:[],pts:[],falls:[],fc:0,lastPt:null,
+  timerID:null,watchID:null,
+  map:null,layerGroup:null,prevLL:null,smkr:null,pmkr:null,
   dmap:null,
-  locked:false, folderID:null, page:'track',
+  locked:false,folderID:null,page:'track',
 };
 
-/* ═══ TOAST ══════════════════════════════════════ */
+/* ═══ TOAST ═══════════════════════════════════════════════════════ */
 let _tt;
 const toast=(m,d=2600)=>{const e=$('toast');e.textContent=m;e.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('on'),d);};
 
-/* ═══ NAVIGATION ════════════════════════════════ */
+/* ═══ NAVIGATION ══════════════════════════════════════════════════ */
 function goPage(pg){
   S.page=pg;
   document.querySelectorAll('.page').forEach(el=>el.classList.toggle('on',el.id==='page-'+pg));
   document.querySelectorAll('.nbt').forEach(b=>b.classList.toggle('on',b.dataset.pg===pg));
+  // Karte invalidieren wenn Track-Tab wieder sichtbar wird
+  if(pg==='track'&&S.map) setTimeout(()=>S.map.invalidateSize(),80);
   if(pg==='history') renderHistory();
   if(pg==='settings') renderSettings();
 }
 document.querySelectorAll('.nbt').forEach(b=>b.addEventListener('click',()=>goPage(b.dataset.pg)));
 
-/* ═══ GPS ════════════════════════════════════════ */
+/* ═══ GPS ═════════════════════════════════════════════════════════ */
 function initGPS(){
   if(!navigator.geolocation){setGPS('error');return;}
   setGPS('waiting');
-
-  // 500ms Throttle: responsiv genug für Live-Anzeige, verhindert aber
-  // exzessives Re-Rendering auf Geräten die 10+ Updates/Sek. liefern.
   let lastProcessed=0;
-  const MIN_INTERVAL=500;
-
   S.watchID=navigator.geolocation.watchPosition(
     pos=>{
       setGPS('ready');
       const now=Date.now();
-      if(now-lastProcessed < MIN_INTERVAL) return;
+      if(now-lastProcessed<500) return; // 500ms Throttle
       lastProcessed=now;
       onPos(pos);
     },
-    e=>{ console.warn('GPS Fehler:',e.code,e.message); setGPS('error'); },
-    { enableHighAccuracy:true, timeout:20000, maximumAge:1000 }
+    e=>{console.warn('GPS:',e.code);setGPS('error');},
+    {enableHighAccuracy:true,timeout:20000,maximumAge:1000}
   );
 }
 
 function setGPS(s){
   S.gps=s;
-  const d=$('gdot'), l=$('glbl'), b=$('tbtn');
+  const d=$('gdot'),l=$('glbl'),b=$('tbtn');
   d.className='gdot';
-  if(s==='ready') d.classList.add('r');
-  else if(s==='waiting') d.classList.add('w');
-  else if(s==='error') d.classList.add('e');
+  if(s==='ready')d.classList.add('r');
+  else if(s==='waiting')d.classList.add('w');
+  else if(s==='error')d.classList.add('e');
   l.textContent={idle:'GPS',waiting:'Suche GPS…',ready:'GPS bereit',error:'GPS fehlt'}[s]||s;
-  if(!S.tracking) b.disabled=(s!=='ready');
+  if(!S.tracking)b.disabled=(s!=='ready');
 }
 
-/* ═══ POSITION HANDLER ═══════════════════════════
-   Kernlogik: Speed, Distanz, Metriken, Karte.
-   Wird bei jedem GPS-Update (gedrosselt auf 500ms) aufgerufen.
-════════════════════════════════════════════════ */
+/* ═══ POSITION HANDLER ════════════════════════════════════════════ */
 function onPos(pos){
   const now=Date.now();
-  const lat=pos.coords.latitude, lon=pos.coords.longitude;
+  const lat=pos.coords.latitude,lon=pos.coords.longitude;
 
-  // Karte vor Tracking-Start nur zentrieren
+  // Vor Tracking-Start: Karte zentrieren
   if(!S.tracking){
-    if(S.map) S.map.setView([lat,lon],16,{animate:false});
+    if(S.map)S.map.setView([lat,lon],16,{animate:false});
     return;
   }
 
-  // ── Speed: nativer GPS-Wert (m/s → km/h) ──────────────────────
+  // Speed aus GPS (m/s → km/h)
   let raw=0;
-  if(typeof pos.coords.speed==='number' && pos.coords.speed>=0){
-    raw=pos.coords.speed*3.6;
-  }
+  if(typeof pos.coords.speed==='number'&&pos.coords.speed>=0)raw=pos.coords.speed*3.6;
 
-  // ── Distanz aus Positionsdelta + Fallback-Speed ─────────────────
+  // Distanz + Fallback-Speed aus Positionsdelta
   const curPt={lat,lon,time:now};
   if(S.lastPt){
     const dt=(now-S.lastPt.time)/1e3;
     const dk=hav(S.lastPt,curPt);
-    // Plausibilitätsprüfung: max 20 Sek. Lücke, max 500m Sprung
-    if(dt>0 && dt<=20 && dk<0.5){
+    if(dt>0&&dt<=20&&dk<0.5){
       S.dist+=dk;
-      // Fallback: Speed aus Positionsdelta, wenn GPS keinen Speed liefert
-      if(raw===0) raw=(dk/dt)*3600;
+      if(raw===0)raw=(dk/dt)*3600;
     }
   }
   S.lastPt=curPt;
 
-  // ── 3-Punkt gleitender Mittelwert (reduziert GPS-Jitter) ────────
+  // 3-Punkt gleitender Mittelwert (reduziert GPS-Jitter)
   S.buf.push(raw);
-  if(S.buf.length>3) S.buf.shift();
+  if(S.buf.length>3)S.buf.shift();
   S.speed=S.buf.reduce((a,b)=>a+b,0)/S.buf.length;
 
-  // ── Trackpoint mit Speed speichern (für Farbkarte in Detailansicht) ─
-  S.pts.push({lat, lon, time:now, speed:S.speed});
+  // Trackpoint mit Speed (für Farbkarte in Detailansicht)
+  S.pts.push({lat,lon,time:now,speed:S.speed});
 
-  // ── Max / Avg ───────────────────────────────────────────────────
-  if(S.speed>S.maxSpd) S.maxSpd=S.speed;
+  // Max / Avg
+  if(S.speed>S.maxSpd)S.maxSpd=S.speed;
   S.hist.push({s:+(S.speed.toFixed(1)),t:now});
-  // Avg nur aus Punkten berechnen wo man wirklich fährt (>2 km/h)
   const mv=S.hist.filter(p=>p.s>2);
-  S.avgSpd=mv.length ? mv.reduce((a,b)=>a+b.s,0)/mv.length : 0;
+  S.avgSpd=mv.length?mv.reduce((a,b)=>a+b.s,0)/mv.length:0;
 
-  // ── DOM + Karte aktualisieren ───────────────────────────────────
+  // DOM + Karte
   updateDOM();
-  mapAddPoint(lat, lon, S.speed);
+  mapAddPoint(lat,lon,S.speed);
 }
 
-/* ═══ DOM UPDATE ════════════════════════════════
-   BUGFIX (v2.3): ring.className = '...' auf einem SVG-<circle>
-   wirft in strict-mode einen TypeError, weil SVGElement.className
-   eine read-only SVGAnimatedString ist, keine normale String-Property.
-   Fix: setAttribute('class', ...) / getAttribute('class') verwenden.
-════════════════════════════════════════════════ */
+/* ═══ DOM UPDATE ══════════════════════════════════════════════════
+   KEIN SVGElement.className mehr → kein strict-mode TypeError.
+   Speed-Zahl ist ein normaler <span>, Balken via style.width.
+══════════════════════════════════════════════════════════════════ */
 function updateDOM(){
-  const spd=S.speed, MAX=80;
+  const spd=S.speed,MAX=80;
 
-  // ── Zahl im Ring ────────────────────────────────────────────────
+  // Geschwindigkeitszahl + Farb-Klasse
   const num=$('snum');
-  num.textContent=Math.round(spd);
-  const numCls='snum'+(spd>60?' d':spd>40?' w':'');
-  // num ist ein normaler DIV → className-Zuweisung ist korrekt
-  if(num.className!==numCls) num.className=numCls;
+  if(num){
+    num.textContent=Math.round(spd);
+    const nc='trk-spd-num'+(spd>60?' d':spd>40?' w':'');
+    if(num.className!==nc)num.className=nc;
+  }
 
-  // ── SVG-Ring (circle-Element) ───────────────────────────────────
-  // FIX: SVGElement.className ist read-only in strict mode.
-  // getAttribute/setAttribute verwenden statt .className = '...'
-  const ring=$('rfill');
-  ring.style.strokeDashoffset=603*(1-Math.min(spd/MAX,1));
-  const ringCls='rfill'+(spd>60?' d':spd>40?' w':'');
-  if(ring.getAttribute('class')!==ringCls) ring.setAttribute('class',ringCls);
+  // Horizontaler Balken (0–80 km/h = 0–100%)
+  const bar=$('spd-bar');
+  if(bar){
+    const pct=Math.min(spd/MAX,1)*100;
+    bar.style.width=pct+'%';
+    const col=spd>60?'#ff453a':spd>40?'#ffd60a':'#0a84ff';
+    bar.style.background=col;
+    bar.style.boxShadow=`0 0 12px ${col}`;
+  }
 
-  // ── Metrik-Felder ────────────────────────────────────────────────
+  // Metriken
   $('mmax').textContent=S.maxSpd.toFixed(1);
   $('mavg').textContent=S.avgSpd.toFixed(1);
-
   const d=S.dist;
-  if(d<0.1){
-    $('mdist').textContent=Math.round(d*1000);
-    $('mdistl').textContent='m';
-  } else {
-    $('mdist').textContent=d.toFixed(2);
-    $('mdistl').textContent='km';
-  }
-  // mtime wird vom sekündlichen Timer gesetzt
+  if(d<0.1){$('mdist').textContent=Math.round(d*1000);$('mdistl').textContent='m';}
+  else{$('mdist').textContent=d.toFixed(2);$('mdistl').textContent='km';}
 }
 
-/* ═══ MAP ════════════════════════════════════════
-   #lmap hat per CSS immer height:220px.
-   .mwrap versteckt den Container visuell (opacity:0, max-height:0)
-   ohne die tatsächliche Größe von #lmap zu ändern → Leaflet init korrekt.
-════════════════════════════════════════════════ */
+/* ═══ MAP ═════════════════════════════════════════════════════════
+   #lmap ist position:absolute in #page-track.on (position:fixed).
+   Leaflet initialisiert sich gegen dieses Element mit korrekter Größe,
+   solange #page-track.on beim initMap()-Aufruf sichtbar ist.
+   → initMap() wird mit setTimeout(150) NACH goPage('track') aufgerufen.
+══════════════════════════════════════════════════════════════════ */
 function initMap(){
-  if(S.map) return;
+  if(S.map)return;
   const map=L.map('lmap',{
-    zoomControl:false,
+    zoomControl:true,
     attributionControl:false,
     fadeAnimation:false,
     markerZoomAnimation:false,
   });
+  // Zoom-Control unten rechts (nicht von HUD verdeckt)
+  map.zoomControl.setPosition('bottomright');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19, updateWhenIdle:false, keepBuffer:4,
+    maxZoom:19,updateWhenIdle:false,keepBuffer:4,
   }).addTo(map);
+  // Layer-Gruppe für alle Live-Track-Elemente (clearLayers() beim neuen Run)
+  S.layerGroup=L.layerGroup().addTo(map);
   map.setView([48.2,13.5],15);
   S.map=map;
-  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); },200);
+  setTimeout(()=>{if(S.map)S.map.invalidateSize();},200);
 }
 
-// Farbe interpoliert: rot (0 km/h) → gelb (25 km/h) → grün (50+ km/h)
+/* Farbe nach Geschwindigkeit: rot → gelb → grün */
 function spdColor(spd){
   const t=Math.min(Math.max(spd,0)/50,1);
   let r,g,b;
-  if(t<0.5){
-    const u=t*2;
-    r=255; g=Math.round(69+(214-69)*u); b=Math.round(58+(10-58)*u);
-  } else {
-    const u=(t-0.5)*2;
-    r=Math.round(255+(48-255)*u); g=Math.round(214+(209-214)*u); b=Math.round(10+(88-10)*u);
-  }
+  if(t<0.5){const u=t*2;r=255;g=Math.round(69+(214-69)*u);b=Math.round(58+(10-58)*u);}
+  else{const u=(t-0.5)*2;r=Math.round(255+(48-255)*u);g=Math.round(214+(209-214)*u);b=Math.round(10+(88-10)*u);}
   return`rgb(${r},${g},${b})`;
 }
 
 function mapAddPoint(lat,lon,spd){
-  if(!S.map) return;
+  if(!S.map||!S.layerGroup)return;
 
-  // Beim allerersten Punkt: invalidateSize + Start-Marker setzen
+  // Erster Punkt: Start-Marker + invalidateSize
   if(!S.smkr){
     S.map.invalidateSize();
     S.smkr=L.circleMarker([lat,lon],{
-      radius:8, color:'#fff', weight:2.5,
-      fillColor:'#30d158', fillOpacity:1,
-    }).addTo(S.map);
+      radius:8,color:'#fff',weight:2.5,fillColor:'#30d158',fillOpacity:1,
+    }).addTo(S.layerGroup);
     S.map.setView([lat,lon],17,{animate:false});
   }
 
-  // Farbiges Liniensegment vom letzten zum aktuellen Punkt
+  // Farbiges Segment
   if(S.prevLL){
     L.polyline([S.prevLL,[lat,lon]],{
-      color:spdColor(spd), weight:5, opacity:1, lineCap:'round', lineJoin:'round',
-    }).addTo(S.map);
-    // Segment-Referenz für clearMapSession merken
-    // (L.polyline gibt Objekt zurück – hier via addTo direkt im Layer-Stack)
+      color:spdColor(spd),weight:5.5,opacity:1,lineCap:'round',lineJoin:'round',
+    }).addTo(S.layerGroup);
   }
   S.prevLL=[lat,lon];
 
-  // Positions-Marker bewegen + Farbe aktualisieren
+  // Positions-Marker (folgt dem aktuellen Punkt)
   const col=spdColor(spd);
   if(!S.pmkr){
-    S.pmkr=L.circleMarker([lat,lon],{radius:9,color:'#fff',weight:2.5,fillColor:col,fillOpacity:1}).addTo(S.map);
+    S.pmkr=L.circleMarker([lat,lon],{radius:9,color:'#fff',weight:2.5,fillColor:col,fillOpacity:1}).addTo(S.layerGroup);
   } else {
     S.pmkr.setLatLng([lat,lon]);
     S.pmkr.setStyle({fillColor:col});
   }
 
-  // Karte sanft folgen
-  S.map.panTo([lat,lon],{animate:true,duration:1.0,easeLinearity:0.4});
+  // Karte folgt sanft dem aktuellen Punkt
+  S.map.panTo([lat,lon],{animate:true,duration:0.9,easeLinearity:0.4});
 }
 
 function clearMapSession(){
-  // Alle Polylines + Marker aus der Karte entfernen
-  if(S.map){
-    S.map.eachLayer(layer=>{
-      if(layer instanceof L.Polyline || layer instanceof L.CircleMarker){
-        layer.remove();
-      }
-    });
-  }
-  S.segs=[];
-  S.smkr=null;
-  S.pmkr=null;
-  S.prevLL=null;
+  if(S.layerGroup)S.layerGroup.clearLayers();
+  S.smkr=null;S.pmkr=null;S.prevLL=null;
 }
 
-/* ═══ TRACKING ══════════════════════════════════ */
+/* ═══ TRACKING ════════════════════════════════════════════════════ */
 $('tbtn').addEventListener('click',()=>S.tracking?stopT():startT());
 
 function startT(){
-  S.tracking=true; S.t0=Date.now();
-  S.speed=0; S.maxSpd=0; S.avgSpd=0; S.dist=0; S.elapsed=0;
-  S.buf=[]; S.hist=[]; S.pts=[]; S.falls=[]; S.fc=0; S.lastPt=null;
-
+  S.tracking=true;S.t0=Date.now();
+  S.speed=0;S.maxSpd=0;S.avgSpd=0;S.dist=0;S.elapsed=0;
+  S.buf=[];S.hist=[];S.pts=[];S.falls=[];S.fc=0;S.lastPt=null;
   clearMapSession();
-  $('mwrap').classList.add('visible');
 
-  // invalidateSize nach CSS-Transition (350ms) damit Leaflet korrekte Größe liest
-  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); },350);
-
-  // Timer: sekündlich Zeit + Metriken aktualisieren
   S.timerID=setInterval(()=>{
     S.elapsed=Date.now()-S.t0;
     $('mtime').textContent=fmtT(S.elapsed);
     updateDOM();
   },1000);
 
-  const b=$('tbtn');
-  b.disabled=false; b.className='tbtn st';
+  const b=$('tbtn');b.disabled=false;b.className='tbtn st';
   $('tbtl').textContent='Run beenden';
-
-  // Sofort rendern damit alle Felder auf 0 stehen
   updateDOM();
   toast('⏱ Run gestartet');
 }
 
 function stopT(){
   S.tracking=false;
-  clearInterval(S.timerID); S.timerID=null;
-
-  const b=$('tbtn');
-  b.className='tbtn go'; b.disabled=(S.gps!=='ready');
+  clearInterval(S.timerID);S.timerID=null;
+  const b=$('tbtn');b.className='tbtn go';b.disabled=(S.gps!=='ready');
   $('tbtl').textContent='Run starten';
-
-  if(S.hist.length>3) saveRun();
+  if(S.hist.length>3)saveRun();
   else toast('Zu kurz – nicht gespeichert');
 }
 
 function saveRun(){
   DB.addRun({
-    id:Date.now().toString(),
-    name:`Run ${new Date().toLocaleDateString('de-DE')}`,
-    folderId:null, startTime:S.t0, duration:S.elapsed,
-    maxSpeed:S.maxSpd, avgSpeed:S.avgSpd, distance:S.dist,
-    speedHistory:S.hist, trackPoints:S.pts, falls:S.falls,
+    id:Date.now().toString(),name:`Run ${new Date().toLocaleDateString('de-DE')}`,
+    folderId:null,startTime:S.t0,duration:S.elapsed,
+    maxSpeed:S.maxSpd,avgSpeed:S.avgSpd,distance:S.dist,
+    speedHistory:S.hist,trackPoints:S.pts,falls:S.falls,
   });
   DB.clearSession();
   toast(`✅ Gespeichert · ${S.maxSpd.toFixed(1)} km/h max`);
 }
 
-/* ═══ MOTION (Sturzerkennung) ════════════════════ */
+/* ═══ MOTION (Sturzerkennung) ═════════════════════════════════════ */
 function initMotion(){
-  if(!window.DeviceMotionEvent) return;
+  if(!window.DeviceMotionEvent)return;
   const h=e=>{
-    if(!S.tracking) return;
-    const ag=e.accelerationIncludingGravity||e.acceleration; if(!ag) return;
+    if(!S.tracking)return;
+    const ag=e.accelerationIncludingGravity||e.acceleration;if(!ag)return;
     const g=Math.sqrt((ag.x||0)**2+(ag.y||0)**2+(ag.z||0)**2)/9.81;
     if(g>2.5&&S.speed>8){
-      const now=Date.now(), last=S.falls[S.falls.length-1];
+      const now=Date.now(),last=S.falls[S.falls.length-1];
       if(!last||now-last.time>3000){
-        S.falls.push({time:now,speed:S.speed,gForce:g.toFixed(2)});
-        S.fc++;
+        S.falls.push({time:now,speed:S.speed,gForce:g.toFixed(2)});S.fc++;
         $('fat').textContent=`💥 Sturz #${S.fc} erkannt!`;
         $('fas').textContent=`${g.toFixed(1)}g · ${S.speed.toFixed(1)} km/h`;
-        const el=$('falert'); el.style.display='flex';
-        el.style.animation='shk .5s ease, fup .4s cubic-bezier(.34,1.4,.64,1)';
-        if(navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
+        const el=$('falert');el.style.display='flex';
+        el.style.animation='shk .5s ease,fup .4s cubic-bezier(.34,1.4,.64,1)';
+        if(navigator.vibrate)navigator.vibrate([200,80,200,80,400]);
         setTimeout(()=>{el.style.display='none';},5000);
       }
     }
@@ -800,17 +979,15 @@ function initMotion(){
   }
 }
 
-/* ═══ HISTORY + FOLDERS ═════════════════════════ */
+/* ═══ HISTORY + FOLDERS ═══════════════════════════════════════════ */
 const COLS=['#0a84ff','#30d158','#ff9f0a','#ff2d55','#bf5af2','#5ac8fa','#ff6b35'];
 
 function renderFTabs(){
-  const flds=DB.getFolders(), w=$('ftabs'); w.innerHTML='';
-  const all=document.createElement('div'); all.className='ftab'+(S.folderID===null?' on':''); all.textContent='Alle';
-  all.addEventListener('click',()=>{S.folderID=null;renderHistory();});
-  w.appendChild(all);
+  const flds=DB.getFolders(),w=$('ftabs');w.innerHTML='';
+  const all=document.createElement('div');all.className='ftab'+(S.folderID===null?' on':'');all.textContent='Alle';
+  all.addEventListener('click',()=>{S.folderID=null;renderHistory();});w.appendChild(all);
   flds.forEach(f=>{
-    const t=document.createElement('div');
-    t.className='ftab'+(S.folderID===f.id?' on':'');
+    const t=document.createElement('div');t.className='ftab'+(S.folderID===f.id?' on':'');
     t.innerHTML=`<div class="fdot" style="background:${f.color}"></div>${esc(f.name)}`;
     t.addEventListener('click',()=>{if(S.folderID===f.id)showFolderOpts(f);else{S.folderID=f.id;renderHistory();}});
     w.appendChild(t);
@@ -819,14 +996,14 @@ function renderFTabs(){
 
 function renderHistory(){
   renderFTabs();
-  const all=DB.getRuns(), runs=S.folderID===null?all:all.filter(r=>r.folderId===S.folderID);
-  const list=$('rlist'); list.innerHTML='';
+  const all=DB.getRuns(),runs=S.folderID===null?all:all.filter(r=>r.folderId===S.folderID);
+  const list=$('rlist');list.innerHTML='';
   if(!runs.length){list.innerHTML=`<div class="empty"><div class="emico">🌊</div><div>${S.folderID?'Keine Fahrten in diesem Ordner':'Noch keine Fahrten'}</div></div>`;return;}
   const fm=Object.fromEntries(DB.getFolders().map(f=>[f.id,f]));
   runs.forEach((r,i)=>{
     const f=r.folderId?fm[r.folderId]:null;
-    const d=r.distance||0, ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2), dl=d<0.1?'Meter':'km';
-    const c=document.createElement('div'); c.className='rcard'; c.style.animationDelay=`${i*.04}s`;
+    const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'km';
+    const c=document.createElement('div');c.className='rcard';c.style.animationDelay=`${i*.04}s`;
     c.innerHTML=`
       <div class="rctop">
         <div class="rcl">
@@ -855,7 +1032,7 @@ function renderHistory(){
 $('nfbtn').addEventListener('click',()=>showFolderCreate());
 
 function showFolderCreate(ex){
-  const isEdit=!!ex; let sc=ex?ex.color:COLS[0];
+  const isEdit=!!ex;let sc=ex?ex.color:COLS[0];
   const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + var(--sb))">
     <div style="font-size:19px;font-weight:700;margin-bottom:16px">${isEdit?'Ordner bearbeiten':'Neuer Ordner'}</div>
     <div class="lbl">Name</div><input class="inp" id="fni" placeholder="z. B. Training" value="${isEdit?esc(ex.name):''}"/>
@@ -866,11 +1043,11 @@ function showFolderCreate(ex){
       <button class="btn bp" id="fns">${isEdit?'Speichern':'Erstellen'}</button>
     </div>
   </div>`);
-  const inp=ov.querySelector('#fni'); setTimeout(()=>inp.focus(),80);
+  const inp=ov.querySelector('#fni');setTimeout(()=>inp.focus(),80);
   ov.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{sc=s.dataset.c;ov.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));s.classList.add('on');}));
   ov.querySelector('#fnc').addEventListener('click',()=>ov.remove());
   ov.querySelector('#fns').addEventListener('click',()=>{
-    const nm=inp.value.trim(); if(!nm){inp.style.borderColor='var(--red)';inp.focus();return;}
+    const nm=inp.value.trim();if(!nm){inp.style.borderColor='var(--red)';inp.focus();return;}
     if(isEdit)DB.updateFolder(ex.id,{name:nm,color:sc});else DB.addFolder({id:'f'+Date.now(),name:nm,color:sc});
     ov.remove();renderHistory();toast(isEdit?'Ordner aktualisiert':'Ordner erstellt');
   });
@@ -914,7 +1091,7 @@ function showRename(r){
       <button class="btn bp" id="rns">Speichern</button>
     </div>
   </div>`);
-  const inp=ov.querySelector('#rni'); setTimeout(()=>{inp.focus();inp.select();},80);
+  const inp=ov.querySelector('#rni');setTimeout(()=>{inp.focus();inp.select();},80);
   ov.querySelector('#rnc').addEventListener('click',()=>ov.remove());
   ov.querySelector('#rns').addEventListener('click',()=>{const nm=inp.value.trim();if(!nm)return;DB.updateRun(r.id,{name:nm});ov.remove();renderHistory();toast('Umbenannt');});
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
@@ -931,19 +1108,19 @@ function showFolderPicker(r){
     <div class="shrow c" id="fpc">Abbrechen</div>
   </div>`);
   ov.querySelectorAll('.fpr').forEach(row=>row.addEventListener('click',()=>{
-    const id=row.dataset.id; DB.updateRun(r.id,{folderId:id==='__none__'?null:id});
-    ov.remove(); renderHistory(); toast(`Verschoben → ${id==='__none__'?'Allgemein':flds.find(f=>f.id===id)?.name}`);
+    const id=row.dataset.id;DB.updateRun(r.id,{folderId:id==='__none__'?null:id});
+    ov.remove();renderHistory();toast(`Verschoben → ${id==='__none__'?'Allgemein':flds.find(f=>f.id===id)?.name}`);
   }));
   ov.querySelector('#fpn').addEventListener('click',()=>{ov.remove();showFolderCreate();});
   ov.querySelector('#fpc').addEventListener('click',()=>ov.remove());
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
 
-/* ═══ DETAIL ════════════════════════════════════ */
+/* ═══ DETAIL ══════════════════════════════════════════════════════ */
 function openDetail(r){
-  const d=r.distance||0, ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2), dl=d<0.1?'Meter':'Distanz km';
-  const hf=(r.falls||[]).length>0, ht=(r.trackPoints||[]).length>2;
-  $('dtitle').textContent=r.name||'Run'; $('ddate').textContent=fmtD(r.startTime);
+  const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'Distanz km';
+  const hf=(r.falls||[]).length>0,ht=(r.trackPoints||[]).length>2;
+  $('dtitle').textContent=r.name||'Run';$('ddate').textContent=fmtD(r.startTime);
   $('dcont').innerHTML=`
     <div class="dhero" style="animation:fup .32s cubic-bezier(.34,1.28,.64,1) both">
       <div class="dspd">${Math.round(r.maxSpeed||0)}</div>
@@ -964,8 +1141,8 @@ function openDetail(r){
     <button class="delbtn" id="ddel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
   $('pd').style.display='block';
   requestAnimationFrame(()=>{
-    if(ht) initDMap(r.trackPoints,r.falls||[]);
-    const cv=$('dchrt'); if(cv) setTimeout(()=>drawChart(cv,r.speedHistory),120);
+    if(ht)initDMap(r.trackPoints,r.falls||[]);
+    const cv=$('dchrt');if(cv)setTimeout(()=>drawChart(cv,r.speedHistory),120);
   });
   $('ddel').addEventListener('click',()=>confirm2('Fahrt löschen?','Nicht rückgängig machbar.',()=>{DB.deleteRun(r.id);closeDetail();renderHistory();toast('Fahrt gelöscht');}));
 }
@@ -974,14 +1151,12 @@ function closeDetail(){if(S.dmap){S.dmap.remove();S.dmap=null;}$('pd').style.dis
 $('bbtn').addEventListener('click',closeDetail);
 
 function initDMap(pts,falls){
-  const el=$('dmap'); if(!el||pts.length<2) return;
+  const el=$('dmap');if(!el||pts.length<2)return;
   if(S.dmap){S.dmap.remove();S.dmap=null;}
   const map=L.map(el,{zoomControl:true,attributionControl:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
   S.dmap=map;
-
-  // Farbige Segmente – Speed-Feld aus trackPoints nutzen (seit v2.3 gespeichert)
-  const hasSpdData=pts.length>1 && pts[1].speed!==undefined;
+  const hasSpdData=pts.length>1&&pts[1].speed!==undefined;
   if(hasSpdData){
     for(let i=1;i<pts.length;i++){
       L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{
@@ -989,43 +1164,36 @@ function initDMap(pts,falls){
       }).addTo(map);
     }
   } else {
-    // Fallback für ältere Aufnahmen ohne Speed-Feld
     L.polyline(pts.map(p=>[p.lat,p.lon]),{color:'#0a84ff',weight:4.5,opacity:.95,lineCap:'round'}).addTo(map);
   }
-
-  // Start / Ende Marker
-  const mk=(col,sz=11)=>L.divIcon({html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''});
   const ll=pts.map(p=>[p.lat,p.lon]);
+  const mk=(col,sz=11)=>L.divIcon({html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''});
   L.marker(ll[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Start');
   L.marker(ll[ll.length-1],{icon:mk('#ff453a')}).addTo(map).bindPopup('Ende');
-  falls.forEach(f=>{
-    const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);
-    L.marker([cp.lat,cp.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map);
-  });
-
+  falls.forEach(f=>{const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);L.marker([cp.lat,cp.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map);});
   const bounds=L.latLngBounds(ll);
   map.fitBounds(bounds,{padding:[20,20]});
   setTimeout(()=>{map.invalidateSize();map.fitBounds(bounds,{padding:[20,20]});},300);
 }
 
-/* ═══ CHART ══════════════════════════════════════ */
+/* ═══ CHART ═══════════════════════════════════════════════════════ */
 function drawChart(cv,hist){
-  if(!cv||!hist||hist.length<2) return;
-  const ctx=cv.getContext('2d'), W=cv.offsetWidth||300, H=cv.offsetHeight||80;
-  cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio;
+  if(!cv||!hist||hist.length<2)return;
+  const ctx=cv.getContext('2d'),W=cv.offsetWidth||300,H=cv.offsetHeight||80;
+  cv.width=W*devicePixelRatio;cv.height=H*devicePixelRatio;
   ctx.scale(devicePixelRatio,devicePixelRatio);
-  const vals=hist.map(p=>p.s!==undefined?p.s:p.speed||0), mx=Math.max(...vals,1);
-  const step=Math.max(1,Math.floor(vals.length/120)), pts=vals.filter((_,i)=>i%step===0);
+  const vals=hist.map(p=>p.s!==undefined?p.s:p.speed||0),mx=Math.max(...vals,1);
+  const step=Math.max(1,Math.floor(vals.length/120)),pts2=vals.filter((_,i)=>i%step===0);
   const grad=ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'rgba(10,132,255,.35)'); grad.addColorStop(1,'rgba(10,132,255,0)');
+  grad.addColorStop(0,'rgba(10,132,255,.35)');grad.addColorStop(1,'rgba(10,132,255,0)');
   ctx.clearRect(0,0,W,H);
-  ctx.beginPath(); pts.forEach((v,i)=>{const x=(i/(pts.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
-  ctx.beginPath(); pts.forEach((v,i)=>{const x=(i/(pts.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.strokeStyle='#0a84ff'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath();pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.strokeStyle='#0a84ff';ctx.lineWidth=2;ctx.stroke();
 }
 
-/* ═══ PROFIL & SETTINGS ═════════════════════════ */
+/* ═══ SETTINGS ════════════════════════════════════════════════════ */
 function renderSettings(){
-  const p=DB.getProfile(), runs=DB.getRuns(), dist=runs.reduce((a,r)=>a+(r.distance||0),0);
+  const p=DB.getProfile(),runs=DB.getRuns(),dist=runs.reduce((a,r)=>a+(r.distance||0),0);
   const av=$('sav');
   av.textContent=p.initial||'?';
   av.style.background=`linear-gradient(135deg,${p.color},${shd(p.color,-40)})`;
@@ -1036,7 +1204,7 @@ function renderSettings(){
 
 $('pcrd').addEventListener('click',()=>showProfileEdit());
 function showProfileEdit(){
-  const p=DB.getProfile(); let sc=p.color;
+  const p=DB.getProfile();let sc=p.color;
   const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + var(--sb))">
     <div style="font-size:19px;font-weight:700;margin-bottom:16px">Profil bearbeiten</div>
     <div class="lbl">Name</div><input class="inp" id="pni" value="${esc(p.name)}" style="margin-bottom:12px"/>
@@ -1054,92 +1222,89 @@ function showProfileEdit(){
   ov.querySelector('#pes').addEventListener('click',()=>{
     const nm=ov.querySelector('#pni').value.trim()||'Fahrer';
     const init=(ov.querySelector('#pii').value.trim()||nm[0]).toUpperCase().slice(0,2);
-    DB.saveProfile({...p,name:nm,initial:init,color:sc}); ov.remove(); renderSettings(); toast('Profil gespeichert ✓');
+    DB.saveProfile({...p,name:nm,initial:init,color:sc});ov.remove();renderSettings();toast('Profil gespeichert ✓');
   });
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
 }
 
 $('sexport').addEventListener('click',()=>{
   const b=new Blob([JSON.stringify(DB.exportAll(),null,2)],{type:'application/json'});
-  const u=URL.createObjectURL(b), a=document.createElement('a');
-  a.href=u; a.download=`wakeski-${Date.now()}.json`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u);
+  const u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download=`wakeski-${Date.now()}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
   toast('Export gestartet');
 });
 $('simport').addEventListener('click',()=>$('fimp').click());
 $('fimp').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload=ev=>{
-    try{
-      const d=JSON.parse(ev.target.result);
-      if(!d.runs&&!d.profile)throw 0;
-      confirm2('Daten importieren?',`${(d.runs||[]).length} Fahrten werden geladen.`,()=>{DB.importAll(d);renderSettings();toast('Import abgeschlossen');});
-    }catch{toast('❌ Ungültige Datei');}
-    e.target.value='';
-  }; r.readAsText(f);
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);if(!d.runs&&!d.profile)throw 0;confirm2('Daten importieren?',`${(d.runs||[]).length} Fahrten werden geladen.`,()=>{DB.importAll(d);renderSettings();toast('Import abgeschlossen');});}
+    catch{toast('❌ Ungültige Datei');}e.target.value='';
+  };r.readAsText(f);
 });
 $('sclear').addEventListener('click',()=>confirm2('Alle Fahrten löschen?','Ordner und Profil bleiben.',()=>{DB.clearRuns();renderSettings();toast('Alle Fahrten gelöscht');}));
 
-/* ═══ CONFIRM ════════════════════════════════════ */
+/* ═══ CONFIRM ═════════════════════════════════════════════════════ */
 function confirm2(t,s,fn){
-  $('ctxt').textContent=t; $('cstxt').textContent=s; $('cov').style.display='flex';
+  $('ctxt').textContent=t;$('cstxt').textContent=s;$('cov').style.display='flex';
   const hide=()=>$('cov').style.display='none';
-  const y=$('cyes'),n=$('cno'), yc=y.cloneNode(true),nc=n.cloneNode(true);
-  y.parentNode.replaceChild(yc,y); n.parentNode.replaceChild(nc,n);
-  $('cyes').addEventListener('click',()=>{hide();fn();}); $('cno').addEventListener('click',hide);
+  const y=$('cyes'),n=$('cno'),yc=y.cloneNode(true),nc=n.cloneNode(true);
+  y.parentNode.replaceChild(yc,y);n.parentNode.replaceChild(nc,n);
+  $('cyes').addEventListener('click',()=>{hide();fn();});$('cno').addEventListener('click',hide);
 }
 
-/* ═══ OVERLAY HELPER ════════════════════════════ */
+/* ═══ OVERLAY HELPER ══════════════════════════════════════════════ */
 function mkOv(html){const o=document.createElement('div');o.className='ov';o.innerHTML=html;document.body.appendChild(o);return o;}
 
-/* ═══ WATER LOCK ════════════════════════════════ */
+/* ═══ WATER LOCK ══════════════════════════════════════════════════ */
 $('lbtn').addEventListener('click',()=>{$('wl').classList.add('on');S.locked=true;if(navigator.vibrate)navigator.vibrate(60);});
-let _lt=null; const wb=$('wlbtn'), wp=$('wlprog');
+let _lt=null;const wb=$('wlbtn'),wp=$('wlprog');
 wb.addEventListener('pointerdown',e=>{
-  if(!S.locked)return; e.preventDefault();
-  wb.classList.add('p'); wp.style.width='0'; wp.className='wlprog go';
+  if(!S.locked)return;e.preventDefault();
+  wb.classList.add('p');wp.style.width='0';wp.className='wlprog go';
   _lt=setTimeout(()=>{$('wl').classList.remove('on');S.locked=false;wb.classList.remove('p');wp.className='wlprog';if(navigator.vibrate)navigator.vibrate([80,40,80]);},2000);
 });
 ['pointerup','pointerleave','pointercancel'].forEach(ev=>wb.addEventListener(ev,()=>{clearTimeout(_lt);_lt=null;wb.classList.remove('p');wp.className='wlprog';}));
 
-/* ═══ AUTO SESSION SAVE ═════════════════════════ */
+/* ═══ AUTO SESSION SAVE ═══════════════════════════════════════════ */
 setInterval(()=>{
   if(!S.tracking)return;
   DB.saveSession({maxSpd:S.maxSpd,avgSpd:S.avgSpd,dist:S.dist,elapsed:S.elapsed,t0:S.t0});
 },10000);
 
-/* ═══ APP START ══════════════════════════════════ */
+/* ═══ APP START ════════════════════════════════════════════════════
+   Reihenfolge wichtig:
+   1. App sichtbar machen
+   2. goPage('track') → #page-track.on → position:fixed, sichtbar
+   3. initMap() mit setTimeout(150) → Leaflet liest #lmap-Größe korrekt
+      (#page-track ist dann bereits im DOM sichtbar)
+══════════════════════════════════════════════════════════════════ */
 function launchApp(){
   $('sp').style.display='none';
-  const app=$('app'); app.style.display='flex'; app.style.flexDirection='column';
+  const app=$('app');app.style.display='flex';app.style.flexDirection='column';
   goPage('track');
   initGPS();
   initMotion();
-  // Map nach erstem Paint initialisieren (150ms) – #lmap hat per CSS immer 220px Höhe
-  setTimeout(()=>initMap(), 150);
-
+  // Leaflet erst nach dem ersten Paint initialisieren (track-page ist dann sichtbar)
+  setTimeout(initMap,150);
+  // Letzte Session wiederherstellen
   const sess=DB.getSession();
   if(sess&&sess.maxSpd){S.maxSpd=sess.maxSpd||0;S.dist=sess.dist||0;updateDOM();}
 }
 
 $('perm-btn').addEventListener('click',async()=>{
-  const b=$('perm-btn'); b.disabled=true;
+  const b=$('perm-btn');b.disabled=true;
   b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0110 10"/></svg> Aktiviere…';
   for(const E of[window.DeviceMotionEvent,window.DeviceOrientationEvent]){
-    if(typeof E?.requestPermission==='function') await E.requestPermission().catch(()=>{});
+    if(typeof E?.requestPermission==='function')await E.requestPermission().catch(()=>{});
   }
   setTimeout(()=>{$('sp').style.opacity='0';$('sp').style.transition='opacity .35s';setTimeout(launchApp,350);},400);
 });
 
-// GPS bereits erteilt → direkt starten
+// GPS bereits erteilt → direkt starten (kein Permission-Screen)
 (async()=>{
-  if(!navigator.permissions) return;
-  try{
-    const r=await navigator.permissions.query({name:'geolocation'});
-    if(r.state==='granted') launchApp();
-  }catch{}
+  if(!navigator.permissions)return;
+  try{const r=await navigator.permissions.query({name:'geolocation'});if(r.state==='granted')launchApp();}catch{}
 })();
 </script>
-
 </body>
 </html>
