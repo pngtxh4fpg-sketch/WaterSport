@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WakeSki"/>
+<meta name="theme-color" content="#000000"/>
+<meta name="color-scheme" content="dark"/>
+<title>WakeSki Pro</title>
+<!--
+╔═══════════════════════════════════════════════════════════════════╗
+║  EIGENES APP-ICON einbinden                                       ║
+║  1. PNG (180×180 px) auf https://www.base64encode.org konvert.   ║
+║  2. Das href-Attribut unten ersetzen:                            ║
+║     href="data:image/png;base64,DEIN_BASE64_HIER"               ║
+║  3. Safari → Teilen → "Zum Home-Bildschirm" → Icon erscheint     ║
+╚═══════════════════════════════════════════════════════════════════╝
+-->
+<link rel="apple-touch-icon" id="ati" href=""/>
+<link rel="manifest" id="mani" href=""/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+input,textarea,select{user-select:text;-webkit-user-select:text}
+
+:root{
+  --ac:#0a84ff;--acg:rgba(10,132,255,.28);--acl:rgba(10,132,255,.13);
+  --green:#30d158;--gg:rgba(48,209,88,.25);
+  --red:#ff453a;--rg:rgba(255,69,58,.28);
+  --yellow:#ffd60a;--yg:rgba(255,214,10,.22);
+  --tx:rgba(255,255,255,.92);--tx2:rgba(255,255,255,.52);--tx3:rgba(255,255,255,.26);
+  --glass:rgba(255,255,255,.055);--gb:rgba(255,255,255,.10);--gs:rgba(255,255,255,.08);
+  --nav:82px;
+  color-scheme:dark;
+}
+html,body{height:100%;width:100%;background:#000;color:var(--tx);
+  font-family:'DM Sans',-apple-system,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+
+/* ── Pages ── */
+.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(var(--nav)+16px);display:none}
+.page::-webkit-scrollbar{display:none}
+
+/* History + Settings: black bg, safe area padding at top */
+#page-history.on,#page-settings.on{
+  display:block;background:#000;
+  /* FIX: padding-top at page level handles Dynamic Island / notch */
+  padding-top:env(safe-area-inset-top,0px);
+  animation:fup .3s cubic-bezier(.34,1.28,.64,1) both;
+}
+
+/* Track page: fullscreen fixed, map as background */
+#page-track{overflow:hidden;padding-bottom:0;background:transparent;display:none}
+#page-track.on{display:block;position:fixed;top:0;left:0;right:0;bottom:0;z-index:2}
+#lmap{position:absolute;inset:0;z-index:0;background:#0a0d12}
+.trk-ov{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;pointer-events:none}
+.trk-top,.trk-hud,#falert{pointer-events:auto}
+.trk-spacer{flex:1;pointer-events:none}
+
+/* ── Track Top Bar ── */
+.trk-top{
+  flex-shrink:0;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 28px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  background:linear-gradient(to bottom,rgba(0,0,0,.84) 0%,transparent 100%);
+}
+.app-name{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:26px;font-weight:900;letter-spacing:1px;color:#fff;text-shadow:0 0 24px rgba(10,132,255,.45);line-height:1}
+.gbadge{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:20px;background:rgba(0,0,0,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:.5px solid rgba(255,255,255,.14);font-size:11px;font-weight:500;color:var(--tx2);margin-top:7px}
+.gdot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
+.gdot.w{background:var(--yellow);animation:pulse 1.4s ease-in-out infinite}
+.gdot.r{background:var(--green);box-shadow:0 0 8px var(--gg)}
+.gdot.e{background:var(--red)}
+.lock-pill{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;border:none;cursor:pointer;background:rgba(0,0,0,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:.5px solid rgba(255,255,255,.14);color:var(--tx2);font-size:12px;font-weight:500;font-family:'DM Sans',-apple-system,sans-serif}
+.lock-pill:active{opacity:.6}
+.lock-pill svg{width:13px;height:13px;flex-shrink:0}
+
+/* ── Crash Alert ── */
+#falert{flex-shrink:0;margin:0 14px 10px;padding:13px 16px;background:rgba(255,69,58,.12);border:.5px solid rgba(255,69,58,.4);border-radius:16px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;gap:12px}
+.fat{font-weight:700;color:var(--red);font-size:15px}.fas{font-size:12px;color:var(--tx2);margin-top:1px}
+
+/* ── Track HUD ── */
+.trk-hud{
+  flex-shrink:0;
+  padding:28px 14px calc(var(--nav) + 12px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(to top,rgba(0,0,0,.98) 0%,rgba(0,0,0,.92) 36%,rgba(0,0,0,.62) 64%,transparent 100%);
+}
+.trk-spd-wrap{text-align:center;margin-bottom:2px}
+.trk-spd-num{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:106px;font-weight:900;line-height:1;color:#fff;letter-spacing:-4px;text-shadow:0 0 70px rgba(10,132,255,.32),0 4px 24px rgba(0,0,0,.7);transition:color .26s,text-shadow .26s;display:inline-block;min-width:3ch}
+.trk-spd-num.w{color:var(--yellow);text-shadow:0 0 70px rgba(255,214,10,.4),0 4px 24px rgba(0,0,0,.7)}
+.trk-spd-num.d{color:var(--red);text-shadow:0 0 70px rgba(255,69,58,.4),0 4px 24px rgba(0,0,0,.7)}
+.trk-spd-unit{font-size:12px;color:var(--tx2);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:-2px}
+.trk-bar-wrap{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin:10px 0 14px;overflow:hidden}
+.trk-bar{height:100%;background:var(--ac);border-radius:2px;width:0%;transition:width .5s cubic-bezier(.34,1.2,.64,1),background .26s;box-shadow:0 0 10px var(--ac)}
+.trk-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.trk-m{background:rgba(255,255,255,.07);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:.5px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 6px 9px;text-align:center}
+.trk-mv{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:22px;font-weight:800;line-height:1;color:var(--tx)}
+.trk-ml{font-size:9px;color:var(--tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
+.tbtn{width:100%;height:56px;border-radius:16px;border:none;cursor:pointer;font-family:'DM Sans',-apple-system,sans-serif;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
+.tbtn.go{background:rgba(10,132,255,.95);color:#fff;box-shadow:0 6px 32px rgba(10,132,255,.5),inset 0 .5px 0 rgba(255,255,255,.2);animation:glow 3s ease-in-out infinite}
+.tbtn.st{background:rgba(255,69,58,.95);color:#fff;box-shadow:0 6px 32px rgba(255,69,58,.5),inset 0 .5px 0 rgba(255,255,255,.2);animation:none}
+.tbtn:active{transform:scale(.96)}.tbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;animation:none;box-shadow:none}
+
+/* ── Page Headers (History/Settings) ── */
+/* No top padding here – handled by padding-top:env() on page itself */
+.phdr{padding:28px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative}
+.phdr::after{content:'';position:absolute;bottom:0;left:20px;right:20px;height:.5px;background:var(--gb)}
+.phdt{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:34px;font-weight:900;text-shadow:0 0 30px rgba(10,132,255,.3)}
+
+/* ── History ── */
+.ftabs{padding:12px 16px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.ftabs::-webkit-scrollbar{display:none}
+.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--glass);border:.5px solid var(--gb);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.ftab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rcard{margin:0 16px 10px;padding:16px;background:var(--glass);border:.5px solid var(--gb);border-radius:22px;animation:fup .36s cubic-bezier(.34,1.2,.64,1) both}
+.rctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.rcl{flex:1;min-width:0;cursor:pointer}
+.rname{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.rdate{font-size:12px;color:var(--tx2)}
+.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
+.rfbd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.rsb{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:34px;font-weight:800;line-height:1;text-align:right}
+.rsu{font-size:11px;color:var(--tx2);text-align:right}
+.rmenu{width:28px;height:28px;border-radius:50%;background:var(--gs);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);flex-shrink:0;margin-left:8px}
+.rmenu:active{opacity:.5}
+.rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rs{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
+.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--tx2)}
+.emico{font-size:52px;margin-bottom:12px;opacity:.4}
+
+/* ── Settings ── */
+.pcard{margin:12px 16px 6px;padding:18px;background:var(--glass);border:.5px solid var(--gb);border-radius:24px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
+.pcard:active{border-color:rgba(10,132,255,.4)}
+.sav{width:56px;height:56px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:26px;font-weight:800;color:#fff}
+.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(--tx2);margin-top:2px}.shi{font-size:11px;color:var(--tx3);margin-top:5px}
+.ssec{margin:10px 16px 0;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden}
+.ssec-title{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;padding:14px 16px 8px;border-bottom:.5px solid var(--gb)}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid rgba(255,255,255,.05);cursor:pointer;transition:background .12s}
+.srow:last-child{border-bottom:none}.srow:active{background:var(--gs)}
+.srico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(--tx2);margin-top:1px}
+.srow-arrow{color:var(--tx3);flex-shrink:0}
+
+/* ── Advanced Settings Overlay ── */
+#as-panel{position:fixed;inset:0;z-index:160;background:#000;overflow-y:auto;display:none}
+#as-panel::-webkit-scrollbar{display:none}
+.as-hdr{padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 16px;display:flex;align-items:center;gap:14px;border-bottom:.5px solid var(--gb)}
+.as-title{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:26px;font-weight:900}
+.as-sub{font-size:12px;color:var(--tx2);margin-top:2px}
+.as-section{margin:16px 16px 0}
+.as-stitle{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:1.2px;padding:0 4px;margin-bottom:8px}
+.as-card{background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden;margin-bottom:4px}
+.as-row{padding:13px 16px;border-bottom:.5px solid rgba(255,255,255,.05)}
+.as-row:last-child{border-bottom:none}
+.as-row-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.as-row-left{flex:1;min-width:0}
+.as-rl{font-size:15px;font-weight:500}
+.as-rs{font-size:11px;color:var(--tx2);margin-top:2px}
+.as-live-val{font-size:11px;font-weight:600;color:var(--ac);margin-top:3px}
+/* Toggle */
+.as-tog{width:46px;height:27px;border-radius:14px;background:#3a3a3c;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;border:none;outline:none}
+.as-tog.on{background:var(--ac)}
+.as-tog::after{content:'';position:absolute;width:21px;height:21px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s cubic-bezier(.34,1.4,.64,1);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.as-tog.on::after{transform:translateX(19px)}
+/* Segment */
+.as-seg{display:flex;background:rgba(255,255,255,.07);border-radius:10px;padding:2px;gap:2px;flex-shrink:0;flex-wrap:wrap}
+.as-sbt{padding:5px 9px;border-radius:8px;font-size:11px;font-weight:500;color:var(--tx2);cursor:pointer;transition:all .15s;white-space:nowrap;background:none;border:none;font-family:'DM Sans',-apple-system,sans-serif}
+.as-sbt.on{background:var(--ac);color:#fff}
+/* Slider row */
+.as-slrow{padding:12px 16px 14px;border-bottom:.5px solid rgba(255,255,255,.05)}
+.as-slrow:last-child{border-bottom:none}
+.as-sl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.as-sl-label{font-size:15px;font-weight:500}
+.as-sl-val{font-size:13px;font-weight:700;color:var(--ac)}
+.as-sl-sub{font-size:11px;color:var(--tx2);margin-bottom:8px}
+.as-slider{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.15);outline:none;cursor:pointer}
+.as-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+
+/* ── Detail ── */
+#pd{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
+#pd::-webkit-scrollbar{display:none}
+.dhdr{padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 16px;display:flex;align-items:flex-start;gap:12px}
+.bbtn{width:36px;height:36px;border-radius:50%;background:var(--glass);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
+.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(--ac)}
+.dtitle{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(--tx2);margin-top:3px}
+.dhero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
+.dspd{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
+.dspdl{font-size:13px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
+.dst{padding:15px;background:var(--glass);border:.5px solid var(--gb);border-radius:16px}
+.dstv{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:30px;font-weight:800;color:var(--tx);line-height:1}
+.dstl{font-size:11px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
+.slbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
+.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:240px}
+.dmw #dmap{width:100%;height:100%;background:#0a0d12}
+.cwrap{margin:0 16px 14px;padding:14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px}
+.flist{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
+.fit{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
+.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(--tx2);margin-top:1px}
+.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(--red);font-family:'DM Sans',-apple-system,sans-serif;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.delbtn:active{transform:scale(.97)}
+
+/* ── Nav ── */
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav);background:rgba(6,6,8,.95);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-top:.5px solid var(--gb);display:flex;align-items:flex-start;justify-content:space-around;z-index:200;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px))}
+.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:'DM Sans',-apple-system,sans-serif;font-size:10px;font-weight:500;transition:color .2s}
+.nbt svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
+.nbt.on{color:var(--ac)}.nbt.on svg{transform:scale(1.1)}
+
+/* ── Water Lock ── */
+#wl{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
+#wl.on{display:flex;animation:fin .25s ease both}
+.wlico{font-size:58px;margin-bottom:14px}
+.wltitle{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:36px;font-weight:900;margin-bottom:8px}
+.wlsub{font-size:15px;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
+.wlbtn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
+.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0;border-radius:2px}
+.wlprog.go{animation:lfill 2s linear both}
+.wlwaves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);opacity:0}
+.wlbtn.p .wlwave{animation:rip 1s ease-out infinite}
+.wlbtn.p .wlwave:nth-child(2){animation-delay:.3s}
+.wlbtn.p .wlwave:nth-child(3){animation-delay:.6s}
+.wlhint{font-size:14px;color:var(--tx2);margin-top:12px}
+
+/* ── Sheets / Overlays ── */
+.ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(env(safe-area-inset-bottom,0px)+16px);animation:fin .2s ease both}
+.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
+.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(--gb)}
+.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(--tx2);margin-top:2px}
+.shrow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
+.shrow:last-child{border-bottom:none}.shrow:active{background:var(--gs)}
+.shrow.r{color:var(--red)}.shrow.c{color:var(--tx2);border-top:.5px solid var(--gb)}
+.shico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.shdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.sw{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
+.sw.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
+.sw.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.cov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(env(safe-area-inset-bottom,0px)+20px);animation:fin .2s ease both}
+.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
+.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(--tx2);margin-bottom:18px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:'DM Sans',-apple-system,sans-serif;font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
+.btn:active{transform:scale(.965)}
+.bp{background:var(--ac);color:#fff;box-shadow:0 4px 24px var(--acg)}
+.bd{background:var(--red);color:#fff;box-shadow:0 4px 24px var(--rg)}
+.bg{background:var(--gs);border:.5px solid var(--gb);color:var(--tx)}
+.bsm{padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
+.inp{width:100%;background:var(--gs);border:.5px solid var(--gb);border-radius:14px;padding:14px 16px;color:var(--tx);font-family:'DM Sans',-apple-system,sans-serif;font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}.inp::placeholder{color:var(--tx3)}
+.lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+
+/* ── Toast ── */
+#toast{position:fixed;top:calc(env(safe-area-inset-top,44px) + 8px);left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.96);border:.5px solid var(--gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Permission ── */
+#sp{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fin .4s ease both}
+.plogo{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
+.ptag{font-size:14px;color:var(--tx2);margin-bottom:44px}
+.plist{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
+.pit:nth-child(1){animation-delay:.08s}.pit:nth-child(2){animation-delay:.16s}.pit:nth-child(3){animation-delay:.24s}
+.pico{width:42px;height:42px;border-radius:11px;background:var(--acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pico svg{width:20px;height:20px;color:var(--ac)}
+.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(--tx2)}
+.pbw{width:100%;animation:fup .4s .32s cubic-bezier(.34,1.2,.64,1) both}
+
+/* ── Animations ── */
+@keyframes fup  {from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes fin  {from{opacity:0}to{opacity:1}}
+@keyframes sup  {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes rip  {0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.4);opacity:0}}
+@keyframes spin {to{transform:rotate(360deg)}}
+@keyframes shk  {0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes glow {0%,100%{box-shadow:0 6px 32px rgba(10,132,255,.5),inset 0 .5px 0 rgba(255,255,255,.2)}50%{box-shadow:0 6px 52px rgba(10,132,255,.8),inset 0 .5px 0 rgba(255,255,255,.2)}}
+@keyframes lfill{from{width:0}to{width:100%}}
+
+/* ── Leaflet dark ── */
+.leaflet-container{background:#0a0d12 !important}
+.leaflet-tile{filter:brightness(.62) saturate(.65) hue-rotate(200deg)}
+.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(--gb);border-radius:10px;color:var(--tx)}
+.leaflet-popup-tip{background:rgba(10,13,20,.95)}
+.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(--tx) !important;border-color:var(--gb) !important}
+.leaflet-control-attribution{display:none}
+.leaflet-control-zoom{margin-right:10px !important;margin-bottom:calc(var(--nav) + 10px) !important}
+</style>
+</head>
+<body>
+
+<!-- Permission Screen -->
+<div id="sp">
+  <div class="plogo">WakeSki</div>
+  <div class="ptag">Wasserski · Wakeboard · Wakesurf</div>
+  <div class="plist">
+    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div><div><div class="pt">GPS & Standort</div><div class="ps">Geschwindigkeit, Distanz, Live-Karte</div></div></div>
+    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22V12M12 12L7 7M12 12l5-5M2 17l5-3M17 14l5 3"/></svg></div><div><div class="pt">Bewegungssensoren</div><div class="ps">Sturzerkennung via Beschleunigungssensor</div></div></div>
+    <div class="pit"><div class="pico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg></div><div><div class="pt">Lokaler Speicher</div><div class="ps">Fahrten offline speichern & exportieren</div></div></div>
+  </div>
+  <div class="pbw"><button class="btn bp" id="perm-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Berechtigungen erteilen</button></div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none">
+  <div id="toast"></div>
+
+  <!-- Track Page -->
+  <div id="page-track" class="page">
+    <div id="lmap"></div>
+    <div class="trk-ov">
+      <div class="trk-top">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="app-name">WakeSki</div>
+          <div class="gbadge"><div class="gdot" id="gdot"></div><span id="glbl">Warte…</span></div>
+        </div>
+        <button class="lock-pill" id="lbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Sperren</button>
+      </div>
+      <div class="trk-spacer"></div>
+      <div id="falert" style="display:none"><div style="font-size:26px;flex-shrink:0">💥</div><div><div class="fat" id="fat">Sturz erkannt!</div><div class="fas" id="fas"></div></div></div>
+      <div class="trk-hud">
+        <div class="trk-spd-wrap"><span class="trk-spd-num" id="snum">0</span></div>
+        <div class="trk-spd-unit" id="spd-unit">km/h</div>
+        <div class="trk-bar-wrap"><div class="trk-bar" id="spd-bar"></div></div>
+        <div class="trk-metrics">
+          <div class="trk-m"><div class="trk-mv" id="mmax">0.0</div><div class="trk-ml">Max</div></div>
+          <div class="trk-m"><div class="trk-mv" id="mavg">0.0</div><div class="trk-ml">Avg</div></div>
+          <div class="trk-m"><div class="trk-mv" id="mdist">0</div><div class="trk-ml" id="mdistl">m</div></div>
+          <div class="trk-m"><div class="trk-mv" id="mtime">0:00</div><div class="trk-ml">Zeit</div></div>
+        </div>
+        <button class="tbtn go" id="tbtn" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+          <span id="tbtl">Run starten</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Page -->
+  <div id="page-history" class="page">
+    <div class="phdr">
+      <div class="phdt">Verlauf</div>
+      <button class="btn bsm bg" id="nfbtn" style="display:flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Ordner</button>
+    </div>
+    <div class="ftabs" id="ftabs"></div>
+    <div id="rlist"></div>
+  </div>
+
+  <!-- Settings Page -->
+  <div id="page-settings" class="page">
+    <div class="phdr" style="padding-bottom:8px"><div class="phdt">Einstellungen</div></div>
+    <div class="pcard" id="pcrd">
+      <div class="sav" id="sav">W</div>
+      <div style="flex:1;min-width:0"><div class="snm" id="snm">Fahrer</div><div class="sst" id="sst">0 Fahrten</div><div class="shi">Tippen zum Bearbeiten</div></div>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx3);flex-shrink:0"><polyline points="9,18 15,12 9,6"/></svg>
+    </div>
+    <div class="ssec">
+      <div class="ssec-title">Erweitert</div>
+      <div class="srow" id="sadv"><div class="srico" style="background:rgba(10,132,255,.15)">⚙️</div><div><div class="srt">Erweiterte Einstellungen</div><div class="srs">GPS, Algorithmus, Sturzerkennung, Anzeige…</div></div><svg class="srow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg></div>
+    </div>
+    <div class="ssec">
+      <div class="ssec-title">Daten</div>
+      <div class="srow" id="sexport"><div class="srico" style="background:rgba(10,132,255,.15)">📤</div><div><div class="srt">Exportieren</div><div class="srs">Profil, Fahrten & Einstellungen als JSON</div></div></div>
+      <div class="srow" id="simport"><div class="srico" style="background:rgba(48,209,88,.15)">📥</div><div><div class="srt">Importieren</div><div class="srs">JSON-Backup laden</div></div></div>
+    </div>
+    <div class="ssec">
+      <div class="ssec-title">Gefahrenzone</div>
+      <div class="srow" id="sclear"><div class="srico" style="background:rgba(255,69,58,.15)">🗑️</div><div><div class="srt">Alle Fahrten löschen</div><div class="srs">Ordner und Profil bleiben erhalten</div></div></div>
+    </div>
+    <div class="ssec">
+      <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.05)">ℹ️</div><div><div class="srt">WakeSki Pro v2.5</div><div class="srs">GPS · Karte · Kalman · Sturzerkennung</div></div></div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- Detail Overlay -->
+  <div id="pd">
+    <div class="dhdr">
+      <button class="bbtn" id="bbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div><div class="dtitle" id="dtitle">Run</div><div class="ddate" id="ddate"></div></div>
+    </div>
+    <div id="dcont"></div>
+  </div>
+
+  <!-- Advanced Settings Overlay -->
+  <div id="as-panel">
+    <div class="as-hdr">
+      <button class="bbtn" id="as-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div><div class="as-title">Erweiterte Einstellungen</div><div class="as-sub">Alle Werte werden sofort übernommen</div></div>
+    </div>
+    <div id="as-content"></div>
+    <div style="height:40px"></div>
+  </div>
+
+  <!-- Nav -->
+  <nav id="nav">
+    <button class="nbt on" data-pg="track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>Track</button>
+    <button class="nbt" data-pg="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Verlauf</button>
+    <button class="nbt" data-pg="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Mehr</button>
+  </nav>
+</div>
+
+<!-- Water Lock -->
+<div id="wl">
+  <div class="wlico">💧</div>
+  <div class="wltitle">Gesperrt</div>
+  <div class="wlsub">Kreis 2 Sekunden halten zum Entsperren.</div>
+  <div class="wlbtn" id="wlbtn">
+    <div class="wlwaves"><div class="wlwave"></div><div class="wlwave"></div><div class="wlwave"></div></div>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    <div class="wlprog" id="wlprog"></div>
+  </div>
+  <div class="wlhint">Gedrückt halten</div>
+</div>
+
+<!-- Confirm -->
+<div class="cov" id="cov" style="display:none">
+  <div class="csh">
+    <div class="ct" id="ctxt"></div><div class="cs" id="cstxt"></div>
+    <div style="display:flex;gap:10px"><button class="btn bg" id="cno">Abbrechen</button><button class="btn bd" id="cyes">Bestätigen</button></div>
+  </div>
+</div>
+
+<input type="file" id="fimp" accept=".json" style="display:none"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+'use strict';
+
+/* ═══ SERVICE WORKER ════════════════════════════════════════════ */
+if('serviceWorker' in navigator){
+  const sw=`const C='ws-v8';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.add(location.href)).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim()));});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const h=e.request.headers.get('accept');if(h&&h.includes('text/html')){e.respondWith(fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;}).catch(()=>caches.match(e.request)));}else{e.respondWith(caches.match(e.request).then(h=>h||fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;})));}});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+}
+
+/* ═══ APP ICON (Platzhalter-Canvas) ════════════════════════════ */
+(function(){
+  const el=document.getElementById('ati');
+  if(!el||el.href)return;
+  const c=document.createElement('canvas');c.width=c.height=180;
+  const x=c.getContext('2d');
+  function rr(bx,by,w,h,r){x.beginPath();x.moveTo(bx+r,by);x.lineTo(bx+w-r,by);x.arcTo(bx+w,by,bx+w,by+r,r);x.lineTo(bx+w,by+h-r);x.arcTo(bx+w,by+h,bx+w-r,by+h,r);x.lineTo(bx+r,by+h);x.arcTo(bx,by+h,bx,by+h-r,r);x.lineTo(bx,by+r);x.arcTo(bx,by,bx+r,by,r);x.closePath();}
+  const g=x.createLinearGradient(0,0,180,180);g.addColorStop(0,'#0a1628');g.addColorStop(1,'#000');
+  rr(0,0,180,180,38);x.fillStyle=g;x.fill();
+  const rg=x.createRadialGradient(70,50,0,90,90,110);rg.addColorStop(0,'rgba(10,132,255,.35)');rg.addColorStop(1,'transparent');
+  rr(0,0,180,180,38);x.fillStyle=rg;x.fill();
+  x.strokeStyle='#0a84ff';x.lineWidth=5.5;x.lineCap='round';
+  x.beginPath();x.moveTo(22,92);x.bezierCurveTo(46,68,64,68,90,92);x.bezierCurveTo(116,116,134,116,158,92);x.stroke();
+  x.globalAlpha=.5;x.lineWidth=3.5;
+  x.beginPath();x.moveTo(22,110);x.bezierCurveTo(46,86,64,86,90,110);x.bezierCurveTo(116,134,134,134,158,110);x.stroke();
+  x.globalAlpha=1;x.fillStyle='#fff';x.font='900 50px -apple-system,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('WS',90,68);
+  el.href=c.toDataURL('image/png');
+  const ico=c.toDataURL('image/png');
+  const mf=JSON.stringify({name:'WakeSki Pro',short_name:'WakeSki',theme_color:'#000000',background_color:'#000000',display:'standalone',orientation:'portrait',start_url:'.',icons:[{src:ico,sizes:'192x192',type:'image/png'},{src:ico,sizes:'512x512',type:'image/png'}]});
+  document.getElementById('mani').href='data:application/manifest+json,'+encodeURIComponent(mf);
+})();
+
+/* ═══ SETTINGS DEFAULTS ════════════════════════════════════════
+   Alle Einstellungen mit sinnvollen Standardwerten.
+   Werden in localStorage unter 'ws_cfg' gespeichert.
+   Export/Import schließt dieses Objekt ein.
+════════════════════════════════════════════════════════════════ */
+const DEFAULT_CFG = {
+  // 📡 GPS & Sensoren
+  gpsAccuracy:  'high',       // 'high' | 'medium' | 'low'
+  gpsInterval:  500,          // ms: 200 | 500 | 1000 | 2000
+  distFilter:   2,            // min. Meter zwischen gespeicherten Punkten: 1|2|5|10
+  speedAlgo:    'moving_avg', // 'moving_avg' | 'kalman' | 'raw'
+  smoothBuf:    3,            // Puffergröße gleitender Mittelwert: 2–10
+  kalmanR:      1.0,          // Kalman Messrauschen: 0.1–5.0
+  kalmanQ:      0.1,          // Kalman Prozessrauschen: 0.01–1.0
+  // 💥 Sturzerkennung
+  crashG:       2.5,          // G-Kraft-Schwelle: 1.5–6.0
+  crashMinSpd:  8,            // km/h Mindestgeschwindigkeit: 0|5|8|15|20
+  crashCooldown:3000,         // ms zwischen Stürzen: 1000|3000|5000|10000
+  crashVibrate: true,
+  crashVoice:   false,
+  // 🎯 Anzeige
+  speedUnit:    'kmh',        // 'kmh' | 'mph' | 'ms'
+  maxScale:     80,           // km/h: 60|80|100|120
+  mapFollow:    true,
+  mapZoom:      17,           // 15|16|17|18
+  nightMap:     true,
+  // 🔊 Feedback
+  voiceRecord:  true,
+  voiceMile:    false,
+  vibStart:     true,
+  // 💾 Datenspeicherung
+  autoSaveInt:  10,           // Sekunden: 5|10|30|60
+  minRunPts:    3,            // Min. Punkte zum Speichern: 3|5|10|20
+  ptRes:        1,            // Trackpunkt-Auflösung: 1|2|5
+  // 🔒 Sicherheit
+  autoLock:     false,
+  crashCheckin: 0,            // Sek. 0=aus | 15|30|60
+};
+
+// CFG: lädt gespeicherte Einstellungen, füllt fehlende mit Defaults auf
+let CFG = {...DEFAULT_CFG, ...(()=>{try{return JSON.parse(localStorage.getItem('ws_cfg'))||{};}catch{return {};}})()};
+function saveCFG(){ localStorage.setItem('ws_cfg', JSON.stringify(CFG)); }
+function setCFG(key, val){ CFG[key]=val; saveCFG(); applyCFG(key); }
+
+/* Effekte bei Einstellungsänderung (Karte, GPS, etc.) */
+function applyCFG(key){
+  if(key==='nightMap' && S.map){
+    document.querySelectorAll('.leaflet-tile').forEach(t=>{
+      t.style.filter=CFG.nightMap?'brightness(.62) saturate(.65) hue-rotate(200deg)':'none';
+    });
+  }
+  if(key==='speedAlgo') KALMAN.reset();
+  if(key==='speedUnit'){ const u=$('spd-unit'); if(u) u.textContent={kmh:'km/h',mph:'mph',ms:'m/s'}[CFG.speedUnit]; }
+}
+
+/* ═══ KALMAN FILTER ════════════════════════════════════════════
+   Einfacher 1D Kalman-Filter zur Geschwindigkeitsglättung.
+   R = Messrauschen (groß = mehr Glättung)
+   Q = Prozessrauschen (groß = schnellere Reaktion)
+════════════════════════════════════════════════════════════════ */
+const KALMAN = {
+  P:1, K:0, x:0,
+  update(z){ this.P+=CFG.kalmanQ; this.K=this.P/(this.P+CFG.kalmanR); this.x+=this.K*(z-this.x); this.P=(1-this.K)*this.P; return this.x; },
+  reset(){ this.P=1; this.K=0; this.x=0; },
+};
+
+/* ═══ DB ════════════════════════════════════════════════════════ */
+const DB={
+  g:k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
+  s:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+  getRuns:    ()=>DB.g('ws_runs')||[],
+  saveRuns:   r=>DB.s('ws_runs',r),
+  addRun:     r=>{const a=DB.getRuns();a.unshift(r);DB.saveRuns(a);},
+  updateRun:  (id,p)=>{const a=DB.getRuns(),i=a.findIndex(r=>r.id===id);if(i>=0){a[i]={...a[i],...p};DB.saveRuns(a);}},
+  deleteRun:  id=>DB.saveRuns(DB.getRuns().filter(r=>r.id!==id)),
+  clearRuns:  ()=>localStorage.removeItem('ws_runs'),
+  getFolders:   ()=>DB.g('ws_folders')||[],
+  saveFolders:  f=>DB.s('ws_folders',f),
+  addFolder:    f=>{const a=DB.getFolders();a.push(f);DB.saveFolders(a);},
+  updateFolder: (id,p)=>{const a=DB.getFolders(),i=a.findIndex(x=>x.id===id);if(i>=0){a[i]={...a[i],...p};DB.saveFolders(a);}},
+  deleteFolder: id=>{DB.saveFolders(DB.getFolders().filter(x=>x.id!==id));const r=DB.getRuns();r.forEach(x=>{if(x.folderId===id)x.folderId=null;});DB.saveRuns(r);},
+  getProfile:  ()=>DB.g('ws_profile')||{name:'Fahrer',initial:'F',color:'#0a84ff'},
+  saveProfile: p=>DB.s('ws_profile',p),
+  getSession:  ()=>DB.g('ws_session'),
+  saveSession: s=>DB.s('ws_session',s),
+  clearSession:()=>localStorage.removeItem('ws_session'),
+  // Export schließt jetzt Einstellungen ein
+  exportAll:   ()=>({profile:DB.getProfile(),folders:DB.getFolders(),runs:DB.getRuns(),settings:CFG,at:Date.now()}),
+  importAll:   d=>{
+    if(d.profile)DB.saveProfile(d.profile);
+    if(d.folders)DB.saveFolders(d.folders);
+    if(d.runs)DB.saveRuns(d.runs);
+    // Einstellungen importieren und zusammenführen
+    if(d.settings){CFG={...DEFAULT_CFG,...d.settings};saveCFG();}
+  },
+};
+
+/* ═══ UTILS ═════════════════════════════════════════════════════ */
+function hav(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+const fmtT=ms=>{const s=Math.floor(ms/1e3),m=Math.floor(s/60);return`${m}:${(s%60).toString().padStart(2,'0')}`;};
+const fmtD=ts=>new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const shd=(col,a)=>{const n=parseInt(col.slice(1),16),c=v=>Math.min(255,Math.max(0,v));return'#'+[c((n>>16)+a),c(((n>>8)&0xff)+a),c((n&0xff)+a)].map(v=>v.toString(16).padStart(2,'0')).join('');};
+const $=id=>document.getElementById(id);
+// Geschwindigkeit in gewählte Einheit umrechnen
+function toUnit(kmh){ return CFG.speedUnit==='mph'?kmh*0.621371:CFG.speedUnit==='ms'?kmh/3.6:kmh; }
+function unitLabel(){ return{kmh:'km/h',mph:'mph',ms:'m/s'}[CFG.speedUnit]||'km/h'; }
+function fmtSpd(kmh,dec=1){ return toUnit(kmh).toFixed(dec); }
+
+document.addEventListener('contextmenu',e=>e.preventDefault(),{passive:false});
+document.addEventListener('selectstart',e=>{if(!(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement))e.preventDefault();},{passive:false});
+document.addEventListener('dragstart',e=>e.preventDefault(),{passive:false});
+
+/* ═══ STATE ═════════════════════════════════════════════════════ */
+const S={
+  gps:'idle',tracking:false,
+  speed:0,maxSpd:0,avgSpd:0,dist:0,elapsed:0,t0:null,
+  buf:[],hist:[],pts:[],falls:[],fc:0,lastPt:null,
+  timerID:null,watchID:null,
+  // Live-Sensor-Werte (für Advanced Settings Panel)
+  lastAccuracy:null, lastGForce:0,
+  map:null,lg:null,prevLL:null,smkr:null,pmkr:null,
+  dmap:null,
+  locked:false,folderID:null,page:'track',
+  asLiveTimer:null, // Interval für Live-Werte im Advanced-Settings-Panel
+};
+
+/* ═══ TOAST ═════════════════════════════════════════════════════ */
+let _tt;
+const toast=(m,d=2600)=>{const e=$('toast');e.textContent=m;e.classList.add('on');clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('on'),d);};
+
+/* ═══ NAVIGATION ════════════════════════════════════════════════ */
+function goPage(pg){
+  // FIX: Detail und Advanced Settings schließen wenn Tab gewechselt wird
+  closeDetail();
+  closeAdvSettings();
+  S.page=pg;
+  document.querySelectorAll('.page').forEach(el=>el.classList.toggle('on',el.id==='page-'+pg));
+  document.querySelectorAll('.nbt').forEach(b=>b.classList.toggle('on',b.dataset.pg===pg));
+  if(pg==='track'&&S.map) setTimeout(()=>S.map.invalidateSize(),80);
+  if(pg==='history') renderHistory();
+  if(pg==='settings') renderSettings();
+}
+document.querySelectorAll('.nbt').forEach(b=>b.addEventListener('click',()=>goPage(b.dataset.pg)));
+
+/* ═══ GPS ═══════════════════════════════════════════════════════ */
+function initGPS(){
+  if(!navigator.geolocation){setGPS('error');return;}
+  setGPS('waiting');
+  let last=0;
+  S.watchID=navigator.geolocation.watchPosition(
+    pos=>{
+      setGPS('ready');
+      S.lastAccuracy=pos.coords.accuracy;
+      const now=Date.now();
+      if(now-last < CFG.gpsInterval) return;
+      last=now;
+      onPos(pos);
+    },
+    e=>{console.warn('GPS:',e.code);setGPS('error');},
+    {enableHighAccuracy:CFG.gpsAccuracy==='high',timeout:20000,maximumAge:1000}
+  );
+}
+
+function setGPS(s){
+  S.gps=s;
+  const d=$('gdot'),l=$('glbl'),b=$('tbtn');
+  d.className='gdot';
+  if(s==='ready')d.classList.add('r');
+  else if(s==='waiting')d.classList.add('w');
+  else if(s==='error')d.classList.add('e');
+  l.textContent={idle:'GPS',waiting:'Suche GPS…',ready:'GPS bereit',error:'GPS fehlt'}[s]||s;
+  if(!S.tracking)b.disabled=(s!=='ready');
+}
+
+/* ═══ POSITION HANDLER ═════════════════════════════════════════ */
+function onPos(pos){
+  const now=Date.now();
+  const lat=pos.coords.latitude,lon=pos.coords.longitude;
+  if(!S.tracking){if(S.map)S.map.setView([lat,lon],CFG.mapZoom,{animate:false});return;}
+
+  let raw=0;
+  if(typeof pos.coords.speed==='number'&&pos.coords.speed>=0) raw=pos.coords.speed*3.6;
+
+  const curPt={lat,lon,time:now};
+  if(S.lastPt){
+    const dt=(now-S.lastPt.time)/1e3;
+    const dk=hav(S.lastPt,curPt);
+    if(dt>0&&dt<=20&&dk<0.5){
+      // Distanzfilter: zu kleine Bewegungen ignorieren
+      if(dk*1000 >= CFG.distFilter) S.dist+=dk;
+      if(raw===0) raw=(dk/dt)*3600;
+    }
+  }
+  S.lastPt=curPt;
+
+  // Geschwindigkeitsalgorithmus
+  if(CFG.speedAlgo==='raw'){
+    S.speed=raw;
+  } else if(CFG.speedAlgo==='kalman'){
+    S.speed=KALMAN.update(raw);
+  } else { // moving_avg
+    S.buf.push(raw);
+    while(S.buf.length>CFG.smoothBuf)S.buf.shift();
+    S.speed=S.buf.reduce((a,b)=>a+b,0)/S.buf.length;
+  }
+
+  // Trackpunkt mit Speed speichern (Auflösung nach ptRes)
+  if(S.pts.length===0 || S.pts.length%CFG.ptRes===0){
+    S.pts.push({lat,lon,time:now,speed:S.speed});
+  }
+
+  if(S.speed>S.maxSpd){
+    S.maxSpd=S.speed;
+    // Voice-Feedback bei neuem Rekord
+    if(CFG.voiceRecord&&'speechSynthesis' in window){
+      const msg=`Neue Höchstgeschwindigkeit: ${Math.round(toUnit(S.speed))} ${unitLabel()}`;
+      const u=new SpeechSynthesisUtterance(msg);u.lang='de-DE';u.volume=.8;
+      speechSynthesis.cancel();speechSynthesis.speak(u);
+    }
+  }
+  S.hist.push({s:+(S.speed.toFixed(1)),t:now});
+  const mv=S.hist.filter(p=>p.s>2);
+  S.avgSpd=mv.length?mv.reduce((a,b)=>a+b.s,0)/mv.length:0;
+
+  updateDOM();
+  mapAddPoint(lat,lon,S.speed);
+}
+
+/* ═══ DOM UPDATE ════════════════════════════════════════════════
+   Kein SVGElement.className – Zahlen sind normale <span>/<div>.
+   Speed-Balken via style.width.
+════════════════════════════════════════════════════════════════ */
+function updateDOM(){
+  const spd=S.speed, MAX=CFG.maxScale;
+  const dispSpd=toUnit(spd);
+
+  const num=$('snum');
+  if(num){
+    num.textContent=Math.round(dispSpd);
+    const nc='trk-spd-num'+(spd>MAX*.75?' d':spd>MAX*.5?' w':'');
+    if(num.className!==nc)num.className=nc;
+  }
+
+  const bar=$('spd-bar');
+  if(bar){
+    const pct=Math.min(spd/MAX,1)*100;
+    bar.style.width=pct+'%';
+    const col=spd>MAX*.75?'#ff453a':spd>MAX*.5?'#ffd60a':'#0a84ff';
+    bar.style.background=col;bar.style.boxShadow=`0 0 10px ${col}`;
+  }
+
+  $('mmax').textContent=fmtSpd(S.maxSpd);
+  $('mavg').textContent=fmtSpd(S.avgSpd);
+  const d=S.dist;
+  if(d<0.1){$('mdist').textContent=Math.round(d*1000);$('mdistl').textContent='m';}
+  else{$('mdist').textContent=d.toFixed(2);$('mdistl').textContent='km';}
+}
+
+/* ═══ MAP ════════════════════════════════════════════════════════ */
+function initMap(){
+  if(S.map)return;
+  const map=L.map('lmap',{zoomControl:true,attributionControl:false,fadeAnimation:false,markerZoomAnimation:false});
+  map.zoomControl.setPosition('bottomright');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,updateWhenIdle:false,keepBuffer:4}).addTo(map);
+  if(!CFG.nightMap) document.querySelectorAll('.leaflet-tile').forEach(t=>t.style.filter='none');
+  S.lg=L.layerGroup().addTo(map);
+  map.setView([48.2,13.5],15);
+  S.map=map;
+  setTimeout(()=>{if(S.map)S.map.invalidateSize();},200);
+}
+
+function spdColor(spd){
+  const t=Math.min(Math.max(spd,0)/50,1);let r,g,b;
+  if(t<0.5){const u=t*2;r=255;g=Math.round(69+(214-69)*u);b=Math.round(58+(10-58)*u);}
+  else{const u=(t-.5)*2;r=Math.round(255+(48-255)*u);g=Math.round(214+(209-214)*u);b=Math.round(10+(88-10)*u);}
+  return`rgb(${r},${g},${b})`;
+}
+
+function mapAddPoint(lat,lon,spd){
+  if(!S.map||!S.lg)return;
+  if(!S.smkr){
+    S.map.invalidateSize();
+    S.smkr=L.circleMarker([lat,lon],{radius:8,color:'#fff',weight:2.5,fillColor:'#30d158',fillOpacity:1}).addTo(S.lg);
+    S.map.setView([lat,lon],CFG.mapZoom,{animate:false});
+  }
+  if(S.prevLL){
+    L.polyline([S.prevLL,[lat,lon]],{color:spdColor(spd),weight:5.5,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(S.lg);
+  }
+  S.prevLL=[lat,lon];
+  const col=spdColor(spd);
+  if(!S.pmkr){S.pmkr=L.circleMarker([lat,lon],{radius:9,color:'#fff',weight:2.5,fillColor:col,fillOpacity:1}).addTo(S.lg);}
+  else{S.pmkr.setLatLng([lat,lon]);S.pmkr.setStyle({fillColor:col});}
+  if(CFG.mapFollow) S.map.panTo([lat,lon],{animate:true,duration:0.9,easeLinearity:0.4});
+}
+
+function clearMapSession(){
+  if(S.lg)S.lg.clearLayers();
+  S.smkr=null;S.pmkr=null;S.prevLL=null;
+}
+
+/* ═══ TRACKING ══════════════════════════════════════════════════ */
+$('tbtn').addEventListener('click',()=>S.tracking?stopT():startT());
+
+function startT(){
+  S.tracking=true;S.t0=Date.now();
+  S.speed=0;S.maxSpd=0;S.avgSpd=0;S.dist=0;S.elapsed=0;
+  S.buf=[];S.hist=[];S.pts=[];S.falls=[];S.fc=0;S.lastPt=null;
+  KALMAN.reset();
+  clearMapSession();
+  if(CFG.autoLock){$('wl').classList.add('on');S.locked=true;}
+  if(CFG.vibStart&&navigator.vibrate)navigator.vibrate(60);
+  S.timerID=setInterval(()=>{S.elapsed=Date.now()-S.t0;$('mtime').textContent=fmtT(S.elapsed);updateDOM();},1000);
+  const b=$('tbtn');b.disabled=false;b.className='tbtn st';$('tbtl').textContent='Run beenden';
+  updateDOM();toast('⏱ Run gestartet');
+}
+
+function stopT(){
+  S.tracking=false;clearInterval(S.timerID);S.timerID=null;
+  const b=$('tbtn');b.className='tbtn go';b.disabled=(S.gps!=='ready');
+  $('tbtl').textContent='Run starten';
+  if(S.hist.length>CFG.minRunPts)saveRun();
+  else toast('Zu kurz – nicht gespeichert');
+}
+
+function saveRun(){
+  DB.addRun({id:Date.now().toString(),name:`Run ${new Date().toLocaleDateString('de-DE')}`,folderId:null,startTime:S.t0,duration:S.elapsed,maxSpeed:S.maxSpd,avgSpeed:S.avgSpd,distance:S.dist,speedHistory:S.hist,trackPoints:S.pts,falls:S.falls});
+  DB.clearSession();toast(`✅ Gespeichert · ${fmtSpd(S.maxSpd)} ${unitLabel()} max`);
+}
+
+/* ═══ MOTION ════════════════════════════════════════════════════ */
+function initMotion(){
+  if(!window.DeviceMotionEvent)return;
+  const h=e=>{
+    const ag=e.accelerationIncludingGravity||e.acceleration;if(!ag)return;
+    const g=Math.sqrt((ag.x||0)**2+(ag.y||0)**2+(ag.z||0)**2)/9.81;
+    S.lastGForce=g;
+    if(!S.tracking)return;
+    if(g>CFG.crashG&&S.speed>CFG.crashMinSpd){
+      const now=Date.now(),last=S.falls[S.falls.length-1];
+      if(!last||now-last.time>CFG.crashCooldown){
+        S.falls.push({time:now,speed:S.speed,gForce:g.toFixed(2)});S.fc++;
+        $('fat').textContent=`💥 Sturz #${S.fc} erkannt!`;
+        $('fas').textContent=`${g.toFixed(1)}g · ${fmtSpd(S.speed)} ${unitLabel()}`;
+        const el=$('falert');el.style.display='flex';el.style.animation='shk .5s ease,fup .4s cubic-bezier(.34,1.4,.64,1)';
+        if(CFG.crashVibrate&&navigator.vibrate)navigator.vibrate([200,80,200,80,400]);
+        if(CFG.crashVoice&&'speechSynthesis' in window){const u=new SpeechSynthesisUtterance(`Sturz erkannt! ${g.toFixed(1)} G`);u.lang='de-DE';speechSynthesis.speak(u);}
+        setTimeout(()=>{el.style.display='none';},5000);
+      }
+    }
+  };
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+    DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')window.addEventListener('devicemotion',h,{passive:true});}).catch(()=>{});
+  }else window.addEventListener('devicemotion',h,{passive:true});
+}
+
+/* ═══ HISTORY ═══════════════════════════════════════════════════ */
+const COLS=['#0a84ff','#30d158','#ff9f0a','#ff2d55','#bf5af2','#5ac8fa','#ff6b35'];
+
+function renderFTabs(){
+  const flds=DB.getFolders(),w=$('ftabs');w.innerHTML='';
+  const all=document.createElement('div');all.className='ftab'+(S.folderID===null?' on':'');all.textContent='Alle';
+  all.addEventListener('click',()=>{S.folderID=null;renderHistory();});w.appendChild(all);
+  flds.forEach(f=>{
+    const t=document.createElement('div');t.className='ftab'+(S.folderID===f.id?' on':'');
+    t.innerHTML=`<div class="fdot" style="background:${f.color}"></div>${esc(f.name)}`;
+    t.addEventListener('click',()=>{if(S.folderID===f.id)showFolderOpts(f);else{S.folderID=f.id;renderHistory();}});
+    w.appendChild(t);
+  });
+}
+
+function renderHistory(){
+  renderFTabs();
+  const all=DB.getRuns(),runs=S.folderID===null?all:all.filter(r=>r.folderId===S.folderID);
+  const list=$('rlist');list.innerHTML='';
+  if(!runs.length){list.innerHTML=`<div class="empty"><div class="emico">🌊</div><div>${S.folderID?'Keine Fahrten in diesem Ordner':'Noch keine Fahrten'}</div></div>`;return;}
+  const fm=Object.fromEntries(DB.getFolders().map(f=>[f.id,f]));
+  runs.forEach((r,i)=>{
+    const f=r.folderId?fm[r.folderId]:null;
+    const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'km';
+    const c=document.createElement('div');c.className='rcard';c.style.animationDelay=`${i*.04}s`;
+    c.innerHTML=`
+      <div class="rctop">
+        <div class="rcl">
+          ${f?`<div class="rfb"><div class="rfbd" style="background:${f.color}"></div>${esc(f.name)}</div>`:''}
+          <div class="rname">${esc(r.name||'Run')}</div>
+          <div class="rdate">${fmtD(r.startTime)}</div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:6px;flex-shrink:0;margin-left:10px">
+          <button class="rmenu"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+          <div><div class="rsb">${Math.round(r.maxSpeed||0)}</div><div class="rsu">km/h max</div></div>
+        </div>
+      </div>
+      <div class="rstats">
+        <div class="rs"><div class="rsv">${(r.avgSpeed||0).toFixed(1)}</div><div class="rsl">Ø km/h</div></div>
+        <div class="rs"><div class="rsv">${ds}</div><div class="rsl">${dl}</div></div>
+        <div class="rs"><div class="rsv">${fmtT(r.duration||0)}</div><div class="rsl">Zeit</div></div>
+        <div class="rs" style="color:${(r.falls||[]).length?'var(--red)':'var(--green)'}"><div class="rsv">${(r.falls||[]).length}</div><div class="rsl">Stürze</div></div>
+      </div>`;
+    c.querySelector('.rcl').addEventListener('click',()=>openDetail(r));
+    c.querySelectorAll('.rs').forEach(s=>s.addEventListener('click',()=>openDetail(r)));
+    c.querySelector('.rmenu').addEventListener('click',e=>{e.stopPropagation();showRunOpts(r);});
+    list.appendChild(c);
+  });
+}
+
+$('nfbtn').addEventListener('click',()=>showFolderCreate());
+
+function showFolderCreate(ex){
+  const isEdit=!!ex;let sc=ex?ex.color:COLS[0];
+  const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px))">
+    <div style="font-size:19px;font-weight:700;margin-bottom:16px">${isEdit?'Ordner bearbeiten':'Neuer Ordner'}</div>
+    <div class="lbl">Name</div><input class="inp" id="fni" placeholder="z. B. Training" value="${isEdit?esc(ex.name):''}"/>
+    <div class="lbl" style="margin-top:14px">Farbe</div>
+    <div class="swatches">${COLS.map(c=>`<div class="sw${c===sc?' on':''}" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn bg" id="fnc">Abbrechen</button><button class="btn bp" id="fns">${isEdit?'Speichern':'Erstellen'}</button></div>
+  </div>`);
+  const inp=ov.querySelector('#fni');setTimeout(()=>inp.focus(),80);
+  ov.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{sc=s.dataset.c;ov.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));s.classList.add('on');}));
+  ov.querySelector('#fnc').addEventListener('click',()=>ov.remove());
+  ov.querySelector('#fns').addEventListener('click',()=>{const nm=inp.value.trim();if(!nm){inp.style.borderColor='var(--red)';inp.focus();return;}if(isEdit)DB.updateFolder(ex.id,{name:nm,color:sc});else DB.addFolder({id:'f'+Date.now(),name:nm,color:sc});ov.remove();renderHistory();toast(isEdit?'Ordner aktualisiert':'Ordner erstellt');});
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showFolderOpts(f){
+  const ov=mkOv(`<div class="sh"><div class="shhdr"><div class="shht">${esc(f.name)}</div></div>
+    <div class="shrow" id="for">✏️ Umbenennen</div>
+    <div class="shrow r" id="fod">🗑️ Löschen</div>
+    <div class="shrow c" id="foc">Abbrechen</div></div>`);
+  ov.querySelector('#for').addEventListener('click',()=>{ov.remove();showFolderCreate(f);});
+  ov.querySelector('#fod').addEventListener('click',()=>{ov.remove();confirm2('Ordner löschen?','Fahrten bleiben erhalten.',()=>{DB.deleteFolder(f.id);if(S.folderID===f.id)S.folderID=null;renderHistory();toast('Ordner gelöscht');});});
+  ov.querySelector('#foc').addEventListener('click',()=>ov.remove());
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showRunOpts(r){
+  const ov=mkOv(`<div class="sh"><div class="shhdr"><div class="shht">${esc(r.name||'Run')}</div><div class="shhs">${fmtD(r.startTime)}</div></div>
+    <div class="shrow" id="ror">✏️ Umbenennen</div>
+    <div class="shrow" id="rom">📁 In Ordner verschieben</div>
+    <div class="shrow r" id="rod">🗑️ Fahrt löschen</div>
+    <div class="shrow c" id="roc">Abbrechen</div></div>`);
+  ov.querySelector('#ror').addEventListener('click',()=>{ov.remove();showRename(r);});
+  ov.querySelector('#rom').addEventListener('click',()=>{ov.remove();showFolderPicker(r);});
+  ov.querySelector('#rod').addEventListener('click',()=>{ov.remove();confirm2('Fahrt löschen?','Nicht rückgängig.',()=>{DB.deleteRun(r.id);renderHistory();toast('Fahrt gelöscht');});});
+  ov.querySelector('#roc').addEventListener('click',()=>ov.remove());
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showRename(r){
+  const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px))">
+    <div style="font-size:19px;font-weight:700;margin-bottom:14px">Umbenennen</div>
+    <input class="inp" id="rni" value="${esc(r.name||'Run')}"/>
+    <div style="display:flex;gap:10px;margin-top:14px"><button class="btn bg" id="rnc">Abbrechen</button><button class="btn bp" id="rns">Speichern</button></div>
+  </div>`);
+  const inp=ov.querySelector('#rni');setTimeout(()=>{inp.focus();inp.select();},80);
+  ov.querySelector('#rnc').addEventListener('click',()=>ov.remove());
+  ov.querySelector('#rns').addEventListener('click',()=>{const nm=inp.value.trim();if(!nm)return;DB.updateRun(r.id,{name:nm});ov.remove();renderHistory();toast('Umbenannt');});
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+function showFolderPicker(r){
+  const flds=DB.getFolders();
+  const rows=flds.map(f=>`<div class="shrow fpr" data-id="${f.id}"><div class="shdot" style="background:${f.color}"></div>${esc(f.name)}${r.folderId===f.id?'<div class="shchk">✓</div>':''}</div>`).join('');
+  const ov=mkOv(`<div class="sh"><div class="shhdr"><div class="shht">In Ordner verschieben</div></div>
+    <div class="shrow fpr" data-id="__none__"><div class="shdot" style="background:#48484a"></div>Kein Ordner${!r.folderId?'<div class="shchk" style="background:#48484a">✓</div>':''}</div>
+    ${rows}
+    <div class="shrow" id="fpn">➕ Neuen Ordner erstellen</div>
+    <div class="shrow c" id="fpc">Abbrechen</div></div>`);
+  ov.querySelectorAll('.fpr').forEach(row=>row.addEventListener('click',()=>{const id=row.dataset.id;DB.updateRun(r.id,{folderId:id==='__none__'?null:id});ov.remove();renderHistory();toast('Verschoben');}));
+  ov.querySelector('#fpn').addEventListener('click',()=>{ov.remove();showFolderCreate();});
+  ov.querySelector('#fpc').addEventListener('click',()=>ov.remove());
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+/* ═══ DETAIL ════════════════════════════════════════════════════ */
+function openDetail(r){
+  const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'Distanz km';
+  const hf=(r.falls||[]).length>0,ht=(r.trackPoints||[]).length>2;
+  $('dtitle').textContent=r.name||'Run';$('ddate').textContent=fmtD(r.startTime);
+  $('dcont').innerHTML=`
+    <div class="dhero" style="animation:fup .32s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="dspd">${Math.round(r.maxSpeed||0)}</div><div class="dspdl">km/h Maximalgeschwindigkeit</div>
+    </div>
+    <div class="dgrid" style="animation:fup .32s .05s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="dst"><div class="dstv">${(r.avgSpeed||0).toFixed(1)}</div><div class="dstl">Ø Geschwindigkeit</div></div>
+      <div class="dst"><div class="dstv">${ds}</div><div class="dstl">${dl}</div></div>
+      <div class="dst"><div class="dstv">${fmtT(r.duration||0)}</div><div class="dstl">Fahrzeit</div></div>
+      <div class="dst" style="border-color:${hf?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}">
+        <div class="dstv" style="color:${hf?'var(--red)':'var(--green)'}">${(r.falls||[]).length}</div><div class="dstl">Stürze</div>
+      </div>
+    </div>
+    ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:80px;display:block"></canvas></div>`:''}
+    ${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}
+    ${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit"><div style="font-size:22px">💥</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
+    <button class="delbtn" id="ddel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
+  $('pd').style.display='block';
+  requestAnimationFrame(()=>{
+    if(ht)initDMap(r.trackPoints,r.falls||[]);
+    const cv=$('dchrt');if(cv)setTimeout(()=>drawChart(cv,r.speedHistory),120);
+  });
+  $('ddel').addEventListener('click',()=>confirm2('Fahrt löschen?','Nicht rückgängig.',()=>{DB.deleteRun(r.id);closeDetail();renderHistory();toast('Fahrt gelöscht');}));
+}
+
+function closeDetail(){ if($('pd').style.display!=='none'){if(S.dmap){S.dmap.remove();S.dmap=null;}$('pd').style.display='none';} }
+$('bbtn').addEventListener('click',closeDetail);
+
+function initDMap(pts,falls){
+  const el=$('dmap');if(!el||pts.length<2)return;
+  if(S.dmap){S.dmap.remove();S.dmap=null;}
+  const map=L.map(el,{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  S.dmap=map;
+  const hasSpdData=pts.length>1&&pts[1].speed!==undefined;
+  if(hasSpdData){for(let i=1;i<pts.length;i++)L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{color:spdColor(pts[i].speed||0),weight:4.5,opacity:.95,lineCap:'round'}).addTo(map);}
+  else L.polyline(pts.map(p=>[p.lat,p.lon]),{color:'#0a84ff',weight:4.5,opacity:.95,lineCap:'round'}).addTo(map);
+  const ll=pts.map(p=>[p.lat,p.lon]);
+  const mk=(col)=>L.divIcon({html:`<div style="width:11px;height:11px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[11,11],iconAnchor:[5.5,5.5],className:''});
+  L.marker(ll[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Start');
+  L.marker(ll[ll.length-1],{icon:mk('#ff453a')}).addTo(map).bindPopup('Ende');
+  falls.forEach(f=>{const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);L.marker([cp.lat,cp.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map);});
+  const bounds=L.latLngBounds(ll);
+  map.fitBounds(bounds,{padding:[20,20]});
+  setTimeout(()=>{map.invalidateSize();map.fitBounds(bounds,{padding:[20,20]});},300);
+}
+
+function drawChart(cv,hist){
+  if(!cv||!hist||hist.length<2)return;
+  const ctx=cv.getContext('2d'),W=cv.offsetWidth||300,H=cv.offsetHeight||80;
+  cv.width=W*devicePixelRatio;cv.height=H*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);
+  const vals=hist.map(p=>p.s!==undefined?p.s:p.speed||0),mx=Math.max(...vals,1);
+  const step=Math.max(1,Math.floor(vals.length/120)),pts2=vals.filter((_,i)=>i%step===0);
+  const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'rgba(10,132,255,.35)');grad.addColorStop(1,'rgba(10,132,255,0)');
+  ctx.clearRect(0,0,W,H);
+  ctx.beginPath();pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.strokeStyle='#0a84ff';ctx.lineWidth=2;ctx.stroke();
+}
+
+/* ═══ SETTINGS ══════════════════════════════════════════════════ */
+function renderSettings(){
+  const p=DB.getProfile(),runs=DB.getRuns(),dist=runs.reduce((a,r)=>a+(r.distance||0),0);
+  const av=$('sav');av.textContent=p.initial||'?';
+  av.style.background=`linear-gradient(135deg,${p.color},${shd(p.color,-40)})`;
+  av.style.boxShadow=`0 4px 20px ${p.color}55`;
+  $('snm').textContent=p.name;
+  $('sst').textContent=`${runs.length} Fahrten · ${dist<0.1?Math.round(dist*1000)+'m':dist.toFixed(1)+' km'}`;
+}
+
+$('pcrd').addEventListener('click',showProfileEdit);
+function showProfileEdit(){
+  const p=DB.getProfile();let sc=p.color;
+  const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px))">
+    <div style="font-size:19px;font-weight:700;margin-bottom:16px">Profil bearbeiten</div>
+    <div class="lbl">Name</div><input class="inp" id="pni" value="${esc(p.name)}" style="margin-bottom:12px"/>
+    <div class="lbl">Kürzel (1–2 Zeichen)</div><input class="inp" id="pii" value="${esc(p.initial)}" maxlength="2" style="margin-bottom:12px"/>
+    <div class="lbl">Farbe</div><div class="swatches">${COLS.map(c=>`<div class="sw${c===sc?' on':''}" data-c="${c}" style="background:${c}"></div>`).join('')}</div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn bg" id="pec">Abbrechen</button><button class="btn bp" id="pes">Speichern</button></div>
+  </div>`);
+  setTimeout(()=>ov.querySelector('#pni').focus(),80);
+  ov.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>{sc=s.dataset.c;ov.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));s.classList.add('on');}));
+  ov.querySelector('#pec').addEventListener('click',()=>ov.remove());
+  ov.querySelector('#pes').addEventListener('click',()=>{
+    const nm=ov.querySelector('#pni').value.trim()||'Fahrer';
+    const init=(ov.querySelector('#pii').value.trim()||nm[0]).toUpperCase().slice(0,2);
+    DB.saveProfile({...p,name:nm,initial:init,color:sc});ov.remove();renderSettings();toast('Profil gespeichert ✓');
+  });
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
+
+$('sexport').addEventListener('click',()=>{
+  const b=new Blob([JSON.stringify(DB.exportAll(),null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download=`wakeski-${Date.now()}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);toast('Export gestartet');
+});
+$('simport').addEventListener('click',()=>$('fimp').click());
+$('fimp').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);if(!d.runs&&!d.profile)throw 0;confirm2('Daten importieren?',`${(d.runs||[]).length} Fahrten werden geladen.`,()=>{DB.importAll(d);renderSettings();toast('Import abgeschlossen');});}
+    catch{toast('❌ Ungültige Datei');}e.target.value='';
+  };r.readAsText(f);
+});
+$('sclear').addEventListener('click',()=>confirm2('Alle Fahrten löschen?','Ordner und Profil bleiben.',()=>{DB.clearRuns();renderSettings();toast('Alle Fahrten gelöscht');}));
+
+/* ═══ ADVANCED SETTINGS ════════════════════════════════════════
+   25 Einstellungen in 5 Kategorien.
+   Live-Werte (GPS-Genauigkeit, G-Kraft, aktuelle Geschwindigkeit)
+   werden jede Sekunde aktualisiert solange das Panel offen ist.
+════════════════════════════════════════════════════════════════ */
+$('sadv').addEventListener('click',openAdvSettings);
+$('as-back').addEventListener('click',closeAdvSettings);
+
+function openAdvSettings(){
+  buildAdvSettings();
+  $('as-panel').style.display='block';
+  // Live-Update-Timer: aktualisiert Sensor-Werte im Panel
+  if(S.asLiveTimer) clearInterval(S.asLiveTimer);
+  S.asLiveTimer=setInterval(updateAdvLive,800);
+}
+
+function closeAdvSettings(){
+  if($('as-panel').style.display==='none') return;
+  $('as-panel').style.display='none';
+  if(S.asLiveTimer){clearInterval(S.asLiveTimer);S.asLiveTimer=null;}
+}
+
+function seg(key, opts){
+  return `<div class="as-seg">${opts.map(o=>`<button class="as-sbt${CFG[key]===o.v?' on':''}" data-key="${key}" data-val="${o.v}">${o.l}</button>`).join('')}</div>`;
+}
+function tog(key){
+  return `<button class="as-tog${CFG[key]?' on':''}" data-tog="${key}"></button>`;
+}
+function slRow(key, label, sub, min, max, step, fmt){
+  const v=CFG[key];
+  return `<div class="as-slrow">
+    <div class="as-sl-top"><span class="as-sl-label">${label}</span><span class="as-sl-val" id="sl-val-${key}">${fmt(v)}</span></div>
+    <div class="as-sl-sub">${sub}</div>
+    <input type="range" class="as-slider" id="sl-${key}" data-key="${key}" data-min="${min}" data-max="${max}" data-step="${step}" min="${min}" max="${max}" step="${step}" value="${v}"/>
+  </div>`;
+}
+function row(label, sub, liveId, control){
+  const liveHtml=liveId?`<div class="as-live-val" id="${liveId}">–</div>`:'';
+  return `<div class="as-row">
+    <div class="as-row-top">
+      <div class="as-row-left"><div class="as-rl">${label}</div>${sub?`<div class="as-rs">${sub}</div>`:''}${liveHtml}</div>
+      ${control}
+    </div>
+  </div>`;
+}
+
+function buildAdvSettings(){
+  const c=$('as-content');
+  c.innerHTML = `
+  <!-- 📡 GPS & Sensoren -->
+  <div class="as-section">
+    <div class="as-stitle">📡 GPS & Sensoren</div>
+    <div class="as-card">
+      ${row('GPS-Genauigkeit','Hoch: bessere Werte, mehr Akku','as-l-acc', seg('gpsAccuracy',[{v:'high',l:'Hoch'},{v:'medium',l:'Mittel'},{v:'low',l:'Niedrig'}]))}
+      ${row('Update-Interval','Wie oft GPS-Punkte verarbeitet werden',null, seg('gpsInterval',[{v:200,l:'0.2s'},{v:500,l:'0.5s'},{v:1000,l:'1s'},{v:2000,l:'2s'}]))}
+      ${row('Distanzfilter','Min. Meter zwischen Trackpunkten',null, seg('distFilter',[{v:1,l:'1m'},{v:2,l:'2m'},{v:5,l:'5m'},{v:10,l:'10m'}]))}
+      ${row('Algorithmus','Methode zur Geschwindigkeitsberechnung',null, seg('speedAlgo',[{v:'moving_avg',l:'Gleitend'},{v:'kalman',l:'Kalman'},{v:'raw',l:'Direkt'}]))}
+    </div>
+    <div class="as-card" style="margin-top:8px">
+      ${slRow('smoothBuf','Puffergröße','Punkte für gleitenden Mittelwert',2,10,1,v=>Math.round(v)+' Pkt.')}
+      ${slRow('kalmanR','Kalman – Messrauschen R','Höher = stärkere Glättung',0.1,5,0.1,v=>(+v).toFixed(1))}
+      ${slRow('kalmanQ','Kalman – Prozessrauschen Q','Höher = schnellere Reaktion',0.01,1,0.01,v=>(+v).toFixed(2))}
+    </div>
+  </div>
+
+  <!-- 💥 Sturzerkennung -->
+  <div class="as-section">
+    <div class="as-stitle">💥 Sturzerkennung</div>
+    <div class="as-card">
+      ${row('G-Kraft Schwelle','Schwellenwert zur Sturzerkennung','as-l-gforce', seg('crashG',[{v:1.5,l:'1.5g'},{v:2.0,l:'2g'},{v:2.5,l:'2.5g'},{v:3.5,l:'3.5g'},{v:5.0,l:'5g'}]))}
+      ${row('Mindestgeschwindigkeit','Unter diesem Wert kein Sturz erkannt',null, seg('crashMinSpd',[{v:0,l:'Aus'},{v:5,l:'5'},{v:8,l:'8'},{v:15,l:'15'},{v:20,l:'20 km/h'}]))}
+      ${row('Cooldown','Pause zwischen zwei Stürzen',null, seg('crashCooldown',[{v:1000,l:'1s'},{v:3000,l:'3s'},{v:5000,l:'5s'},{v:10000,l:'10s'}]))}
+      ${row('Vibration bei Sturz',null,null, tog('crashVibrate'))}
+      ${row('Stimme bei Sturz','Sprachansage via Web Speech API',null, tog('crashVoice'))}
+    </div>
+  </div>
+
+  <!-- 🎯 Anzeige -->
+  <div class="as-section">
+    <div class="as-stitle">🎯 Anzeige</div>
+    <div class="as-card">
+      ${row('Geschwindigkeitseinheit','Live-Anzeige und gespeicherte Werte','as-l-unit', seg('speedUnit',[{v:'kmh',l:'km/h'},{v:'mph',l:'mph'},{v:'ms',l:'m/s'}]))}
+      ${row('Max-Skala Speed-Ring','Bezugsgröße für Farbe und Balken',null, seg('maxScale',[{v:60,l:'60'},{v:80,l:'80'},{v:100,l:'100'},{v:120,l:'120 km/h'}]))}
+      ${row('Karte folgt Position','Karte zentriert auf aktuellen Punkt',null, tog('mapFollow'))}
+      ${row('Zoom beim Start',null,null, seg('mapZoom',[{v:15,l:'15'},{v:16,l:'16'},{v:17,l:'17'},{v:18,l:'18'}]))}
+      ${row('Nacht-Filter Karte','Dunkler Karten-Look',null, tog('nightMap'))}
+    </div>
+  </div>
+
+  <!-- 🔊 Feedback -->
+  <div class="as-section">
+    <div class="as-stitle">🔊 Feedback</div>
+    <div class="as-card">
+      ${row('Stimme bei neuem Rekord','Sprachansage via Web Speech API',null, tog('voiceRecord'))}
+      ${row('Stimme bei Meilensteinen','Alle 10 km/h-Schritte',null, tog('voiceMile'))}
+      ${row('Vibration beim Run-Start',null,null, tog('vibStart'))}
+    </div>
+  </div>
+
+  <!-- 💾 Datenspeicherung -->
+  <div class="as-section">
+    <div class="as-stitle">💾 Datenspeicherung</div>
+    <div class="as-card">
+      ${row('Autosave-Interval','Sicherheitskopie im Hintergrund',null, seg('autoSaveInt',[{v:5,l:'5s'},{v:10,l:'10s'},{v:30,l:'30s'},{v:60,l:'60s'}]))}
+      ${row('Min. Run-Länge','Min. Punkte zum Speichern',null, seg('minRunPts',[{v:3,l:'3'},{v:5,l:'5'},{v:10,l:'10'},{v:20,l:'20 Pkt.'}]))}
+      ${row('Trackpunkt-Auflösung','Jeden n-ten Punkt speichern',null, seg('ptRes',[{v:1,l:'Alle'},{v:2,l:'Jed. 2.'},{v:5,l:'Jed. 5.'}]))}
+    </div>
+  </div>
+
+  <!-- 🔒 Sicherheit -->
+  <div class="as-section">
+    <div class="as-stitle">🔒 Sicherheit</div>
+    <div class="as-card">
+      ${row('Auto-Sperre beim Tracking-Start','Wassergeschützt-Modus aktiviert sich automatisch',null, tog('autoLock'))}
+      ${row('Check-in nach Sturz','Erinnerung wenn kein Check-in erfolgt',null, seg('crashCheckin',[{v:0,l:'Aus'},{v:15,l:'15s'},{v:30,l:'30s'},{v:60,l:'60s'}]))}
+    </div>
+  </div>
+
+  <div style="height:16px"></div>`;
+
+  // Event-Listener für Segment-Buttons
+  c.querySelectorAll('.as-sbt').forEach(btn=>btn.addEventListener('click',()=>{
+    const key=btn.dataset.key;
+    let val=btn.dataset.val;
+    // Zahlen-Werte korrekt parsen
+    if(!isNaN(val)&&val!=='')val=parseFloat(val);
+    setCFG(key,val);
+    // Segment visuell aktualisieren
+    c.querySelectorAll(`.as-sbt[data-key="${key}"]`).forEach(b=>b.classList.toggle('on',b.dataset.val==val));
+  }));
+
+  // Event-Listener für Toggles
+  c.querySelectorAll('.as-tog').forEach(btn=>btn.addEventListener('click',()=>{
+    const key=btn.dataset.tog;
+    setCFG(key,!CFG[key]);
+    btn.classList.toggle('on',CFG[key]);
+  }));
+
+  // Event-Listener für Slider
+  c.querySelectorAll('.as-slider').forEach(sl=>sl.addEventListener('input',()=>{
+    const key=sl.dataset.key;
+    let val=parseFloat(sl.value);
+    setCFG(key,val);
+    const fmt=getSliderFmt(key);
+    const vEl=document.getElementById('sl-val-'+key);
+    if(vEl)vEl.textContent=fmt(val);
+  }));
+
+  // Sofort live aktualisieren
+  updateAdvLive();
+}
+
+function getSliderFmt(key){
+  if(key==='smoothBuf')return v=>Math.round(v)+' Pkt.';
+  if(key==='kalmanR')return v=>(+v).toFixed(1);
+  if(key==='kalmanQ')return v=>(+v).toFixed(2);
+  return v=>v;
+}
+
+// Aktualisiert Live-Werte im Advanced Settings Panel
+function updateAdvLive(){
+  const la=$('as-l-acc');
+  if(la) la.textContent=S.lastAccuracy!=null?`Live: ±${Math.round(S.lastAccuracy)} m Genauigkeit`:'Live: kein GPS-Fix';
+
+  const lg=$('as-l-gforce');
+  if(lg) lg.textContent=`Live: ${S.lastGForce.toFixed(2)} g`;
+
+  const lu=$('as-l-unit');
+  if(lu) lu.textContent=`Live: ${fmtSpd(S.speed,1)} ${unitLabel()}`;
+}
+
+/* ═══ CONFIRM ═══════════════════════════════════════════════════ */
+function confirm2(t,s,fn){
+  $('ctxt').textContent=t;$('cstxt').textContent=s;$('cov').style.display='flex';
+  const hide=()=>$('cov').style.display='none';
+  const y=$('cyes'),n=$('cno'),yc=y.cloneNode(true),nc=n.cloneNode(true);
+  y.parentNode.replaceChild(yc,y);n.parentNode.replaceChild(nc,n);
+  $('cyes').addEventListener('click',()=>{hide();fn();});$('cno').addEventListener('click',hide);
+}
+
+function mkOv(html){const o=document.createElement('div');o.className='ov';o.innerHTML=html;document.body.appendChild(o);return o;}
+
+/* ═══ WATER LOCK ════════════════════════════════════════════════ */
+$('lbtn').addEventListener('click',()=>{$('wl').classList.add('on');S.locked=true;if(navigator.vibrate)navigator.vibrate(60);});
+let _lt=null;const wb=$('wlbtn'),wp=$('wlprog');
+wb.addEventListener('pointerdown',e=>{if(!S.locked)return;e.preventDefault();wb.classList.add('p');wp.style.width='0';wp.className='wlprog go';_lt=setTimeout(()=>{$('wl').classList.remove('on');S.locked=false;wb.classList.remove('p');wp.className='wlprog';if(navigator.vibrate)navigator.vibrate([80,40,80]);},2000);});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>wb.addEventListener(ev,()=>{clearTimeout(_lt);_lt=null;wb.classList.remove('p');wp.className='wlprog';}));
+
+/* ═══ AUTO SESSION SAVE ════════════════════════════════════════ */
+setInterval(()=>{
+  if(!S.tracking)return;
+  DB.saveSession({maxSpd:S.maxSpd,avgSpd:S.avgSpd,dist:S.dist,elapsed:S.elapsed,t0:S.t0});
+}, CFG.autoSaveInt*1000||10000);
+
+/* ═══ APP START ═════════════════════════════════════════════════ */
+function launchApp(){
+  $('sp').style.display='none';
+  const app=$('app');app.style.display='flex';app.style.flexDirection='column';
+  // Speed-Unit-Label initial setzen
+  const su=$('spd-unit');if(su)su.textContent=unitLabel();
+  goPage('track');
+  initGPS();
+  initMotion();
+  setTimeout(initMap,150);
+  const sess=DB.getSession();
+  if(sess&&sess.maxSpd){S.maxSpd=sess.maxSpd||0;S.dist=sess.dist||0;updateDOM();}
+}
+
+$('perm-btn').addEventListener('click',async()=>{
+  const b=$('perm-btn');b.disabled=true;
+  b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0110 10"/></svg> Aktiviere…';
+  for(const E of[window.DeviceMotionEvent,window.DeviceOrientationEvent]){if(typeof E?.requestPermission==='function')await E.requestPermission().catch(()=>{});}
+  setTimeout(()=>{$('sp').style.opacity='0';$('sp').style.transition='opacity .35s';setTimeout(launchApp,350);},400);
+});
+
+(async()=>{
+  if(!navigator.permissions)return;
+  try{const r=await navigator.permissions.query({name:'geolocation'});if(r.state==='granted')launchApp();}catch{}
+})();
+</script>
+</body>
+</html>
