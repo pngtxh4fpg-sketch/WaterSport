@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="de">
 <head>
 <meta charset="UTF-8"/>
@@ -17,22 +18,22 @@
 input,textarea{user-select:text;-webkit-user-select:text}
 
 :root{
-  --bg:#000;--glass:rgba(255,255,255,.05);--gb:rgba(255,255,255,.10);--gs:rgba(255,255,255,.08);
-  --ac:#0a84ff;--acg:rgba(10,132,255,.30);--acl:rgba(10,132,255,.13);
-  --green:#30d158;--gg:rgba(48,209,88,.25);
-  --red:#ff453a;--rg:rgba(255,69,58,.30);
-  --yellow:#ffd60a;--yg:rgba(255,214,10,.25);
-  --tx:rgba(255,255,255,.92);--tx2:rgba(255,255,255,.55);--tx3:rgba(255,255,255,.28);
-  --fd:'Barlow Condensed',sans-serif;--fb:'DM Sans',sans-serif;
-  --nav:82px;--sb:env(safe-area-inset-bottom,0px);
-  color-scheme:dark;
+–bg:#000;–glass:rgba(255,255,255,.05);–gb:rgba(255,255,255,.10);–gs:rgba(255,255,255,.08);
+–ac:#0a84ff;–acg:rgba(10,132,255,.30);–acl:rgba(10,132,255,.13);
+–green:#30d158;–gg:rgba(48,209,88,.25);
+–red:#ff453a;–rg:rgba(255,69,58,.30);
+–yellow:#ffd60a;–yg:rgba(255,214,10,.25);
+–tx:rgba(255,255,255,.92);–tx2:rgba(255,255,255,.55);–tx3:rgba(255,255,255,.28);
+–fd:‘Barlow Condensed’,sans-serif;–fb:‘DM Sans’,sans-serif;
+–nav:82px;–sb:env(safe-area-inset-bottom,0px);
+color-scheme:dark;
 }
 
-html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);font-family:var(--fb);-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);font-family:var(–fb);-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 
 #app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
 
-.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav)+16px);display:none}
+.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(–nav)+16px);display:none}
 .page.on{display:block;animation:fup .35s cubic-bezier(.34,1.28,.64,1) both}
 .page::-webkit-scrollbar{display:none}
 
@@ -44,209 +45,206 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
 @keyframes rip  {0%{transform:scale(.8);opacity:.6}100%{transform:scale(2.4);opacity:0}}
 @keyframes spin {to{transform:rotate(360deg)}}
 @keyframes shk  {0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-@keyframes glow {0%,100%{box-shadow:0 0 20px var(--acg)}50%{box-shadow:0 0 44px var(--acg)}}
+@keyframes glow {0%,100%{box-shadow:0 0 20px var(–acg)}50%{box-shadow:0 0 44px var(–acg)}}
 @keyframes lfill{from{width:0}to{width:100%}}
 
 /* ── Nav ── */
-#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav);background:rgba(8,8,8,.92);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-top:.5px solid var(--gb);display:flex;align-items:flex-start;justify-content:space-around;z-index:200;padding:10px 0 calc(10px + var(--sb))}
-.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:var(--fb);font-size:10px;font-weight:500;transition:color .2s}
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(–nav);background:rgba(8,8,8,.92);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-top:.5px solid var(–gb);display:flex;align-items:flex-start;justify-content:space-around;z-index:200;padding:10px 0 calc(10px + var(–sb))}
+.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:var(–fb);font-size:10px;font-weight:500;transition:color .2s}
 .nbt svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
-.nbt.on{color:var(--ac)}.nbt.on svg{transform:scale(1.1)}
+.nbt.on{color:var(–ac)}.nbt.on svg{transform:scale(1.1)}
 
 /* ── Buttons ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:var(--fb);font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:var(–fb);font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
 .btn:active{transform:scale(.965)}
-.bp{background:var(--ac);color:#fff;box-shadow:0 4px 24px var(--acg)}
-.bd{background:var(--red);color:#fff;box-shadow:0 4px 24px var(--rg)}
-.bg{background:var(--gs);border:.5px solid var(--gb);color:var(--tx)}
+.bp{background:var(–ac);color:#fff;box-shadow:0 4px 24px var(–acg)}
+.bd{background:var(–red);color:#fff;box-shadow:0 4px 24px var(–rg)}
+.bg{background:var(–gs);border:.5px solid var(–gb);color:var(–tx)}
 .bsm{padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
-.inp{width:100%;background:var(--gs);border:.5px solid var(--gb);border-radius:14px;padding:14px 16px;color:var(--tx);font-family:var(--fb);font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
-.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}.inp::placeholder{color:var(--tx3)}
+.inp{width:100%;background:var(–gs);border:.5px solid var(–gb);border-radius:14px;padding:14px 16px;color:var(–tx);font-family:var(–fb);font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.inp:focus{border-color:var(–ac);box-shadow:0 0 0 3px var(–acl)}.inp::placeholder{color:var(–tx3)}
 
 /* ── Permission ── */
 #sp{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fin .4s ease both}
-.plogo{font-family:var(--fd);font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
-.ptag{font-size:14px;color:var(--tx2);margin-bottom:44px}
+.plogo{font-family:var(–fd);font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
+.ptag{font-size:14px;color:var(–tx2);margin-bottom:44px}
 .plist{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
-.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
+.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
 .pit:nth-child(1){animation-delay:.08s}.pit:nth-child(2){animation-delay:.16s}.pit:nth-child(3){animation-delay:.24s}
-.pico{width:42px;height:42px;border-radius:11px;background:var(--acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pico svg{width:20px;height:20px;color:var(--ac)}
-.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(--tx2)}
+.pico{width:42px;height:42px;border-radius:11px;background:var(–acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pico svg{width:20px;height:20px;color:var(–ac)}
+.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(–tx2)}
 .pbw{width:100%;animation:fup .4s .32s cubic-bezier(.34,1.2,.64,1) both}
 
 /* ── Track page ── */
 .thdr{padding:52px 20px 0;display:flex;align-items:center;justify-content:space-between}
-.ttl{font-family:var(--fd);font-size:34px;font-weight:900}
-.gbadge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--glass);border:.5px solid var(--gb);font-size:12px;font-weight:500}
+.ttl{font-family:var(–fd);font-size:34px;font-weight:900}
+.gbadge{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(–glass);border:.5px solid var(–gb);font-size:12px;font-weight:500}
 .gdot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
-.gdot.w{background:var(--yellow);animation:pulse 1.4s ease-in-out infinite}
-.gdot.r{background:var(--green);box-shadow:0 0 8px var(--gg)}
-.gdot.e{background:var(--red)}
+.gdot.w{background:var(–yellow);animation:pulse 1.4s ease-in-out infinite}
+.gdot.r{background:var(–green);box-shadow:0 0 8px var(–gg)}
+.gdot.e{background:var(–red)}
 
 /* Speed ring */
 .swrap{display:flex;justify-content:center;padding:24px 20px 16px}
 .sring{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
 .sring .rsvg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .rbg{fill:none;stroke:rgba(255,255,255,.07);stroke-width:3}
-.rfill{fill:none;stroke:var(--ac);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:603;stroke-dashoffset:603;transition:stroke-dashoffset .5s cubic-bezier(.34,1.2,.64,1),stroke .3s;filter:drop-shadow(0 0 7px var(--ac))}
-.rfill.w{stroke:var(--yellow);filter:drop-shadow(0 0 7px var(--yg))}
-.rfill.d{stroke:var(--red);filter:drop-shadow(0 0 7px var(--rg))}
+.rfill{fill:none;stroke:var(–ac);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:603;stroke-dashoffset:603;transition:stroke-dashoffset .5s cubic-bezier(.34,1.2,.64,1),stroke .3s;filter:drop-shadow(0 0 7px var(–ac))}
+.rfill.w{stroke:var(–yellow);filter:drop-shadow(0 0 7px var(–yg))}
+.rfill.d{stroke:var(–red);filter:drop-shadow(0 0 7px var(–rg))}
 .sinn{display:flex;flex-direction:column;align-items:center;z-index:1}
-.snum{font-family:var(--fd);font-size:90px;font-weight:900;line-height:1;color:#fff;transition:color .3s;letter-spacing:-2px}
-.snum.w{color:var(--yellow)}.snum.d{color:var(--red)}
-.sunit{font-size:14px;color:var(--tx2);margin-top:-4px;letter-spacing:1px}
+.snum{font-family:var(–fd);font-size:90px;font-weight:900;line-height:1;color:#fff;transition:color .3s;letter-spacing:-2px}
+.snum.w{color:var(–yellow)}.snum.d{color:var(–red)}
+.sunit{font-size:14px;color:var(–tx2);margin-top:-4px;letter-spacing:1px}
 
 /* Metrics */
 .mstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 16px;margin-bottom:14px}
-.mc{background:var(--glass);border:.5px solid var(--gb);border-radius:14px;padding:10px 6px 9px;text-align:center}
-.mv{font-family:var(--fd);font-size:22px;font-weight:800;line-height:1;color:var(--tx)}
-.ml{font-size:9px;color:var(--tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
+.mc{background:var(–glass);border:.5px solid var(–gb);border-radius:14px;padding:10px 6px 9px;text-align:center}
+.mv{font-family:var(–fd);font-size:22px;font-weight:800;line-height:1;color:var(–tx)}
+.ml{font-size:9px;color:var(–tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
 
 /* Track button */
 .tbw{padding:0 16px;margin-bottom:12px}
-.tbtn{width:100%;height:64px;border-radius:18px;border:none;cursor:pointer;font-family:var(--fb);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
-.tbtn.go{background:var(--ac);color:#fff;box-shadow:0 6px 28px var(--acg);animation:glow 3s ease-in-out infinite}
-.tbtn.st{background:var(--red);color:#fff;box-shadow:0 6px 28px var(--rg);animation:none}
+.tbtn{width:100%;height:64px;border-radius:18px;border:none;cursor:pointer;font-family:var(–fb);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
+.tbtn.go{background:var(–ac);color:#fff;box-shadow:0 6px 28px var(–acg);animation:glow 3s ease-in-out infinite}
+.tbtn.st{background:var(–red);color:#fff;box-shadow:0 6px 28px var(–rg);animation:none}
 .tbtn:active{transform:scale(.96)}
 .tbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;animation:none;box-shadow:none}
 
 /* Map */
-/* Map-Wrapper: Karte ist IMMER mit korrekter Höhe im DOM.
-   max-height:0 + overflow:hidden versteckt sie visuell, aber
-   das Kind-Element #lmap hat trotzdem height:220px – Leaflet liest die Kind-Größe. */
 .mwrap{
-  margin:0 16px;border-radius:18px;border:.5px solid var(--gb);position:relative;
-  overflow:hidden;
-  max-height:0;margin-bottom:0;opacity:0;pointer-events:none;
-  transition:max-height .35s ease, margin-bottom .35s ease, opacity .35s ease;
+margin:0 16px;border-radius:18px;border:.5px solid var(–gb);position:relative;
+overflow:hidden;
+max-height:0;margin-bottom:0;opacity:0;pointer-events:none;
+transition:max-height .35s ease, margin-bottom .35s ease, opacity .35s ease;
 }
 .mwrap.visible{
-  max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
+max-height:240px;margin-bottom:12px;opacity:1;pointer-events:auto;
 }
-/* #lmap hat IMMER feste Höhe – egal ob Wrapper max-height:0 ist.
-   Leaflet initialisiert sich gegen dieses Element, nicht den Wrapper. */
 #lmap{width:100%;height:220px;background:#0a0d12;display:block;}
-.mlbl{position:absolute;bottom:8px;right:8px;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border:.5px solid var(--gb);border-radius:8px;padding:3px 8px;font-size:10px;color:var(--tx2)}
+.mlbl{position:absolute;bottom:8px;right:8px;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border:.5px solid var(–gb);border-radius:8px;padding:3px 8px;font-size:10px;color:var(–tx2)}
 
 /* Map legend */
-.mleg{position:absolute;top:8px;right:8px;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);border:.5px solid var(--gb);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
-.mleg-row{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--tx2)}
+.mleg{position:absolute;top:8px;right:8px;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);border:.5px solid var(–gb);border-radius:8px;padding:6px 8px;display:flex;flex-direction:column;gap:3px}
+.mleg-row{display:flex;align-items:center;gap:5px;font-size:9px;color:var(–tx2)}
 .mleg-dot{width:8px;height:5px;border-radius:2px;flex-shrink:0}
 
 /* Fall alert */
 .falert{margin:0 16px 12px;padding:13px 16px;background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.35);border-radius:16px;display:flex;align-items:center;gap:12px}
-.fat{font-weight:700;color:var(--red);font-size:15px}.fas{font-size:12px;color:var(--tx2);margin-top:1px}
+.fat{font-weight:700;color:var(–red);font-size:15px}.fas{font-size:12px;color:var(–tx2);margin-top:1px}
 
 /* ── History ── */
 .phdr{padding:52px 20px 12px;display:flex;align-items:center;justify-content:space-between}
-.phdt{font-family:var(--fd);font-size:34px;font-weight:900}
+.phdt{font-family:var(–fd);font-size:34px;font-weight:900}
 .ftabs{padding:0 16px 12px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .ftabs::-webkit-scrollbar{display:none}
-.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--glass);border:.5px solid var(--gb);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
-.ftab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(–glass);border:.5px solid var(–gb);color:var(–tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.ftab.on{background:var(–ac);border-color:var(–ac);color:#fff}
 .fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.rcard{margin:0 16px 10px;padding:16px;background:var(--glass);border:.5px solid var(--gb);border-radius:24px;animation:fup .38s cubic-bezier(.34,1.2,.64,1) both}
+.rcard{margin:0 16px 10px;padding:16px;background:var(–glass);border:.5px solid var(–gb);border-radius:24px;animation:fup .38s cubic-bezier(.34,1.2,.64,1) both}
 .rctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .rcl{flex:1;min-width:0;cursor:pointer}
 .rname{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.rdate{font-size:12px;color:var(--tx2)}
-.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
+.rdate{font-size:12px;color:var(–tx2)}
+.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(–tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
 .rfbd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.rsb{font-family:var(--fd);font-size:34px;font-weight:800;line-height:1;text-align:right}
-.rsu{font-size:11px;color:var(--tx2);text-align:right}
-.rmenu{width:28px;height:28px;border-radius:50%;background:var(--gs);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);flex-shrink:0;margin-left:8px}
+.rsb{font-family:var(–fd);font-size:34px;font-weight:800;line-height:1;text-align:right}
+.rsu{font-size:11px;color:var(–tx2);text-align:right}
+.rmenu{width:28px;height:28px;border-radius:50%;background:var(–gs);border:.5px solid var(–gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(–tx2);flex-shrink:0;margin-left:8px}
 .rmenu:active{opacity:.5}
 .rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .rs{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
-.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--tx2)}
+.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(–tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(–tx2)}
 .emico{font-size:52px;margin-bottom:12px;opacity:.45}
 
 /* ── Settings ── */
-.pcard{margin:0 16px 14px;padding:18px;background:var(--glass);border:.5px solid var(--gb);border-radius:28px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
+.pcard{margin:0 16px 14px;padding:18px;background:var(–glass);border:.5px solid var(–gb);border-radius:28px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
 .pcard:active{border-color:rgba(10,132,255,.4)}
-.sav{width:58px;height:58px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:26px;font-weight:800;color:#fff}
-.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(--tx2);margin-top:2px}.shi{font-size:11px;color:var(--tx3);margin-top:5px}
-.ssec{margin:0 16px 14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden}
-.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(--gb);cursor:pointer;transition:background .12s}
-.srow:last-child{border-bottom:none}.srow:active{background:var(--gs)}
+.sav{width:58px;height:58px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(–fd);font-size:26px;font-weight:800;color:#fff}
+.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(–tx2);margin-top:2px}.shi{font-size:11px;color:var(–tx3);margin-top:5px}
+.ssec{margin:0 16px 14px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px;overflow:hidden}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(–gb);cursor:pointer;transition:background .12s}
+.srow:last-child{border-bottom:none}.srow:active{background:var(–gs)}
 .srico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
-.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(--tx2);margin-top:1px}
+.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(–tx2);margin-top:1px}
 
 /* ── Detail ── */
 #pd{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
 #pd::-webkit-scrollbar{display:none}
 .dhdr{padding:52px 20px 16px;display:flex;align-items:flex-start;gap:12px}
-.bbtn{width:36px;height:36px;border-radius:50%;background:var(--glass);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
-.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(--ac)}
-.dtitle{font-family:var(--fd);font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(--tx2);margin-top:3px}
+.bbtn{width:36px;height:36px;border-radius:50%;background:var(–glass);border:.5px solid var(–gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
+.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(–ac)}
+.dtitle{font-family:var(–fd);font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(–tx2);margin-top:3px}
 .dhero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
-.dspd{font-family:var(--fd);font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
-.dspdl{font-size:13px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase}
+.dspd{font-family:var(–fd);font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
+.dspdl{font-size:13px;color:var(–tx2);letter-spacing:1px;text-transform:uppercase}
 .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
-.dst{padding:15px;background:var(--glass);border:.5px solid var(--gb);border-radius:16px}
-.dstv{font-family:var(--fd);font-size:30px;font-weight:800;color:var(--tx);line-height:1}
-.dstl{font-size:11px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
-.slbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
-.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:240px}
+.dst{padding:15px;background:var(–glass);border:.5px solid var(–gb);border-radius:16px}
+.dstv{font-family:var(–fd);font-size:30px;font-weight:800;color:var(–tx);line-height:1}
+.dstl{font-size:11px;color:var(–tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
+.slbl{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
+.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(–gb);height:240px}
 .dmw #dmap{width:100%;height:100%;background:#0a0d12}
-.cwrap{margin:0 16px 14px;padding:14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px}
+.cwrap{margin:0 16px 14px;padding:14px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px}
 .flist{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
 .fit{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
-.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(--tx2);margin-top:1px}
-.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(--red);font-family:var(--fb);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(–tx2);margin-top:1px}
+.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(–red);font-family:var(–fb);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 .delbtn:active{transform:scale(.97)}
 
 /* ── Water lock ── */
 #wl{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
 #wl.on{display:flex;animation:fin .25s ease both}
-.wlico{font-size:58px;margin-bottom:14px}.wltitle{font-family:var(--fd);font-size:36px;font-weight:900;margin-bottom:8px}
-.wlsub{font-size:15px;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
+.wlico{font-size:58px;margin-bottom:14px}.wltitle{font-family:var(–fd);font-size:36px;font-weight:900;margin-bottom:8px}
+.wlsub{font-size:15px;color:var(–tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
 .wlbtn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
-.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0;border-radius:2px}
+.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(–ac);width:0;border-radius:2px}
 .wlprog.go{animation:lfill 2s linear both}
 .wlwaves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
-.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);opacity:0}
+.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(–ac);opacity:0}
 .wlbtn.p .wlwave{animation:rip 1s ease-out infinite}
 .wlbtn.p .wlwave:nth-child(2){animation-delay:.3s}
 .wlbtn.p .wlwave:nth-child(3){animation-delay:.6s}
-.wlhint{font-size:14px;color:var(--tx2);margin-top:12px}
+.wlhint{font-size:14px;color:var(–tx2);margin-top:12px}
 
 /* ── Sheets ── */
-.ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb)+16px);animation:fin .2s ease both}
-.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
-.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(--gb)}
-.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(--tx2);margin-top:2px}
+.ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(–sb)+16px);animation:fin .2s ease both}
+.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(–gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
+.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(–gb)}
+.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(–tx2);margin-top:2px}
 .shrow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
-.shrow:last-child{border-bottom:none}.shrow:active{background:var(--gs)}
-.shrow.r{color:var(--red)}.shrow.c{color:var(--tx2);border-top:.5px solid var(--gb)}
+.shrow:last-child{border-bottom:none}.shrow:active{background:var(–gs)}
+.shrow.r{color:var(–red)}.shrow.c{color:var(–tx2);border-top:.5px solid var(–gb)}
 .shico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
 .shdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(–ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .swatches{display:flex;gap:10px;flex-wrap:wrap}
 .sw{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
 .sw.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
-.sw.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
-.cov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--sb)+20px);animation:fin .2s ease both}
-.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
-.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(--tx2);margin-bottom:18px}
-#toast{position:fixed;top:58px;left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.95);border:.5px solid var(--gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
+.sw.on::after{content:‘✓’;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.cov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(–sb)+20px);animation:fin .2s ease both}
+.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(–gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
+.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(–tx2);margin-bottom:18px}
+#toast{position:fixed;top:58px;left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.95);border:.5px solid var(–gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.lbl{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
 
 /* ── Leaflet dark ── */
 .leaflet-container{background:#0a0d12 !important}
 .leaflet-tile{filter:brightness(.65) saturate(.7) hue-rotate(200deg)}
-.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(--gb);border-radius:10px;color:var(--tx)}
+.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(–gb);border-radius:10px;color:var(–tx)}
 .leaflet-popup-tip{background:rgba(10,13,20,.95)}
-.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(--tx) !important;border-color:var(--gb) !important}
+.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(–tx) !important;border-color:var(–gb) !important}
 .leaflet-control-attribution{display:none}
 </style>
+
 </head>
 <body>
 
 <!-- Permission screen -->
+
 <div id="sp">
   <div class="plogo">WakeSki</div>
   <div class="ptag">Wasserski · Wakeboard · Wakesurf</div>
@@ -264,10 +262,12 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
 </div>
 
 <!-- App -->
+
 <div id="app" style="display:none">
   <div id="toast"></div>
 
   <!-- Track -->
+
   <div id="page-track" class="page">
     <div class="thdr">
       <div class="ttl">Track</div>
@@ -303,9 +303,6 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
         Wassergeschützt sperren
       </button>
     </div>
-    <!-- Map: immer 220px hoch im DOM (Leaflet braucht korrekte Größe beim Init).
-         Vor Tracking visuell versteckt via CSS-Klasse (opacity:0, max-height:0).
-         Kein display:none / height:0 – das macht Leaflet kaputt. -->
     <div class="mwrap" id="mwrap">
       <div id="lmap"></div>
       <div class="mlbl">Live Track</div>
@@ -322,6 +319,7 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
   </div>
 
   <!-- History -->
+
   <div id="page-history" class="page">
     <div class="phdr">
       <div class="phdt">Verlauf</div>
@@ -335,6 +333,7 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
   </div>
 
   <!-- Settings -->
+
   <div id="page-settings" class="page">
     <div class="phdr" style="padding-bottom:16px"><div class="phdt">Einstellungen</div></div>
     <div class="pcard" id="pcrd">
@@ -354,12 +353,13 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
       <div class="srow" id="sclear"><div class="srico" style="background:rgba(255,69,58,.15)">🗑️</div><div><div class="srt">Alle Fahrten löschen</div><div class="srs">Ordner und Profil bleiben</div></div></div>
     </div>
     <div class="ssec">
-      <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.06)">ℹ️</div><div><div class="srt">WakeSki Pro v2.2</div><div class="srs">GPS-Tracker · Farbkarte · Sturzerkennung</div></div></div>
+      <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.06)">ℹ️</div><div><div class="srt">WakeSki Pro v2.3</div><div class="srs">GPS-Tracker · Farbkarte · Sturzerkennung</div></div></div>
     </div>
     <div style="height:20px"></div>
   </div>
 
   <!-- Detail -->
+
   <div id="pd">
     <div class="dhdr">
       <button class="bbtn" id="bbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
@@ -369,6 +369,7 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
   </div>
 
   <!-- Nav -->
+
   <nav id="nav">
     <button class="nbt on" data-pg="track">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>
@@ -386,6 +387,7 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
 </div>
 
 <!-- Water lock -->
+
 <div id="wl">
   <div class="wlico">💧</div>
   <div class="wltitle">Gesperrt</div>
@@ -399,6 +401,7 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
 </div>
 
 <!-- Confirm -->
+
 <div class="cov" id="cov" style="display:none">
   <div class="csh">
     <div class="ct" id="ctxt"></div>
@@ -413,22 +416,19 @@ html,body{height:100%;width:100%;background:#000;color:rgba(255,255,255,.92);fon
 <input type="file" id="fimp" accept=".json" style="display:none"/>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 'use strict';
 
 /* ═══ SERVICE WORKER ════════════════════════════ */
 if('serviceWorker' in navigator){
-  const sw=`const C='ws-v5';
+  const sw=`const C='ws-v6';
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.add(location.href)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{
-  e.waitUntil(
-    caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k))))
-    .then(()=>clients.claim())
-  );
+  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim()));
 });
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
-  // Network-first für HTML (immer aktuellste Version), Cache-first für Assets
   const isHtml=e.request.headers.get('accept')&&e.request.headers.get('accept').includes('text/html');
   if(isHtml){
     e.respondWith(fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;}).catch(()=>caches.match(e.request)));
@@ -481,13 +481,12 @@ document.addEventListener('selectstart',e=>{if(!(e.target instanceof HTMLInputEl
 document.addEventListener('dragstart',e=>e.preventDefault(),{passive:false});
 
 /* ═══ STATE ══════════════════════════════════════ */
-// Einzige State-Variable – übersichtlich und ohne Doppelungen
 const S={
   gps:'idle', tracking:false,
   speed:0, maxSpd:0, avgSpd:0, dist:0, elapsed:0, t0:null,
   buf:[], hist:[], pts:[], falls:[], fc:0, lastPt:null,
   timerID:null, watchID:null,
-  map:null, segs:[], prevLL:null, smkr:null, pmkr:null, dmkr:null,
+  map:null, segs:[], prevLL:null, smkr:null, pmkr:null,
   dmap:null,
   locked:false, folderID:null, page:'track',
 };
@@ -511,51 +510,44 @@ function initGPS(){
   if(!navigator.geolocation){setGPS('error');return;}
   setGPS('waiting');
 
+  // 500ms Throttle: responsiv genug für Live-Anzeige, verhindert aber
+  // exzessives Re-Rendering auf Geräten die 10+ Updates/Sek. liefern.
   let lastProcessed=0;
-  const MIN_INTERVAL=2000; // Mindestens 2 Sekunden zwischen zwei verarbeiteten Punkten
+  const MIN_INTERVAL=500;
 
   S.watchID=navigator.geolocation.watchPosition(
     pos=>{
       setGPS('ready');
-      // Throttle: GPS-Updates kommen auf iOS manchmal 10x/Sek.
-      // Nur verarbeiten wenn MIN_INTERVAL seit letzter Verarbeitung vergangen.
       const now=Date.now();
       if(now-lastProcessed < MIN_INTERVAL) return;
       lastProcessed=now;
       onPos(pos);
     },
-    e=>{ console.warn('GPS Fehler:',e.code); setGPS('error'); },
-    {
-      enableHighAccuracy: true,
-      timeout: 20000,
-      maximumAge: 2000,  // Gecachte Position bis zu 2 Sek. alt akzeptieren → reduziert Callback-Frequenz
-    }
+    e=>{ console.warn('GPS Fehler:',e.code,e.message); setGPS('error'); },
+    { enableHighAccuracy:true, timeout:20000, maximumAge:1000 }
   );
 }
 
 function setGPS(s){
   S.gps=s;
-  const d=$('gdot'),l=$('glbl'),b=$('tbtn');
-  d.className='gdot'+(s==='r'||s==='ready'?'r':s==='waiting'?'w':s==='error'?'e':'');
-  // reset className properly
+  const d=$('gdot'), l=$('glbl'), b=$('tbtn');
   d.className='gdot';
-  if(s==='ready'||s==='r') d.classList.add('r');
-  else if(s==='waiting')   d.classList.add('w');
-  else if(s==='error')     d.classList.add('e');
+  if(s==='ready') d.classList.add('r');
+  else if(s==='waiting') d.classList.add('w');
+  else if(s==='error') d.classList.add('e');
   l.textContent={idle:'GPS',waiting:'Suche GPS…',ready:'GPS bereit',error:'GPS fehlt'}[s]||s;
   if(!S.tracking) b.disabled=(s!=='ready');
 }
 
 /* ═══ POSITION HANDLER ═══════════════════════════
-   Hier passiert die gesamte Live-Berechnung.
-   Wird bei JEDEM GPS-Update aufgerufen.
-   Speed + Distanz + Karte + Metriken – alles hier.
+   Kernlogik: Speed, Distanz, Metriken, Karte.
+   Wird bei jedem GPS-Update (gedrosselt auf 500ms) aufgerufen.
 ════════════════════════════════════════════════ */
 function onPos(pos){
   const now=Date.now();
   const lat=pos.coords.latitude, lon=pos.coords.longitude;
 
-  // Karte vor Tracking-Start zentrieren
+  // Karte vor Tracking-Start nur zentrieren
   if(!S.tracking){
     if(S.map) S.map.setView([lat,lon],16,{animate:false});
     return;
@@ -572,49 +564,60 @@ function onPos(pos){
   if(S.lastPt){
     const dt=(now-S.lastPt.time)/1e3;
     const dk=hav(S.lastPt,curPt);
+    // Plausibilitätsprüfung: max 20 Sek. Lücke, max 500m Sprung
     if(dt>0 && dt<=20 && dk<0.5){
       S.dist+=dk;
+      // Fallback: Speed aus Positionsdelta, wenn GPS keinen Speed liefert
       if(raw===0) raw=(dk/dt)*3600;
     }
   }
   S.lastPt=curPt;
-  S.pts.push(curPt);
 
-  // ── 3-Punkt gleitender Mittelwert ──────────────────────────────
+  // ── 3-Punkt gleitender Mittelwert (reduziert GPS-Jitter) ────────
   S.buf.push(raw);
   if(S.buf.length>3) S.buf.shift();
   S.speed=S.buf.reduce((a,b)=>a+b,0)/S.buf.length;
 
-  // Max / Avg (immer aktualisieren, auch bei 0)
+  // ── Trackpoint mit Speed speichern (für Farbkarte in Detailansicht) ─
+  S.pts.push({lat, lon, time:now, speed:S.speed});
+
+  // ── Max / Avg ───────────────────────────────────────────────────
   if(S.speed>S.maxSpd) S.maxSpd=S.speed;
   S.hist.push({s:+(S.speed.toFixed(1)),t:now});
+  // Avg nur aus Punkten berechnen wo man wirklich fährt (>2 km/h)
   const mv=S.hist.filter(p=>p.s>2);
-  S.avgSpd=mv.length?mv.reduce((a,b)=>a+b.s,0)/mv.length:0;
+  S.avgSpd=mv.length ? mv.reduce((a,b)=>a+b.s,0)/mv.length : 0;
 
-  // ── DOM-Update synchron ────────────────────────────────────────
+  // ── DOM + Karte aktualisieren ───────────────────────────────────
   updateDOM();
-
-  // ── Kartenlinie ────────────────────────────────────────────────
-  if(S.map) mapAddPoint(lat,lon,S.speed);
+  mapAddPoint(lat, lon, S.speed);
 }
 
 /* ═══ DOM UPDATE ════════════════════════════════
-   Aktualisiert Speed-Ring + alle 4 Metriken.
-   Wird sekündlich vom Timer UND bei jedem GPS-Update aufgerufen.
+   BUGFIX (v2.3): ring.className = '...' auf einem SVG-<circle>
+   wirft in strict-mode einen TypeError, weil SVGElement.className
+   eine read-only SVGAnimatedString ist, keine normale String-Property.
+   Fix: setAttribute('class', ...) / getAttribute('class') verwenden.
 ════════════════════════════════════════════════ */
 function updateDOM(){
   const spd=S.speed, MAX=80;
 
-  // Ring
-  const num=$('snum'), ring=$('rfill');
+  // ── Zahl im Ring ────────────────────────────────────────────────
+  const num=$('snum');
   num.textContent=Math.round(spd);
-  const cls='snum'+(spd>60?' d':spd>40?' w':'');
-  if(num.className!==cls) num.className=cls;
-  ring.style.strokeDashoffset=603*(1-Math.min(spd/MAX,1));
-  const rc='rfill'+(spd>60?' d':spd>40?' w':'');
-  if(ring.className!==rc) ring.className=rc;
+  const numCls='snum'+(spd>60?' d':spd>40?' w':'');
+  // num ist ein normaler DIV → className-Zuweisung ist korrekt
+  if(num.className!==numCls) num.className=numCls;
 
-  // Metrics – immer 1 Nachkommastelle
+  // ── SVG-Ring (circle-Element) ───────────────────────────────────
+  // FIX: SVGElement.className ist read-only in strict mode.
+  // getAttribute/setAttribute verwenden statt .className = '...'
+  const ring=$('rfill');
+  ring.style.strokeDashoffset=603*(1-Math.min(spd/MAX,1));
+  const ringCls='rfill'+(spd>60?' d':spd>40?' w':'');
+  if(ring.getAttribute('class')!==ringCls) ring.setAttribute('class',ringCls);
+
+  // ── Metrik-Felder ────────────────────────────────────────────────
   $('mmax').textContent=S.maxSpd.toFixed(1);
   $('mavg').textContent=S.avgSpd.toFixed(1);
 
@@ -626,52 +629,38 @@ function updateDOM(){
     $('mdist').textContent=d.toFixed(2);
     $('mdistl').textContent='km';
   }
-  // Zeit wird vom Timer gesetzt
+  // mtime wird vom sekündlichen Timer gesetzt
 }
 
 /* ═══ MAP ════════════════════════════════════════
-
-   STRATEGIE (iOS Safari getestet):
-   - #lmap hat IMMER height:220px in CSS → Leaflet liest korrekte Größe
-   - Visuell versteckt über .mwrap CSS (opacity:0; max-height:0) ohne Größe zu ändern
-   - Leaflet wird einmalig mit setTimeout(150) initialisiert NACH dem ersten Browser-Paint
-   - invalidateSize() beim ersten GPS-Punkt für sicheres Re-Render
+   #lmap hat per CSS immer height:220px.
+   .mwrap versteckt den Container visuell (opacity:0, max-height:0)
+   ohne die tatsächliche Größe von #lmap zu ändern → Leaflet init korrekt.
 ════════════════════════════════════════════════ */
 function initMap(){
   if(S.map) return;
-
-  // Kein getBoundingClientRect-Hack nötig – #lmap hat per CSS immer 220px Höhe
   const map=L.map('lmap',{
     zoomControl:false,
     attributionControl:false,
     fadeAnimation:false,
     markerZoomAnimation:false,
-    // KEIN preferCanvas – CircleMarker funktioniert mit SVG-Renderer zuverlässiger auf iOS
   });
-
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     maxZoom:19, updateWhenIdle:false, keepBuffer:4,
   }).addTo(map);
-
   map.setView([48.2,13.5],15);
   S.map=map;
-
-  // invalidateSize nach Paint – stellt sicher dass Leaflet die tatsächliche Größe kennt
-  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); }, 200);
-  console.log('[MAP] Leaflet initialized. Container size:', document.getElementById('lmap').getBoundingClientRect().width, 'x', document.getElementById('lmap').getBoundingClientRect().height);
+  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); },200);
 }
 
-// Farbe für Geschwindigkeit: rot (0 km/h) → gelb (25 km/h) → grün (50+ km/h)
-// Interpoliert zwischen #ff453a → #ffd60a → #30d158
+// Farbe interpoliert: rot (0 km/h) → gelb (25 km/h) → grün (50+ km/h)
 function spdColor(spd){
   const t=Math.min(Math.max(spd,0)/50,1);
   let r,g,b;
   if(t<0.5){
-    // rot → gelb (t=0..0.5)
     const u=t*2;
     r=255; g=Math.round(69+(214-69)*u); b=Math.round(58+(10-58)*u);
   } else {
-    // gelb → grün (t=0.5..1)
     const u=(t-0.5)*2;
     r=Math.round(255+(48-255)*u); g=Math.round(214+(209-214)*u); b=Math.round(10+(88-10)*u);
   }
@@ -681,28 +670,27 @@ function spdColor(spd){
 function mapAddPoint(lat,lon,spd){
   if(!S.map) return;
 
-  // Start-Marker beim ersten Punkt
+  // Beim allerersten Punkt: invalidateSize + Start-Marker setzen
   if(!S.smkr){
-    // invalidateSize vor erstem Render – stellt sicher dass Map-Größe korrekt ist
     S.map.invalidateSize();
     S.smkr=L.circleMarker([lat,lon],{
       radius:8, color:'#fff', weight:2.5,
       fillColor:'#30d158', fillOpacity:1,
     }).addTo(S.map);
-    S.map.setView([lat,lon], 17, {animate:false});
+    S.map.setView([lat,lon],17,{animate:false});
   }
 
-  // Farbiges Segment vom letzten zum aktuellen Punkt
+  // Farbiges Liniensegment vom letzten zum aktuellen Punkt
   if(S.prevLL){
-    const col=spdColor(spd);
-    const seg=L.polyline([S.prevLL,[lat,lon]],{
-      color:col, weight:5, opacity:1, lineCap:'round', lineJoin:'round',
+    L.polyline([S.prevLL,[lat,lon]],{
+      color:spdColor(spd), weight:5, opacity:1, lineCap:'round', lineJoin:'round',
     }).addTo(S.map);
-    S.segs.push(seg);
+    // Segment-Referenz für clearMapSession merken
+    // (L.polyline gibt Objekt zurück – hier via addTo direkt im Layer-Stack)
   }
   S.prevLL=[lat,lon];
 
-  // Positions-Marker (zeigt aktuelle Geschwindigkeitsfarbe)
+  // Positions-Marker bewegen + Farbe aktualisieren
   const col=spdColor(spd);
   if(!S.pmkr){
     S.pmkr=L.circleMarker([lat,lon],{radius:9,color:'#fff',weight:2.5,fillColor:col,fillOpacity:1}).addTo(S.map);
@@ -711,14 +699,22 @@ function mapAddPoint(lat,lon,spd){
     S.pmkr.setStyle({fillColor:col});
   }
 
-  // Karte folgt sanft
+  // Karte sanft folgen
   S.map.panTo([lat,lon],{animate:true,duration:1.0,easeLinearity:0.4});
 }
 
 function clearMapSession(){
-  S.segs.forEach(s=>s.remove()); S.segs=[];
-  if(S.smkr){S.smkr.remove();S.smkr=null;}
-  if(S.pmkr){S.pmkr.remove();S.pmkr=null;}
+  // Alle Polylines + Marker aus der Karte entfernen
+  if(S.map){
+    S.map.eachLayer(layer=>{
+      if(layer instanceof L.Polyline || layer instanceof L.CircleMarker){
+        layer.remove();
+      }
+    });
+  }
+  S.segs=[];
+  S.smkr=null;
+  S.pmkr=null;
   S.prevLL=null;
 }
 
@@ -726,32 +722,28 @@ function clearMapSession(){
 $('tbtn').addEventListener('click',()=>S.tracking?stopT():startT());
 
 function startT(){
-  // State zurücksetzen
   S.tracking=true; S.t0=Date.now();
   S.speed=0; S.maxSpd=0; S.avgSpd=0; S.dist=0; S.elapsed=0;
   S.buf=[]; S.hist=[]; S.pts=[]; S.falls=[]; S.fc=0; S.lastPt=null;
 
-  // Map Session leeren und Karte einblenden
   clearMapSession();
   $('mwrap').classList.add('visible');
 
-  // invalidateSize JETZT – nach dem CSS-Klassen-Wechsel hat der Browser die richtige Größe
-  // Kleines Timeout damit der CSS-Transition-Paint abgeschlossen ist
-  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); }, 350);
+  // invalidateSize nach CSS-Transition (350ms) damit Leaflet korrekte Größe liest
+  setTimeout(()=>{ if(S.map) S.map.invalidateSize(); },350);
 
-  // Timer: Zeit + alle Metriken sekündlich aktualisieren
+  // Timer: sekündlich Zeit + Metriken aktualisieren
   S.timerID=setInterval(()=>{
     S.elapsed=Date.now()-S.t0;
     $('mtime').textContent=fmtT(S.elapsed);
     updateDOM();
   },1000);
 
-  // Button
   const b=$('tbtn');
   b.disabled=false; b.className='tbtn st';
   $('tbtl').textContent='Run beenden';
 
-  // Metriken sofort auf 0 rendern
+  // Sofort rendern damit alle Felder auf 0 stehen
   updateDOM();
   toast('⏱ Run gestartet');
 }
@@ -888,8 +880,8 @@ function showFolderCreate(ex){
 function showFolderOpts(f){
   const ov=mkOv(`<div class="sh">
     <div class="shhdr"><div class="shht">${esc(f.name)}</div></div>
-    <div class="shrow" id="for"><div class="shico" style="background:rgba(10,132,255,.12)">✏️</div>Umbenennen</div>
-    <div class="shrow r" id="fod"><div class="shico" style="background:rgba(255,69,58,.1)">🗑️</div>Ordner löschen</div>
+    <div class="shrow" id="for">✏️ Umbenennen</div>
+    <div class="shrow r" id="fod">🗑️ Ordner löschen</div>
     <div class="shrow c" id="foc">Abbrechen</div>
   </div>`);
   ov.querySelector('#for').addEventListener('click',()=>{ov.remove();showFolderCreate(f);});
@@ -901,9 +893,9 @@ function showFolderOpts(f){
 function showRunOpts(r){
   const ov=mkOv(`<div class="sh">
     <div class="shhdr"><div class="shht">${esc(r.name||'Run')}</div><div class="shhs">${fmtD(r.startTime)}</div></div>
-    <div class="shrow" id="ror"><div class="shico" style="background:rgba(10,132,255,.12)">✏️</div>Umbenennen</div>
-    <div class="shrow" id="rom"><div class="shico" style="background:rgba(255,159,10,.12)">📁</div>In Ordner verschieben</div>
-    <div class="shrow r" id="rod"><div class="shico" style="background:rgba(255,69,58,.1)">🗑️</div>Fahrt löschen</div>
+    <div class="shrow" id="ror">✏️ Umbenennen</div>
+    <div class="shrow" id="rom">📁 In Ordner verschieben</div>
+    <div class="shrow r" id="rod">🗑️ Fahrt löschen</div>
     <div class="shrow c" id="roc">Abbrechen</div>
   </div>`);
   ov.querySelector('#ror').addEventListener('click',()=>{ov.remove();showRename(r);});
@@ -935,7 +927,7 @@ function showFolderPicker(r){
     <div class="shhdr"><div class="shht">In Ordner verschieben</div></div>
     <div class="shrow fpr" data-id="__none__"><div class="shdot" style="background:#48484a"></div>Kein Ordner${!r.folderId?'<div class="shchk" style="margin-left:auto;background:#48484a">✓</div>':''}</div>
     ${rows}
-    <div class="shrow" id="fpn"><div class="shico">➕</div>Neuen Ordner erstellen</div>
+    <div class="shrow" id="fpn">➕ Neuen Ordner erstellen</div>
     <div class="shrow c" id="fpc">Abbrechen</div>
   </div>`);
   ov.querySelectorAll('.fpr').forEach(row=>row.addEventListener('click',()=>{
@@ -987,23 +979,30 @@ function initDMap(pts,falls){
   const map=L.map(el,{zoomControl:true,attributionControl:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
   S.dmap=map;
-  // Farbige Segmente auch in der Detail-Ansicht
-  for(let i=1;i<pts.length;i++){
-    const spd=pts[i].speed||0;
-    L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{
-      color:spdColor(spd),weight:4.5,opacity:.95,lineCap:'round'
-    }).addTo(map);
+
+  // Farbige Segmente – Speed-Feld aus trackPoints nutzen (seit v2.3 gespeichert)
+  const hasSpdData=pts.length>1 && pts[1].speed!==undefined;
+  if(hasSpdData){
+    for(let i=1;i<pts.length;i++){
+      L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{
+        color:spdColor(pts[i].speed||0),weight:4.5,opacity:.95,lineCap:'round'
+      }).addTo(map);
+    }
+  } else {
+    // Fallback für ältere Aufnahmen ohne Speed-Feld
+    L.polyline(pts.map(p=>[p.lat,p.lon]),{color:'#0a84ff',weight:4.5,opacity:.95,lineCap:'round'}).addTo(map);
   }
-  // Wenn keine Speed-Daten: einfache blaue Linie als Fallback
-  if(!pts[1]||pts[1].speed===undefined){
-    const ll=pts.map(p=>[p.lat,p.lon]);
-    L.polyline(ll,{color:'#0a84ff',weight:4.5,opacity:.95,lineCap:'round'}).addTo(map);
-  }
-  const ll=pts.map(p=>[p.lat,p.lon]);
+
+  // Start / Ende Marker
   const mk=(col,sz=11)=>L.divIcon({html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''});
+  const ll=pts.map(p=>[p.lat,p.lon]);
   L.marker(ll[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Start');
   L.marker(ll[ll.length-1],{icon:mk('#ff453a')}).addTo(map).bindPopup('Ende');
-  falls.forEach(f=>{const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);L.marker([cp.lat,cp.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map);});
+  falls.forEach(f=>{
+    const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);
+    L.marker([cp.lat,cp.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map);
+  });
+
   const bounds=L.latLngBounds(ll);
   map.fitBounds(bounds,{padding:[20,20]});
   setTimeout(()=>{map.invalidateSize();map.fitBounds(bounds,{padding:[20,20]});},300);
@@ -1071,8 +1070,11 @@ $('simport').addEventListener('click',()=>$('fimp').click());
 $('fimp').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader(); r.onload=ev=>{
-    try{const d=JSON.parse(ev.target.result);if(!d.runs&&!d.profile)throw 0;confirm2('Daten importieren?',`${(d.runs||[]).length} Fahrten werden geladen.`,()=>{DB.importAll(d);renderSettings();toast('Import abgeschlossen');});}
-    catch{toast('❌ Ungültige Datei');}
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.runs&&!d.profile)throw 0;
+      confirm2('Daten importieren?',`${(d.runs||[]).length} Fahrten werden geladen.`,()=>{DB.importAll(d);renderSettings();toast('Import abgeschlossen');});
+    }catch{toast('❌ Ungültige Datei');}
     e.target.value='';
   }; r.readAsText(f);
 });
@@ -1101,28 +1103,21 @@ wb.addEventListener('pointerdown',e=>{
 ['pointerup','pointerleave','pointercancel'].forEach(ev=>wb.addEventListener(ev,()=>{clearTimeout(_lt);_lt=null;wb.classList.remove('p');wp.className='wlprog';}));
 
 /* ═══ AUTO SESSION SAVE ═════════════════════════ */
-setInterval(()=>{if(!S.tracking)return;DB.saveSession({maxSpd:S.maxSpd,avgSpd:S.avgSpd,dist:S.dist,elapsed:S.elapsed,t0:S.t0});},10000);
+setInterval(()=>{
+  if(!S.tracking)return;
+  DB.saveSession({maxSpd:S.maxSpd,avgSpd:S.avgSpd,dist:S.dist,elapsed:S.elapsed,t0:S.t0});
+},10000);
 
-/* ═══ APP START ══════════════════════════════════
-   WICHTIG: initMap() wird hier aufgerufen,
-   damit Leaflet die Container-Größe korrekt lesen kann.
-   Der Container ist sichtbar, weil wir ihn mit visibility:hidden
-   (statt display:none) versteckt haben – so hat er trotzdem eine Größe.
-════════════════════════════════════════════════ */
+/* ═══ APP START ══════════════════════════════════ */
 function launchApp(){
   $('sp').style.display='none';
   const app=$('app'); app.style.display='flex'; app.style.flexDirection='column';
   goPage('track');
   initGPS();
   initMotion();
+  // Map nach erstem Paint initialisieren (150ms) – #lmap hat per CSS immer 220px Höhe
+  setTimeout(()=>initMap(), 150);
 
-  // Map NACH dem ersten Browser-Paint initialisieren (setTimeout 150ms).
-  // #lmap hat per CSS immer height:220px → Leaflet liest korrekte Größe.
-  // Der Container ist via .mwrap CSS visuell versteckt (opacity:0, max-height:0)
-  // ohne die tatsächliche Größe zu ändern.
-  setTimeout(()=>{ initMap(); }, 150);
-
-  // Session-Wiederherstellung
   const sess=DB.getSession();
   if(sess&&sess.maxSpd){S.maxSpd=sess.maxSpd||0;S.dist=sess.dist||0;updateDOM();}
 }
@@ -1139,8 +1134,12 @@ $('perm-btn').addEventListener('click',async()=>{
 // GPS bereits erteilt → direkt starten
 (async()=>{
   if(!navigator.permissions) return;
-  try{const r=await navigator.permissions.query({name:'geolocation'});if(r.state==='granted')launchApp();}catch{}
+  try{
+    const r=await navigator.permissions.query({name:'geolocation'});
+    if(r.state==='granted') launchApp();
+  }catch{}
 })();
 </script>
+
 </body>
 </html>
