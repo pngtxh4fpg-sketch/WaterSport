@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="de">
+
+<html lang="de" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"/>
@@ -9,23 +10,14 @@
 <meta name="theme-color" content="#000000"/>
 <meta name="color-scheme" content="dark"/>
 <title>WakeSki Pro</title>
-
 <!--
-╔═══════════════════════════════════════════════════════════════════╗
-║  APP ICON (WakeSkiIcon.PNG)                                       ║
-║  Lege dein Icon (180×180 px) als "WakeSkiIcon.PNG" in denselben  ║
-║  Ordner wie diese HTML-Datei. Safari verwendet es automatisch.    ║
-║                                                                   ║
-║  DYNAMIC ISLAND: Technisch nicht möglich für Web-Apps.           ║
-║  Apple erlaubt Live Activities nur für native Swift-Apps.        ║
-║  Die Wake Lock API (unten) verhindert, dass der Bildschirm       ║
-║  während der Aufnahme ausgeht.                                    ║
-╚═══════════════════════════════════════════════════════════════════╝
+  ╔═══════════════════════════════════════════════════════════════╗
+  ║  FIREBASE KONFIGURATION – hier deine Keys eintragen:         ║
+  ║  Suche nach "FIREBASE_CONFIG" weiter unten im <script>-Block ║
+  ╚═══════════════════════════════════════════════════════════════╝
 -->
-<!-- Erst eigenes Icon probieren, dann Canvas-Fallback via JS -->
 <link rel="apple-touch-icon" href="WakeSkiIcon.PNG" id="ati" onerror="this.removeAttribute('href')"/>
 <link rel="manifest" id="mani" href=""/>
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
@@ -33,286 +25,319 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 input,textarea,select{user-select:text;-webkit-user-select:text}
 
+/* ── Dark Mode Variables (default) ── */
 :root{
-  --ac:#0a84ff;--acg:rgba(10,132,255,.28);--acl:rgba(10,132,255,.13);
-  --green:#30d158;--gg:rgba(48,209,88,.25);
-  --red:#ff453a;--rg:rgba(255,69,58,.28);
-  --yellow:#ffd60a;--yg:rgba(255,214,10,.22);
-  --tx:rgba(255,255,255,.92);--tx2:rgba(255,255,255,.52);--tx3:rgba(255,255,255,.26);
-  --glass:rgba(255,255,255,.055);--gb:rgba(255,255,255,.10);--gs:rgba(255,255,255,.08);
-  --nav:82px;
-  color-scheme:dark;
+–ac:#0a84ff; –acg:rgba(10,132,255,.28); –acl:rgba(10,132,255,.13);
+–green:#30d158; –gg:rgba(48,209,88,.25);
+–red:#ff453a; –rg:rgba(255,69,58,.28);
+–yellow:#ffd60a; –yg:rgba(255,214,10,.22);
+–tx:rgba(255,255,255,.92); –tx2:rgba(255,255,255,.52); –tx3:rgba(255,255,255,.26);
+–glass:rgba(255,255,255,.055); –gb:rgba(255,255,255,.10); –gs:rgba(255,255,255,.08);
+–bg:#000000; –nav-bg:rgba(6,6,8,.96); –card-bg:rgba(255,255,255,.055);
+–page-bg:#000000; –inp-bg:rgba(255,255,255,.08); –sep:rgba(255,255,255,.05);
+–nav:82px;
+color-scheme:dark;
 }
-html,body{height:100%;width:100%;background:#000;color:var(--tx);
-  font-family:'DM Sans',-apple-system,system-ui,sans-serif;
-  -webkit-font-smoothing:antialiased;overflow:hidden;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
-#app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden}
+/* ── Light Mode Overrides ── */
+html[data-theme=“light”]{
+–tx:rgba(0,0,0,.88); –tx2:rgba(0,0,0,.52); –tx3:rgba(0,0,0,.26);
+–glass:rgba(0,0,0,.04); –gb:rgba(0,0,0,.10); –gs:rgba(0,0,0,.06);
+–bg:#f2f2f7; –nav-bg:rgba(242,242,247,.97); –card-bg:rgba(255,255,255,.9);
+–page-bg:#f2f2f7; –inp-bg:rgba(0,0,0,.06); –sep:rgba(0,0,0,.06);
+color-scheme:light;
+}
+html[data-theme=“light”] body{background:#f2f2f7}
+html[data-theme=“light”] .leaflet-tile-pane{filter:none !important}
+html[data-theme=“light”] #lmap{background:#e8edf2}
+html[data-theme=“light”] #sp{background:#f2f2f7}
+html[data-theme=“light”] .trk-top{background:linear-gradient(to bottom,rgba(242,242,247,.9) 0%,transparent 100%)}
+html[data-theme=“light”] .trk-hud{background:linear-gradient(to top,rgba(242,242,247,.98) 0%,rgba(242,242,247,.88) 40%,rgba(242,242,247,.5) 65%,transparent 100%)}
+html[data-theme=“light”] #wl{background:rgba(242,242,247,.98)}
+html[data-theme=“light”] #pd, html[data-theme=“light”] #as-panel, html[data-theme=“light”] #presets-panel, html[data-theme=“light”] #guide-panel{background:#f2f2f7}
+html[data-theme=“light”] .gbadge, html[data-theme=“light”] .lock-pill{background:rgba(255,255,255,.85); border-color:rgba(0,0,0,.12)}
+html[data-theme=“light”] .trk-spd-num{color:rgba(0,0,0,.88); text-shadow:0 4px 24px rgba(0,0,0,.12)}
+html[data-theme=“light”] .trk-spd-unit{color:rgba(0,0,0,.45)}
+html[data-theme=“light”] .trk-bar-wrap{background:rgba(0,0,0,.12)}
+html[data-theme=“light”] .trk-m{background:rgba(255,255,255,.75); border-color:rgba(0,0,0,.10)}
+html[data-theme=“light”] .app-name{color:rgba(0,0,0,.88); text-shadow:none}
+html[data-theme=“light”] .map-btn{background:rgba(255,255,255,.82); border-color:rgba(0,0,0,.14); color:rgba(0,0,0,.6)}
 
-/* ── Pages ── */
-.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
-  padding-bottom:calc(var(--nav)+16px);display:none}
+html,body{height:100%;width:100%;background:var(–bg);color:var(–tx);
+font-family:‘DM Sans’,-apple-system,system-ui,sans-serif;
+-webkit-font-smoothing:antialiased;overflow:hidden;
+-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;overflow:hidden;background:var(–page-bg)}
+
+.page{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(–nav)+16px);display:none}
 .page::-webkit-scrollbar{display:none}
-
-#page-history.on,#page-settings.on{
-  display:block;background:#000;
-  padding-top:env(safe-area-inset-top,0px);
-  animation:fup .3s cubic-bezier(.34,1.28,.64,1) both;
-}
-
-/* ── Track page: fullscreen fixed, map behind everything ── */
+#page-history.on,#page-settings.on{display:block;background:var(–page-bg);padding-top:env(safe-area-inset-top,0px);animation:fup .3s cubic-bezier(.34,1.28,.64,1) both}
 #page-track{overflow:hidden;padding-bottom:0;background:transparent;display:none}
 #page-track.on{display:block;position:fixed;top:0;left:0;right:0;bottom:0;z-index:2}
 
-/* ── Map fills track page ── */
+/* ── Map ── */
 #lmap{position:absolute;inset:0;z-index:0;background:#0a0d12}
-
-/* ── UI Overlay over map ── */
 .trk-ov{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;pointer-events:none}
-
-/* Top and HUD are interactive; spacer is transparent to touches */
 .trk-top{pointer-events:auto}
 .trk-spacer{flex:1;pointer-events:none}
 #falert{pointer-events:auto}
-
-/* ─── HUD FIX ───────────────────────────────────────────────────────
-   pointer-events: NONE on the hud container so the gradient doesn't
-   block map touches. Only the actual interactive children get auto.
-   This fixes the "km/h display blocks map" hitbox bug.
-─────────────────────────────────────────────────────────────────── */
 .trk-hud{pointer-events:none}
-.trk-hud .trk-metrics,
-.trk-hud .tbtn{pointer-events:auto}
+.trk-hud .trk-metrics,.trk-hud .tbtn{pointer-events:auto}
 
 /* ── Top Bar ── */
-.trk-top{
-  flex-shrink:0;
-  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 28px;
-  display:flex;justify-content:space-between;align-items:flex-start;
-  background:linear-gradient(to bottom,rgba(0,0,0,.84) 0%,transparent 100%);
-}
-.app-name{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:26px;font-weight:900;letter-spacing:1px;color:#fff;text-shadow:0 0 24px rgba(10,132,255,.45);line-height:1}
-.gbadge{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:20px;background:rgba(0,0,0,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:.5px solid rgba(255,255,255,.14);font-size:11px;font-weight:500;color:var(--tx2);margin-top:7px}
+.trk-top{flex-shrink:0;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 28px;display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(to bottom,rgba(0,0,0,.84) 0%,transparent 100%)}
+.app-name{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:26px;font-weight:900;letter-spacing:1px;color:#fff;text-shadow:0 0 24px rgba(10,132,255,.45);line-height:1}
+.gbadge{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:20px;background:rgba(0,0,0,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:.5px solid rgba(255,255,255,.14);font-size:11px;font-weight:500;color:var(–tx2);margin-top:7px}
 .gdot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0}
-.gdot.w{background:var(--yellow);animation:pulse 1.4s ease-in-out infinite}
-.gdot.r{background:var(--green);box-shadow:0 0 8px var(--gg)}
-.gdot.e{background:var(--red)}
-.lock-pill{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;border:none;cursor:pointer;background:rgba(0,0,0,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:.5px solid rgba(255,255,255,.14);color:var(--tx2);font-size:12px;font-weight:500;font-family:'DM Sans',-apple-system,sans-serif}
+.gdot.w{background:var(–yellow);animation:pulse 1.4s ease-in-out infinite}
+.gdot.r{background:var(–green);box-shadow:0 0 8px var(–gg)}
+.gdot.e{background:var(–red)}
+.lock-pill{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;border:none;cursor:pointer;background:rgba(0,0,0,.5);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:.5px solid rgba(255,255,255,.14);color:var(–tx2);font-size:12px;font-weight:500;font-family:‘DM Sans’,-apple-system,sans-serif}
 .lock-pill:active{opacity:.6}
 .lock-pill svg{width:13px;height:13px;flex-shrink:0}
 
-/* ── Map Control Buttons (right side, middle of screen) ── */
-.map-ctrls{
-  position:absolute;
-  right:12px;
-  /* Position above the HUD gradient – sits in the visible map area */
-  bottom:calc(var(--nav) + 160px + env(safe-area-inset-bottom,0px));
-  z-index:2;
-  display:flex;flex-direction:column;gap:8px;
-  pointer-events:auto;
-}
-.map-btn{
-  width:40px;height:40px;border-radius:50%;
-  background:rgba(0,0,0,.55);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border:.5px solid rgba(255,255,255,.16);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;color:rgba(255,255,255,.65);
-  transition:all .18s cubic-bezier(.34,1.4,.64,1);
-  border-style:solid;border-width:.5px;
-}
+/* ── Map Controls ── */
+.map-ctrls{position:absolute;right:12px;bottom:calc(var(–nav) + 160px + env(safe-area-inset-bottom,0px));z-index:2;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+.map-btn{width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:.5px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.65);transition:all .18s cubic-bezier(.34,1.4,.64,1)}
 .map-btn svg{width:18px;height:18px;transition:transform .3s ease}
 .map-btn.active{background:rgba(10,132,255,.8);border-color:rgba(10,132,255,.4);color:#fff}
 .map-btn:active{transform:scale(.88)}
-/* Compass needle rotates to show current heading */
-#compass-btn svg{transform:rotate(0deg)}
 
 /* ── Crash Alert ── */
 #falert{flex-shrink:0;margin:0 14px 10px;padding:13px 16px;background:rgba(255,69,58,.12);border:.5px solid rgba(255,69,58,.4);border-radius:16px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;gap:12px}
-.fat{font-weight:700;color:var(--red);font-size:15px}.fas{font-size:12px;color:var(--tx2);margin-top:1px}
+.fat{font-weight:700;color:var(–red);font-size:15px}.fas{font-size:12px;color:var(–tx2);margin-top:1px}
 
 /* ── HUD ── */
-.trk-hud{
-  flex-shrink:0;
-  padding:28px 14px calc(var(--nav) + 12px + env(safe-area-inset-bottom,0px));
-  background:linear-gradient(to top,rgba(0,0,0,.98) 0%,rgba(0,0,0,.92) 36%,rgba(0,0,0,.62) 64%,transparent 100%);
-}
+.trk-hud{flex-shrink:0;padding:28px 14px calc(var(–nav) + 12px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,rgba(0,0,0,.98) 0%,rgba(0,0,0,.92) 36%,rgba(0,0,0,.62) 64%,transparent 100%)}
 .trk-spd-wrap{text-align:center;margin-bottom:2px}
-.trk-spd-num{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:106px;font-weight:900;line-height:1;color:#fff;letter-spacing:-4px;text-shadow:0 0 70px rgba(10,132,255,.32),0 4px 24px rgba(0,0,0,.7);transition:color .26s,text-shadow .26s;display:inline-block;min-width:3ch}
-.trk-spd-num.w{color:var(--yellow);text-shadow:0 0 70px rgba(255,214,10,.4),0 4px 24px rgba(0,0,0,.7)}
-.trk-spd-num.d{color:var(--red);text-shadow:0 0 70px rgba(255,69,58,.4),0 4px 24px rgba(0,0,0,.7)}
-.trk-spd-unit{font-size:12px;color:var(--tx2);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:-2px}
+.trk-spd-num{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:106px;font-weight:900;line-height:1;color:#fff;letter-spacing:-4px;text-shadow:0 0 70px rgba(10,132,255,.32),0 4px 24px rgba(0,0,0,.7);transition:color .26s,text-shadow .26s;display:inline-block;min-width:3ch}
+.trk-spd-num.w{color:var(–yellow);text-shadow:0 0 70px rgba(255,214,10,.4),0 4px 24px rgba(0,0,0,.7)}
+.trk-spd-num.d{color:var(–red);text-shadow:0 0 70px rgba(255,69,58,.4),0 4px 24px rgba(0,0,0,.7)}
+.trk-spd-unit{font-size:12px;color:var(–tx2);letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:-2px}
 .trk-bar-wrap{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin:10px 0 14px;overflow:hidden}
-.trk-bar{height:100%;background:var(--ac);border-radius:2px;width:0%;transition:width .5s cubic-bezier(.34,1.2,.64,1),background .26s;box-shadow:0 0 10px var(--ac)}
+.trk-bar{height:100%;background:var(–ac);border-radius:2px;width:0%;transition:width .5s cubic-bezier(.34,1.2,.64,1),background .26s;box-shadow:0 0 10px var(–ac)}
 .trk-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .trk-m{background:rgba(255,255,255,.07);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:.5px solid rgba(255,255,255,.12);border-radius:14px;padding:10px 6px 9px;text-align:center}
-.trk-mv{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:22px;font-weight:800;line-height:1;color:var(--tx)}
-.trk-ml{font-size:9px;color:var(--tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
-.tbtn{width:100%;height:56px;border-radius:16px;border:none;cursor:pointer;font-family:'DM Sans',-apple-system,sans-serif;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
-.tbtn.go{background:rgba(10,132,255,.95);color:#fff;box-shadow:0 6px 32px rgba(10,132,255,.5),inset 0 .5px 0 rgba(255,255,255,.2);animation:glow 3s ease-in-out infinite}
-.tbtn.st{background:rgba(255,69,58,.95);color:#fff;box-shadow:0 6px 32px rgba(255,69,58,.5),inset 0 .5px 0 rgba(255,255,255,.2);animation:none}
+.trk-mv{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:22px;font-weight:800;line-height:1;color:var(–tx)}
+.trk-ml{font-size:9px;color:var(–tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
+.tbtn{width:100%;height:56px;border-radius:16px;border:none;cursor:pointer;font-family:‘DM Sans’,-apple-system,sans-serif;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s cubic-bezier(.34,1.4,.64,1)}
+.tbtn.go{background:var(–ac);color:#fff;box-shadow:0 6px 32px var(–acg),inset 0 .5px 0 rgba(255,255,255,.2);animation:glow 3s ease-in-out infinite}
+.tbtn.st{background:var(–red);color:#fff;box-shadow:0 6px 32px var(–rg),inset 0 .5px 0 rgba(255,255,255,.2);animation:none}
 .tbtn:active{transform:scale(.96)}.tbtn:disabled{opacity:.3;cursor:not-allowed;transform:none;animation:none;box-shadow:none}
 
-/* ── History + Settings pages ── */
+/* ── History & Settings ── */
 .phdr{padding:28px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:relative}
-.phdr::after{content:'';position:absolute;bottom:0;left:20px;right:20px;height:.5px;background:var(--gb)}
-.phdt{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:34px;font-weight:900;text-shadow:0 0 30px rgba(10,132,255,.25)}
+.phdr::after{content:’’;position:absolute;bottom:0;left:20px;right:20px;height:.5px;background:var(–gb)}
+.phdt{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:34px;font-weight:900;text-shadow:0 0 30px rgba(10,132,255,.25)}
 .ftabs{padding:12px 16px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
 .ftabs::-webkit-scrollbar{display:none}
-.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--glass);border:.5px solid var(--gb);color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
-.ftab.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.ftab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(–glass);border:.5px solid var(–gb);color:var(–tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.ftab.on{background:var(–ac);border-color:var(–ac);color:#fff}
 .fdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.rcard{margin:0 16px 10px;padding:16px;background:var(--glass);border:.5px solid var(--gb);border-radius:22px;animation:fup .36s cubic-bezier(.34,1.2,.64,1) both}
+.rcard{margin:0 16px 10px;padding:16px;background:var(–glass);border:.5px solid var(–gb);border-radius:22px;animation:fup .36s cubic-bezier(.34,1.2,.64,1) both}
 .rctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .rcl{flex:1;min-width:0;cursor:pointer}
 .rname{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.rdate{font-size:12px;color:var(--tx2)}
-.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
+.rdate{font-size:12px;color:var(–tx2)}
+.rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(–tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
 .rfbd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.rsb{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:34px;font-weight:800;line-height:1;text-align:right}
-.rsu{font-size:11px;color:var(--tx2);text-align:right}
-.rmenu{width:28px;height:28px;border-radius:50%;background:var(--gs);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);flex-shrink:0;margin-left:8px}
+.rsb{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:34px;font-weight:800;line-height:1;text-align:right}
+.rsu{font-size:11px;color:var(–tx2);text-align:right}
+.rmenu{width:28px;height:28px;border-radius:50%;background:var(–gs);border:.5px solid var(–gb);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(–tx2);flex-shrink:0;margin-left:8px}
 .rmenu:active{opacity:.5}
 .rstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .rs{background:rgba(255,255,255,.03);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer}
-.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(--tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(--tx2)}
+.rsv{font-size:14px;font-weight:600}.rsl{font-size:9px;color:var(–tx2);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+.empty{display:flex;flex-direction:column;align-items:center;padding:60px 20px;color:var(–tx2)}
 .emico{font-size:52px;margin-bottom:12px;opacity:.4}
 
-/* Settings */
-.pcard{margin:12px 16px 6px;padding:18px;background:var(--glass);border:.5px solid var(--gb);border-radius:24px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
+/* ── Settings ── */
+.pcard{margin:12px 16px 6px;padding:18px;background:var(–glass);border:.5px solid var(–gb);border-radius:24px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .18s}
 .pcard:active{border-color:rgba(10,132,255,.4)}
-.sav{width:56px;height:56px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:26px;font-weight:800;color:#fff}
-.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(--tx2);margin-top:2px}.shi{font-size:11px;color:var(--tx3);margin-top:5px}
-.ssec{margin:10px 16px 0;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden}
-.ssec-title{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;padding:14px 16px 8px;border-bottom:.5px solid var(--gb)}
-.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid rgba(255,255,255,.05);cursor:pointer;transition:background .12s}
-.srow:last-child{border-bottom:none}.srow:active{background:var(--gs)}
+.sav{width:56px;height:56px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:26px;font-weight:800;color:#fff}
+.snm{font-size:18px;font-weight:700}.sst{font-size:12px;color:var(–tx2);margin-top:2px}.shi{font-size:11px;color:var(–tx3);margin-top:5px}
+.ssec{margin:10px 16px 0;background:var(–glass);border:.5px solid var(–gb);border-radius:18px;overflow:hidden}
+.ssec-title{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1px;padding:14px 16px 8px;border-bottom:.5px solid var(–gb)}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(–sep);cursor:pointer;transition:background .12s}
+.srow:last-child{border-bottom:none}.srow:active{background:var(–gs)}
 .srico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
-.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(--tx2);margin-top:1px}
-.srow-arrow{color:var(--tx3);flex-shrink:0}
+.srt{font-size:15px;font-weight:500}.srs{font-size:12px;color:var(–tx2);margin-top:1px}
+.srow-arrow{color:var(–tx3);flex-shrink:0}
+.srow-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 
-/* Advanced Settings */
-#as-panel{position:fixed;inset:0;z-index:160;background:#000;overflow-y:auto;display:none}
+/* ── Theme / Accent ── */
+.theme-tog{display:flex;background:var(–gs);border-radius:10px;padding:2px;gap:2px}
+.theme-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:500;color:var(–tx2);cursor:pointer;border:none;background:none;font-family:‘DM Sans’,-apple-system,sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px}
+.theme-btn.on{background:var(–ac);color:#fff}
+.accent-dots{display:flex;gap:8px;flex-wrap:wrap}
+.accent-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .2s cubic-bezier(.34,1.6,.64,1);position:relative;flex-shrink:0}
+.accent-dot.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.2);transform:scale(1.15)}
+.accent-dot.on::after{content:‘✓’;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700}
+
+/* ── Advanced Settings Panel ── */
+#as-panel{position:fixed;inset:0;z-index:160;background:var(–page-bg);overflow-y:auto;display:none}
 #as-panel::-webkit-scrollbar{display:none}
-.as-hdr{padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 16px;display:flex;align-items:center;gap:14px;border-bottom:.5px solid var(--gb)}
-.as-title{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:26px;font-weight:900}
-.as-sub{font-size:12px;color:var(--tx2);margin-top:2px}
+.as-hdr{padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 16px;display:flex;align-items:center;gap:14px;border-bottom:.5px solid var(–gb)}
+.as-title{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:26px;font-weight:900}
+.as-sub{font-size:12px;color:var(–tx2);margin-top:2px}
 .as-section{margin:16px 16px 0}
-.as-stitle{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:1.2px;padding:0 4px;margin-bottom:8px}
-.as-card{background:var(--glass);border:.5px solid var(--gb);border-radius:18px;overflow:hidden;margin-bottom:4px}
-.as-row{padding:13px 16px;border-bottom:.5px solid rgba(255,255,255,.05)}
+.as-stitle{font-size:11px;font-weight:700;color:var(–tx2);text-transform:uppercase;letter-spacing:1.2px;padding:0 4px;margin-bottom:8px}
+.as-card{background:var(–glass);border:.5px solid var(–gb);border-radius:18px;overflow:hidden;margin-bottom:4px}
+.as-row{padding:13px 16px;border-bottom:.5px solid var(–sep)}
 .as-row:last-child{border-bottom:none}
 .as-row-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .as-row-left{flex:1;min-width:0}
 .as-rl{font-size:15px;font-weight:500}
-.as-rs{font-size:11px;color:var(--tx2);margin-top:2px}
-.as-live-val{font-size:11px;font-weight:600;color:var(--ac);margin-top:3px}
+.as-rs{font-size:11px;color:var(–tx2);margin-top:2px}
+.as-live-val{font-size:11px;font-weight:600;color:var(–ac);margin-top:3px}
 .as-tog{width:46px;height:27px;border-radius:14px;background:#3a3a3c;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;border:none;outline:none}
-.as-tog.on{background:var(--ac)}
-.as-tog::after{content:'';position:absolute;width:21px;height:21px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s cubic-bezier(.34,1.4,.64,1);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.as-tog.on{background:var(–ac)}
+.as-tog::after{content:’’;position:absolute;width:21px;height:21px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s cubic-bezier(.34,1.4,.64,1);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .as-tog.on::after{transform:translateX(19px)}
-.as-seg{display:flex;background:rgba(255,255,255,.07);border-radius:10px;padding:2px;gap:2px;flex-shrink:0;flex-wrap:wrap}
-.as-sbt{padding:5px 9px;border-radius:8px;font-size:11px;font-weight:500;color:var(--tx2);cursor:pointer;transition:all .15s;white-space:nowrap;background:none;border:none;font-family:'DM Sans',-apple-system,sans-serif}
-.as-sbt.on{background:var(--ac);color:#fff}
-.as-slrow{padding:12px 16px 14px;border-bottom:.5px solid rgba(255,255,255,.05)}
+.as-seg{display:flex;background:var(–gs);border-radius:10px;padding:2px;gap:2px;flex-shrink:0;flex-wrap:wrap}
+.as-sbt{padding:5px 9px;border-radius:8px;font-size:11px;font-weight:500;color:var(–tx2);cursor:pointer;transition:all .15s;white-space:nowrap;background:none;border:none;font-family:‘DM Sans’,-apple-system,sans-serif}
+.as-sbt.on{background:var(–ac);color:#fff}
+/* light mode: segment bg needs border to be visible */
+html[data-theme=“light”] .as-seg{background:rgba(0,0,0,.07);border:.5px solid rgba(0,0,0,.08)}
+html[data-theme=“light”] .as-slider{background:rgba(0,0,0,.18)}
+.as-slrow{padding:12px 16px 14px;border-bottom:.5px solid var(–sep)}
 .as-slrow:last-child{border-bottom:none}
 .as-sl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .as-sl-label{font-size:15px;font-weight:500}
-.as-sl-val{font-size:13px;font-weight:700;color:var(--ac)}
-.as-sl-sub{font-size:11px;color:var(--tx2);margin-bottom:8px}
+.as-sl-val{font-size:13px;font-weight:700;color:var(–ac)}
+.as-sl-sub{font-size:11px;color:var(–tx2);margin-bottom:8px}
 .as-slider{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.15);outline:none;cursor:pointer}
 .as-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.45)}
 
-/* Detail */
-#pd{position:fixed;inset:0;z-index:150;background:#000;overflow-y:auto;display:none}
+/* ── Presets Panel ── */
+#presets-panel{position:fixed;inset:0;z-index:160;background:var(–page-bg);overflow-y:auto;display:none}
+#presets-panel::-webkit-scrollbar{display:none}
+.preset-card{margin:0 16px 10px;padding:16px;background:var(–glass);border:.5px solid var(–gb);border-radius:20px;transition:border-color .18s,transform .15s}
+.preset-card.active-preset{border-color:var(–ac)}
+.preset-card:active{transform:scale(.98)}
+.preset-top{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.preset-ico{font-size:28px;width:48px;height:48px;background:var(–gs);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.preset-name{font-size:17px;font-weight:700}
+.preset-desc{font-size:12px;color:var(–tx2);margin-top:2px}
+.preset-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.preset-tag{padding:3px 9px;border-radius:8px;font-size:10px;font-weight:600;background:var(–acl);color:var(–ac);letter-spacing:.3px}
+.preset-actions{display:flex;gap:8px}
+.preset-btn{flex:1;padding:10px;border-radius:12px;font-size:13px;font-weight:600;font-family:‘DM Sans’,-apple-system,sans-serif;border:none;cursor:pointer;transition:all .15s}
+.preset-btn:active{transform:scale(.96)}
+.preset-btn.apply{background:var(–ac);color:#fff}
+.preset-btn.edit{background:var(–gs);border:.5px solid var(–gb);color:var(–tx)}
+.preset-btn.del{background:rgba(255,69,58,.1);border:.5px solid rgba(255,69,58,.2);color:var(–red)}
+
+/* ── Guide Panel ── */
+#guide-panel{position:fixed;inset:0;z-index:160;background:var(–page-bg);overflow-y:auto;display:none}
+#guide-panel::-webkit-scrollbar{display:none}
+.guide-hero{padding:32px 24px 20px;text-align:center}
+.guide-logo{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:48px;font-weight:900;color:var(–ac);margin-bottom:6px}
+.guide-version{font-size:13px;color:var(–tx2)}
+.guide-section{margin:0 16px 12px;background:var(–glass);border:.5px solid var(–gb);border-radius:20px;overflow:hidden}
+.guide-sec-hdr{padding:16px 18px 12px;display:flex;align-items:center;gap:12px;border-bottom:.5px solid var(–gb);cursor:pointer}
+.guide-sec-ico{font-size:22px;width:40px;height:40px;background:var(–gs);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.guide-sec-title{font-size:16px;font-weight:700}
+.guide-sec-sub{font-size:12px;color:var(–tx2);margin-top:2px}
+.guide-sec-body{padding:14px 18px;display:none}
+.guide-sec-body.open{display:block;animation:fup .25s ease both}
+.guide-item{margin-bottom:14px}
+.guide-item:last-child{margin-bottom:0}
+.guide-item-title{font-size:14px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.guide-item-title .gi-dot{width:6px;height:6px;border-radius:50%;background:var(–ac);flex-shrink:0}
+.guide-item-body{font-size:13px;color:var(–tx2);line-height:1.6;padding-left:13px}
+.guide-tip{margin-top:10px;padding:10px 13px;background:var(–acl);border-left:3px solid var(–ac);border-radius:0 10px 10px 0;font-size:12px;color:var(–tx2);line-height:1.5}
+
+/* ── Detail Overlay ── */
+#pd{position:fixed;inset:0;z-index:150;background:var(–page-bg);overflow-y:auto;display:none}
 #pd::-webkit-scrollbar{display:none}
 .dhdr{padding:calc(env(safe-area-inset-top,0px) + 14px) 20px 16px;display:flex;align-items:flex-start;gap:12px}
-.bbtn{width:36px;height:36px;border-radius:50%;background:var(--glass);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
-.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(--ac)}
-.dtitle{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(--tx2);margin-top:3px}
+.bbtn{width:36px;height:36px;border-radius:50%;background:var(–glass);border:.5px solid var(–gb);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:2px}
+.bbtn:active{transform:scale(.88)}.bbtn svg{width:18px;height:18px;color:var(–ac)}
+.dtitle{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:28px;font-weight:800;line-height:1.2}.ddate{font-size:12px;color:var(–tx2);margin-top:3px}
 .dhero{margin:0 16px 14px;padding:22px;background:linear-gradient(135deg,rgba(10,132,255,.12) 0%,transparent 70%);border:.5px solid rgba(10,132,255,.22);border-radius:28px;text-align:center}
-.dspd{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:80px;font-weight:900;line-height:1;color:#fff;margin-bottom:3px}
-.dspdl{font-size:13px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase}
+.dspd{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:80px;font-weight:900;line-height:1;color:var(–tx);margin-bottom:3px}
+.dspdl{font-size:13px;color:var(–tx2);letter-spacing:1px;text-transform:uppercase}
 .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px}
-.dst{padding:15px;background:var(--glass);border:.5px solid var(--gb);border-radius:16px}
-.dstv{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:30px;font-weight:800;color:var(--tx);line-height:1}
-.dstl{font-size:11px;color:var(--tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
-.slbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
-.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);height:240px}
+.dst{padding:15px;background:var(–glass);border:.5px solid var(–gb);border-radius:16px}
+.dstv{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:30px;font-weight:800;color:var(–tx);line-height:1}
+.dstl{font-size:11px;color:var(–tx2);margin-top:4px;text-transform:uppercase;letter-spacing:.7px}
+.slbl{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1.1px;padding:0 20px;margin:4px 0 8px}
+.dmw{margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(–gb);height:240px}
 .dmw #dmap{width:100%;height:100%;background:#0a0d12}
-.cwrap{margin:0 16px 14px;padding:14px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px}
+.cwrap{margin:0 16px 14px;padding:14px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px}
 .flist{margin:0 16px 14px;display:flex;flex-direction:column;gap:8px}
 .fit{display:flex;align-items:center;gap:12px;padding:13px 15px;background:rgba(255,69,58,.07);border:.5px solid rgba(255,69,58,.2);border-radius:14px}
-.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(--tx2);margin-top:1px}
-.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(--red);font-family:'DM Sans',-apple-system,sans-serif;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.fitt{font-size:14px;font-weight:600}.fits{font-size:12px;color:var(–tx2);margin-top:1px}
+.delbtn{margin:0 16px 40px;padding:14px;width:calc(100% - 32px);background:rgba(255,69,58,.10);border:.5px solid rgba(255,69,58,.28);border-radius:14px;color:var(–red);font-family:‘DM Sans’,-apple-system,sans-serif;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 .delbtn:active{transform:scale(.97)}
 
-/* Nav */
-#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav);background:rgba(6,6,8,.96);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-top:.5px solid var(--gb);display:flex;align-items:flex-start;justify-content:space-around;z-index:200;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px))}
-.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:'DM Sans',-apple-system,sans-serif;font-size:10px;font-weight:500;transition:color .2s}
+/* ── Nav ── */
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(–nav);background:var(–nav-bg);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-top:.5px solid var(–gb);display:flex;align-items:flex-start;justify-content:space-around;z-index:200;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px))}
+.nbt{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#8e8e93;cursor:pointer;padding:8px 20px;border-radius:14px;font-family:‘DM Sans’,-apple-system,sans-serif;font-size:10px;font-weight:500;transition:color .2s}
 .nbt svg{width:24px;height:24px;transition:transform .2s cubic-bezier(.34,1.6,.64,1)}
-.nbt.on{color:var(--ac)}.nbt.on svg{transform:scale(1.1)}
+.nbt.on{color:var(–ac)}.nbt.on svg{transform:scale(1.1)}
 
-/* Water Lock */
+/* ── Water Lock ── */
 #wl{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
 #wl.on{display:flex;animation:fin .25s ease both}
 .wlico{font-size:58px;margin-bottom:14px}
-.wltitle{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:36px;font-weight:900;margin-bottom:8px}
-.wlsub{font-size:15px;color:var(--tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
+.wltitle{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:36px;font-weight:900;margin-bottom:8px}
+.wlsub{font-size:15px;color:var(–tx2);text-align:center;max-width:260px;line-height:1.5;margin-bottom:40px}
 .wlbtn{width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.10);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;touch-action:none}
-.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(--ac);width:0;border-radius:2px}
+.wlprog{position:absolute;bottom:0;left:0;height:4px;background:var(–ac);width:0;border-radius:2px}
 .wlprog.go{animation:lfill 2s linear both}
 .wlwaves{position:absolute;inset:0;border-radius:50%;pointer-events:none}
-.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(--ac);opacity:0}
+.wlwave{position:absolute;inset:0;border-radius:50%;border:2px solid var(–ac);opacity:0}
 .wlbtn.p .wlwave{animation:rip 1s ease-out infinite}
 .wlbtn.p .wlwave:nth-child(2){animation-delay:.3s}
 .wlbtn.p .wlwave:nth-child(3){animation-delay:.6s}
-.wlhint{font-size:14px;color:var(--tx2);margin-top:12px}
+.wlhint{font-size:14px;color:var(–tx2);margin-top:12px}
 
-/* Sheets */
+/* ── Sheets ── */
 .ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(env(safe-area-inset-bottom,0px)+16px);animation:fin .2s ease both}
-.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
-.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(--gb)}
-.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(--tx2);margin-top:2px}
+.sh{width:100%;max-width:430px;background:rgba(18,18,20,.98);border:.5px solid var(–gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both;overflow:hidden}
+.shhdr{padding:18px 20px 12px;border-bottom:.5px solid var(–gb)}
+.shht{font-size:17px;font-weight:700}.shhs{font-size:12px;color:var(–tx2);margin-top:2px}
 .shrow{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:.5px solid rgba(255,255,255,.04);cursor:pointer;font-size:15px;font-weight:500;transition:background .12s}
-.shrow:last-child{border-bottom:none}.shrow:active{background:var(--gs)}
-.shrow.r{color:var(--red)}.shrow.c{color:var(--tx2);border-top:.5px solid var(--gb)}
+.shrow:last-child{border-bottom:none}.shrow:active{background:var(–gs)}
+.shrow.r{color:var(–red)}.shrow.c{color:var(–tx2);border-top:.5px solid var(–gb)}
 .shico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
 .shdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.shchk{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(–ac);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .swatches{display:flex;gap:10px;flex-wrap:wrap}
 .sw{width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .18s cubic-bezier(.34,1.6,.64,1);position:relative}
 .sw.on{box-shadow:0 0 0 2.5px #fff,0 0 0 5px rgba(255,255,255,.25);transform:scale(1.12)}
-.sw.on::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.sw.on::after{content:‘✓’;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
 .cov{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(env(safe-area-inset-bottom,0px)+20px);animation:fin .2s ease both}
-.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(--gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
-.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(--tx2);margin-bottom:18px}
-
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:'DM Sans',-apple-system,sans-serif;font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
+.csh{width:100%;max-width:430px;padding:22px 20px;background:rgba(22,22,24,.98);border:.5px solid var(–gb);border-radius:26px 26px 18px 18px;animation:sup .3s cubic-bezier(.34,1.3,.64,1) both}
+.ct{font-size:18px;font-weight:700;margin-bottom:5px}.cs{font-size:14px;color:var(–tx2);margin-bottom:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;border-radius:16px;border:none;cursor:pointer;font-family:‘DM Sans’,-apple-system,sans-serif;font-size:16px;font-weight:600;transition:all .18s cubic-bezier(.34,1.4,.64,1);width:100%}
 .btn:active{transform:scale(.965)}
-.bp{background:var(--ac);color:#fff;box-shadow:0 4px 24px var(--acg)}
-.bd{background:var(--red);color:#fff;box-shadow:0 4px 24px var(--rg)}
-.bg{background:var(--gs);border:.5px solid var(--gb);color:var(--tx)}
+.bp{background:var(–ac);color:#fff;box-shadow:0 4px 24px var(–acg)}
+.bd{background:var(–red);color:#fff;box-shadow:0 4px 24px var(–rg)}
+.bg{background:var(–gs);border:.5px solid var(–gb);color:var(–tx)}
 .bsm{padding:9px 16px;font-size:13px;border-radius:12px;width:auto}
-.inp{width:100%;background:var(--gs);border:.5px solid var(--gb);border-radius:14px;padding:14px 16px;color:var(--tx);font-family:'DM Sans',-apple-system,sans-serif;font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
-.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}.inp::placeholder{color:var(--tx3)}
-.lbl{font-size:11px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
+.inp{width:100%;background:var(–inp-bg);border:.5px solid var(–gb);border-radius:14px;padding:14px 16px;color:var(–tx);font-family:‘DM Sans’,-apple-system,sans-serif;font-size:16px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.inp:focus{border-color:var(–ac);box-shadow:0 0 0 3px var(–acl)}.inp::placeholder{color:var(–tx3)}
+.lbl{font-size:11px;font-weight:600;color:var(–tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}
 
-#toast{position:fixed;top:calc(env(safe-area-inset-top,44px) + 8px);left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.96);border:.5px solid var(--gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
+/* ── Toast ── */
+#toast{position:fixed;top:calc(env(safe-area-inset-top,44px) + 8px);left:50%;transform:translateX(-50%) translateY(-6px);z-index:800;background:rgba(24,24,26,.96);border:.5px solid var(–gb);border-radius:20px;padding:9px 18px;font-size:14px;font-weight:500;white-space:nowrap;backdrop-filter:blur(20px);pointer-events:none;transition:opacity .28s,transform .28s;opacity:0}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ── Permission Screen ── */
 #sp{position:fixed;inset:0;z-index:1000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fin .4s ease both}
-.plogo{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
-.ptag{font-size:14px;color:var(--tx2);margin-bottom:44px}
+.plogo{font-family:‘Barlow Condensed’,-apple-system,sans-serif;font-size:60px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:6px;text-shadow:0 0 60px rgba(10,132,255,.5)}
+.ptag{font-size:14px;color:var(–tx2);margin-bottom:44px}
 .plist{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
-.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(--glass);border:.5px solid var(--gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
+.pit{display:flex;align-items:center;gap:16px;padding:15px 16px;background:var(–glass);border:.5px solid var(–gb);border-radius:18px;animation:fup .4s cubic-bezier(.34,1.2,.64,1) both}
 .pit:nth-child(1){animation-delay:.08s}.pit:nth-child(2){animation-delay:.16s}.pit:nth-child(3){animation-delay:.24s}
-.pico{width:42px;height:42px;border-radius:11px;background:var(--acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pico svg{width:20px;height:20px;color:var(--ac)}
-.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(--tx2)}
+.pico{width:42px;height:42px;border-radius:11px;background:var(–acl);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pico svg{width:20px;height:20px;color:var(–ac)}
+.pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(–tx2)}
 .pbw{width:100%;animation:fup .4s .32s cubic-bezier(.34,1.2,.64,1) both}
 
+/* ── Keyframes ── */
 @keyframes fup  {from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes fin  {from{opacity:0}to{opacity:1}}
 @keyframes sup  {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
@@ -323,21 +348,21 @@ html,body{height:100%;width:100%;background:#000;color:var(--tx);
 @keyframes glow {0%,100%{box-shadow:0 6px 32px rgba(10,132,255,.5),inset 0 .5px 0 rgba(255,255,255,.2)}50%{box-shadow:0 6px 52px rgba(10,132,255,.8),inset 0 .5px 0 rgba(255,255,255,.2)}}
 @keyframes lfill{from{width:0}to{width:100%}}
 
-/* ── Leaflet dark theme ── */
+/* ── Leaflet dark ── */
 .leaflet-container{background:#0a0d12 !important}
-/* Tile filter only – SVG overlays (polylines) are NOT affected */
 .leaflet-tile-pane{filter:brightness(.62) saturate(.65) hue-rotate(200deg)}
-.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(--gb);border-radius:10px;color:var(--tx)}
+.leaflet-popup-content-wrapper{background:rgba(10,13,20,.95);border:.5px solid var(–gb);border-radius:10px;color:var(–tx)}
 .leaflet-popup-tip{background:rgba(10,13,20,.95)}
-.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(--tx) !important;border-color:var(--gb) !important}
+.leaflet-control-zoom a{background:rgba(10,13,20,.9) !important;color:var(–tx) !important;border-color:var(–gb) !important}
 .leaflet-control-attribution{display:none}
-/* Zoom controls: bottom-right, above nav bar */
-.leaflet-control-zoom{margin-right:60px !important;margin-bottom:calc(var(--nav) + 16px + env(safe-area-inset-bottom,0px)) !important}
+.leaflet-control-zoom{margin-right:60px !important;margin-bottom:calc(var(–nav) + 16px + env(safe-area-inset-bottom,0px)) !important}
 </style>
+
 </head>
 <body>
 
-<!-- Permission Screen -->
+<!-- ═══ PERMISSION SCREEN ═════════════════════════════════════════ -->
+
 <div id="sp">
   <div class="plogo">WakeSki</div>
   <div class="ptag">Wasserski · Wakeboard · Wakesurf</div>
@@ -349,16 +374,16 @@ html,body{height:100%;width:100%;background:#000;color:var(--tx);
   <div class="pbw"><button class="btn bp" id="perm-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Berechtigungen erteilen</button></div>
 </div>
 
-<!-- App -->
+<!-- ═══ APP ════════════════════════════════════════════════════════ -->
+
 <div id="app" style="display:none">
   <div id="toast"></div>
 
   <!-- Track Page -->
+
   <div id="page-track" class="page">
     <div id="lmap"></div>
     <div class="trk-ov">
-
-      <!-- Top bar -->
       <div class="trk-top">
         <div style="display:flex;flex-direction:column;gap:6px">
           <div class="app-name">WakeSki</div>
@@ -366,40 +391,24 @@ html,body{height:100%;width:100%;background:#000;color:var(--tx);
         </div>
         <button class="lock-pill" id="lbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Sperren</button>
       </div>
-
-      <!-- Spacer: transparent to map touches -->
       <div class="trk-spacer"></div>
-
-      <!-- Map control buttons (right side, floating) -->
       <div class="map-ctrls">
-        <!-- Follow mode toggle -->
         <button class="map-btn active" id="follow-btn" title="Positionsverfolgung">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <circle cx="12" cy="12" r="8" stroke-opacity=".5"/>
-            <line x1="12" y1="2" x2="12" y2="6"/>
-            <line x1="12" y1="18" x2="12" y2="22"/>
-            <line x1="2" y1="12" x2="6" y2="12"/>
-            <line x1="18" y1="12" x2="22" y2="12"/>
+            <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-opacity=".5"/>
+            <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
           </svg>
         </button>
-        <!-- Compass / rotation toggle -->
-        <button class="map-btn" id="compass-btn" title="Karte dreht mit Kompass">
-          <!-- Needle SVG: the red tip points North visually -->
+        <button class="map-btn" id="compass-btn" title="Kompass-Modus">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="compass-svg">
             <circle cx="12" cy="12" r="9" stroke-opacity=".4"/>
-            <!-- North (red) -->
             <path d="M12 4 L14 12 L12 11 L10 12 Z" fill="#ff453a" stroke="none"/>
-            <!-- South (white/dim) -->
             <path d="M12 20 L10 12 L12 13 L14 12 Z" fill="rgba(255,255,255,.35)" stroke="none"/>
           </svg>
         </button>
       </div>
-
-      <!-- Crash alert -->
       <div id="falert" style="display:none"><div style="font-size:26px;flex-shrink:0">💥</div><div><div class="fat" id="fat">Sturz erkannt!</div><div class="fas" id="fas"></div></div></div>
-
-      <!-- HUD: speed + metrics + button -->
       <div class="trk-hud">
         <div class="trk-spd-wrap"><span class="trk-spd-num" id="snum">0</span></div>
         <div class="trk-spd-unit" id="spd-unit">km/h</div>
@@ -415,11 +424,11 @@ html,body{height:100%;width:100%;background:#000;color:var(--tx);
           <span id="tbtl">Run starten</span>
         </button>
       </div>
-
-    </div><!-- /.trk-ov -->
+    </div>
   </div>
 
   <!-- History Page -->
+
   <div id="page-history" class="page">
     <div class="phdr"><div class="phdt">Verlauf</div><button class="btn bsm bg" id="nfbtn" style="display:flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Ordner</button></div>
     <div class="ftabs" id="ftabs"></div>
@@ -427,39 +436,131 @@ html,body{height:100%;width:100%;background:#000;color:var(--tx);
   </div>
 
   <!-- Settings Page -->
+
   <div id="page-settings" class="page">
     <div class="phdr" style="padding-bottom:8px"><div class="phdt">Einstellungen</div></div>
-    <div class="pcard" id="pcrd">
-      <div class="sav" id="sav">W</div>
-      <div style="flex:1;min-width:0"><div class="snm" id="snm">Fahrer</div><div class="sst" id="sst">0 Fahrten</div><div class="shi">Tippen zum Bearbeiten</div></div>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx3);flex-shrink:0"><polyline points="9,18 15,12 9,6"/></svg>
+
+```
+<!-- Profile Card -->
+<div class="pcard" id="pcrd">
+  <div class="sav" id="sav">W</div>
+  <div style="flex:1;min-width:0"><div class="snm" id="snm">Fahrer</div><div class="sst" id="sst">0 Fahrten</div><div class="shi">Tippen zum Bearbeiten</div></div>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--tx3);flex-shrink:0"><polyline points="9,18 15,12 9,6"/></svg>
+</div>
+
+<!-- Erscheinungsbild -->
+<div class="ssec">
+  <div class="ssec-title">Erscheinungsbild</div>
+  <div class="srow" style="cursor:default">
+    <div class="srico" style="background:rgba(255,214,10,.15)">🎨</div>
+    <div style="flex:1"><div class="srt">Erscheinungsmodus</div></div>
+    <div class="srow-right">
+      <div class="theme-tog">
+        <button class="theme-btn" id="theme-dark-btn" data-theme="dark">🌙 Dunkel</button>
+        <button class="theme-btn" id="theme-light-btn" data-theme="light">☀️ Hell</button>
+      </div>
     </div>
-    <div class="ssec">
-      <div class="ssec-title">Erweitert</div>
-      <div class="srow" id="sadv"><div class="srico" style="background:rgba(10,132,255,.15)">⚙️</div><div><div class="srt">Erweiterte Einstellungen</div><div class="srs">GPS, Algorithmus, Sturzerkennung, Anzeige…</div></div><svg class="srow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg></div>
-    </div>
-    <div class="ssec">
-      <div class="ssec-title">Daten</div>
-      <div class="srow" id="sexport"><div class="srico" style="background:rgba(10,132,255,.15)">📤</div><div><div class="srt">Exportieren</div><div class="srs">Profil, Fahrten & Einstellungen als JSON</div></div></div>
-      <div class="srow" id="simport"><div class="srico" style="background:rgba(48,209,88,.15)">📥</div><div><div class="srt">Importieren</div><div class="srs">JSON-Backup laden</div></div></div>
-    </div>
-    <div class="ssec">
-      <div class="ssec-title">Gefahrenzone</div>
-      <div class="srow" id="sclear"><div class="srico" style="background:rgba(255,69,58,.15)">🗑️</div><div><div class="srt">Alle Fahrten löschen</div><div class="srs">Ordner und Profil bleiben erhalten</div></div></div>
-    </div>
-    <div class="ssec">
-      <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.05)">ℹ️</div><div><div class="srt">WakeSki Pro v2.6</div><div class="srs">GPS · Kompass · Kalman · Sturzerkennung</div></div></div>
-    </div>
-    <div style="height:20px"></div>
+  </div>
+  <div class="srow" style="cursor:default">
+    <div class="srico" style="background:rgba(10,132,255,.15)">🔵</div>
+    <div style="flex:1"><div class="srt">Akzentfarbe</div><div class="srs">Farbe des UI-Highlights</div></div>
+    <div class="srow-right accent-dots" id="accent-dots"></div>
+  </div>
+</div>
+
+<!-- Presets & Guide -->
+<div class="ssec">
+  <div class="ssec-title">Fahrprofile</div>
+  <div class="srow" id="spresets">
+    <div class="srico" style="background:rgba(48,209,88,.15)">⚡</div>
+    <div><div class="srt">Einstellungs-Presets</div><div class="srs" id="active-preset-name">Aktives Preset laden oder erstellen</div></div>
+    <svg class="srow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+  </div>
+</div>
+
+<!-- Erweitert -->
+<div class="ssec">
+  <div class="ssec-title">Erweitert</div>
+  <div class="srow" id="sadv">
+    <div class="srico" style="background:rgba(10,132,255,.15)">⚙️</div>
+    <div><div class="srt">Erweiterte Einstellungen</div><div class="srs">GPS, Algorithmus, Sturzerkennung…</div></div>
+    <svg class="srow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+  </div>
+</div>
+
+<!-- Daten -->
+<div class="ssec">
+  <div class="ssec-title">Daten</div>
+  <div class="srow" id="sexport"><div class="srico" style="background:rgba(10,132,255,.15)">📤</div><div><div class="srt">Exportieren</div><div class="srs">Profil, Fahrten & Einstellungen als JSON</div></div></div>
+  <div class="srow" id="simport"><div class="srico" style="background:rgba(48,209,88,.15)">📥</div><div><div class="srt">Importieren</div><div class="srs">JSON-Backup laden</div></div></div>
+</div>
+
+<!-- Gefahrenzone -->
+<div class="ssec">
+  <div class="ssec-title">Gefahrenzone</div>
+  <div class="srow" id="sclear"><div class="srico" style="background:rgba(255,69,58,.15)">🗑️</div><div><div class="srt">Alle Fahrten löschen</div><div class="srs">Ordner und Profil bleiben erhalten</div></div></div>
+</div>
+
+<!-- Info & Guide -->
+<div class="ssec">
+  <div class="ssec-title">Info</div>
+  <div class="srow" id="sguide">
+    <div class="srico" style="background:rgba(255,214,10,.15)">📖</div>
+    <div><div class="srt">App-Guide</div><div class="srs">Alle Funktionen erklärt</div></div>
+    <svg class="srow-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+  </div>
+  <div class="srow" style="cursor:default"><div class="srico" style="background:rgba(255,255,255,.05)">ℹ️</div><div><div class="srt">WakeSki Pro v3.0</div><div class="srs">GPS · Kalman · Sturzerkennung · Presets</div></div></div>
+</div>
+<div style="height:20px"></div>
+```
+
   </div>
 
   <!-- Detail Overlay -->
-  <div id="pd"><div class="dhdr"><button class="bbtn" id="bbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button><div><div class="dtitle" id="dtitle">Run</div><div class="ddate" id="ddate"></div></div></div><div id="dcont"></div></div>
+
+  <div id="pd">
+    <div class="dhdr">
+      <button class="bbtn" id="bbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div><div class="dtitle" id="dtitle">Run</div><div class="ddate" id="ddate"></div></div>
+    </div>
+    <div id="dcont"></div>
+  </div>
 
   <!-- Advanced Settings Overlay -->
-  <div id="as-panel"><div class="as-hdr"><button class="bbtn" id="as-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button><div><div class="as-title">Erweiterte Einstellungen</div><div class="as-sub">Änderungen werden sofort übernommen</div></div></div><div id="as-content"></div><div style="height:40px"></div></div>
+
+  <div id="as-panel">
+    <div class="as-hdr">
+      <button class="bbtn" id="as-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div><div class="as-title">Erweiterte Einstellungen</div><div class="as-sub">Änderungen werden sofort übernommen</div></div>
+    </div>
+    <div id="as-content"></div>
+    <div style="height:40px"></div>
+  </div>
+
+  <!-- Presets Panel -->
+
+  <div id="presets-panel">
+    <div class="as-hdr">
+      <button class="bbtn" id="presets-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div><div class="as-title">Einstellungs-Presets</div><div class="as-sub">Vorgaben für verschiedene Fahrstile</div></div>
+    </div>
+    <div id="presets-content"></div>
+    <div style="height:40px"></div>
+  </div>
+
+  <!-- Guide Panel -->
+
+  <div id="guide-panel">
+    <div class="as-hdr">
+      <button class="bbtn" id="guide-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+      <div><div class="as-title">App-Guide</div><div class="as-sub">Alle Funktionen erklärt</div></div>
+    </div>
+    <div id="guide-content"></div>
+    <div style="height:40px"></div>
+  </div>
 
   <!-- Nav -->
+
   <nav id="nav">
     <button class="nbt on" data-pg="track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>Track</button>
     <button class="nbt" data-pg="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Verlauf</button>
@@ -468,37 +569,50 @@ html,body{height:100%;width:100%;background:#000;color:var(--tx);
 </div>
 
 <!-- Water Lock -->
-<div id="wl"><div class="wlico">💧</div><div class="wltitle">Gesperrt</div><div class="wlsub">Kreis 2 Sekunden halten zum Entsperren.</div><div class="wlbtn" id="wlbtn"><div class="wlwaves"><div class="wlwave"></div><div class="wlwave"></div><div class="wlwave"></div></div><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><div class="wlprog" id="wlprog"></div></div><div class="wlhint">Gedrückt halten</div></div>
+
+<div id="wl">
+  <div class="wlico">💧</div>
+  <div class="wltitle">Gesperrt</div>
+  <div class="wlsub">Kreis 2 Sekunden halten zum Entsperren.</div>
+  <div class="wlbtn" id="wlbtn">
+    <div class="wlwaves"><div class="wlwave"></div><div class="wlwave"></div><div class="wlwave"></div></div>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    <div class="wlprog" id="wlprog"></div>
+  </div>
+  <div class="wlhint">Gedrückt halten</div>
+</div>
 
 <!-- Confirm -->
-<div class="cov" id="cov" style="display:none"><div class="csh"><div class="ct" id="ctxt"></div><div class="cs" id="cstxt"></div><div style="display:flex;gap:10px"><button class="btn bg" id="cno">Abbrechen</button><button class="btn bd" id="cyes">Bestätigen</button></div></div></div>
+
+<div class="cov" id="cov" style="display:none">
+  <div class="csh"><div class="ct" id="ctxt"></div><div class="cs" id="cstxt"></div>
+  <div style="display:flex;gap:10px"><button class="btn bg" id="cno">Abbrechen</button><button class="btn bd" id="cyes">Bestätigen</button></div></div>
+</div>
 <input type="file" id="fimp" accept=".json" style="display:none"/>
 
-<!-- Leaflet + Rotate plugin (handles map bearing rotation cleanly) -->
+<!-- ═══ SCRIPTS ═══════════════════════════════════════════════════ -->
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+
 <script>
 'use strict';
 
 /* ═══ SERVICE WORKER ════════════════════════════════════════════ */
 if('serviceWorker' in navigator){
-  const sw=`const C='ws-v9';
+  const sw=`const C='ws-v10';
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.add(location.href)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>clients.claim()));});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const h=e.request.headers.get('accept');if(h&&h.includes('text/html')){e.respondWith(fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;}).catch(()=>caches.match(e.request)));}else{e.respondWith(caches.match(e.request).then(h=>h||fetch(e.request).then(r=>{if(r.ok)caches.open(C).then(c=>c.put(e.request,r.clone()));return r;})));}});`;
   navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
 }
 
-/* ═══ APP ICON FALLBACK ═════════════════════════════════════════
-   Wenn WakeSkiIcon.PNG nicht gefunden wird, Canvas-Icon erzeugen.
-════════════════════════════════════════════════════════════════ */
+/* ═══ APP ICON FALLBACK ═════════════════════════════════════════ */
 (function(){
-  const el=document.getElementById('ati');
-  if(!el) return;
-  // Prüfe ob eigenes Icon geladen hat; onerror-Handler im HTML entfernt href
+  const el=document.getElementById('ati'); if(!el) return;
   const tryLoad=()=>{
-    if(el.href && el.href !== location.href) return; // eigenes Icon vorhanden
-    // Canvas-Fallback
+    if(el.href && el.href!==location.href) return;
     const c=document.createElement('canvas'); c.width=c.height=180;
     const x=c.getContext('2d');
     const g=x.createLinearGradient(0,0,180,180); g.addColorStop(0,'#0a1628'); g.addColorStop(1,'#000');
@@ -515,8 +629,48 @@ self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const h=e.r
     const mf=JSON.stringify({name:'WakeSki Pro',short_name:'WakeSki',theme_color:'#000000',background_color:'#000000',display:'standalone',orientation:'portrait',start_url:'.',icons:[{src:ico,sizes:'192x192',type:'image/png'},{src:ico,sizes:'512x512',type:'image/png'}]});
     document.getElementById('mani').href='data:application/manifest+json,'+encodeURIComponent(mf);
   };
-  setTimeout(tryLoad, 200); // kurz warten ob eigenes Icon lädt
+  setTimeout(tryLoad,200);
 })();
+
+/* ═══ ACCENT COLORS ════════════════════════════════════════════ */
+const ACCENT_COLORS = [
+  { hex:'#0a84ff', name:'Blau'    },
+  { hex:'#30d158', name:'Grün'    },
+  { hex:'#ff9f0a', name:'Orange'  },
+  { hex:'#ff2d55', name:'Pink'    },
+  { hex:'#bf5af2', name:'Lila'    },
+  { hex:'#5ac8fa', name:'Cyan'    },
+  { hex:'#ff6b35', name:'Coral'   },
+  { hex:'#ffd60a', name:'Gelb'    },
+];
+
+function hexToRgba(hex, alpha) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function applyAccentColor(hex) {
+  const root=document.documentElement;
+  root.style.setProperty('--ac', hex);
+  root.style.setProperty('--acg', hexToRgba(hex,.28));
+  root.style.setProperty('--acl', hexToRgba(hex,.13));
+  // Update glow animation for tracking button
+  const style=document.getElementById('glow-style')||document.createElement('style');
+  style.id='glow-style';
+  style.textContent=`@keyframes glow{0%,100%{box-shadow:0 6px 32px ${hexToRgba(hex,.5)},inset 0 .5px 0 rgba(255,255,255,.2)}50%{box-shadow:0 6px 52px ${hexToRgba(hex,.8)},inset 0 .5px 0 rgba(255,255,255,.2)}}`;
+  document.head.appendChild(style);
+}
+
+function applyTheme(mode) {
+  document.documentElement.setAttribute('data-theme', mode);
+  CFG.theme = mode;
+  saveCFG();
+  // Update theme buttons
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('on', b.dataset.theme === mode));
+  // Map filter
+  const pane = document.querySelector('.leaflet-tile-pane');
+  if(pane) pane.style.filter = (mode==='light') ? 'none' : (CFG.nightMap ? 'brightness(.62) saturate(.65) hue-rotate(200deg)' : 'none');
+}
 
 /* ═══ SETTINGS DEFAULTS ════════════════════════════════════════ */
 const DEFAULT_CFG = {
@@ -527,21 +681,85 @@ const DEFAULT_CFG = {
   voiceRecord:true, voiceMile:false, vibStart:true,
   autoSaveInt:10, minRunPts:3, ptRes:1,
   autoLock:false, crashCheckin:0,
+  theme:'dark', accentColor:'#0a84ff',
+  activePresetId: null,
 };
 let CFG = {...DEFAULT_CFG, ...(()=>{try{return JSON.parse(localStorage.getItem('ws_cfg'))||{};}catch{return{};}})()};
 function saveCFG(){ localStorage.setItem('ws_cfg', JSON.stringify(CFG)); }
-function setCFG(k,v){ CFG[k]=v; saveCFG(); applyCFG(k); }
-function applyCFG(k){
-  if(k==='nightMap'){
-    const pane=document.querySelector('.leaflet-tile-pane');
-    if(pane) pane.style.filter=CFG.nightMap?'brightness(.62) saturate(.65) hue-rotate(200deg)':'none';
+function setCFG(k,v){ CFG[k]=v; saveCFG(); applyCFG(k,v); }
+function applyCFG(k,v){
+  if(k==='nightMap'||k==='theme'){
+    if(CFG.theme!=='light'){
+      const pane=document.querySelector('.leaflet-tile-pane');
+      if(pane) pane.style.filter=CFG.nightMap?'brightness(.62) saturate(.65) hue-rotate(200deg)':'none';
+    }
   }
+  if(k==='mapFollow') setFollowMode(CFG.mapFollow);
   if(k==='speedAlgo') KALMAN.reset();
-  if(k==='speedUnit'){ const u=$('spd-unit'); if(u)u.textContent=unitLabel(); }
+  if(k==='speedUnit'){const u=$('spd-unit');if(u)u.textContent=unitLabel();}
+  if(k==='accentColor') applyAccentColor(CFG.accentColor);
 }
 
 /* ═══ KALMAN FILTER ════════════════════════════════════════════ */
-const KALMAN={P:1,K:0,x:0,update(z){this.P+=CFG.kalmanQ;this.K=this.P/(this.P+CFG.kalmanR);this.x+=this.K*(z-this.x);this.P=(1-this.K)*this.P;return this.x;},reset(){this.P=1;this.K=0;this.x=0;}};
+const KALMAN={P:1,K:0,x:0,
+  update(z){this.P+=CFG.kalmanQ;this.K=this.P/(this.P+CFG.kalmanR);this.x+=this.K*(z-this.x);this.P=(1-this.K)*this.P;return this.x;},
+  reset(){this.P=1;this.K=0;this.x=0;}
+};
+
+/* ═══ BUILT-IN PRESETS ═════════════════════════════════════════ */
+const PRESETS_BUILTIN = [
+  {
+    id:'wakeboard_pro', name:'Wakeboard Pro', icon:'🏄', builtin:true,
+    desc:'Hohe Geschwindigkeiten, maximale Sensitivität',
+    tags:['40–80 km/h','Profi','Sensitiv'],
+    settings:{
+      gpsAccuracy:'high', gpsInterval:200, distFilter:1,
+      speedAlgo:'kalman', smoothBuf:3, kalmanR:0.3, kalmanQ:0.2,
+      crashG:3.5, crashMinSpd:20, crashCooldown:3000,
+      maxScale:120, mapZoom:17, ptRes:1
+    }
+  },
+  {
+    id:'waterski_medium', name:'Wasserski', icon:'🎿', builtin:true,
+    desc:'Ausgewogene Einstellungen für klassischen Wasserski',
+    tags:['20–60 km/h','Ausgewogen'],
+    settings:{
+      gpsAccuracy:'high', gpsInterval:500, distFilter:2,
+      speedAlgo:'moving_avg', smoothBuf:4, kalmanR:1.0, kalmanQ:0.1,
+      crashG:2.5, crashMinSpd:10, crashCooldown:3000,
+      maxScale:80, mapZoom:17, ptRes:1
+    }
+  },
+  {
+    id:'beginner', name:'Einsteiger', icon:'🌊', builtin:true,
+    desc:'Niedrige Geschwindigkeiten, tolerante Sturzerkennung',
+    tags:['5–30 km/h','Beginner','Tolerant'],
+    settings:{
+      gpsAccuracy:'medium', gpsInterval:1000, distFilter:5,
+      speedAlgo:'moving_avg', smoothBuf:6, kalmanR:2.0, kalmanQ:0.05,
+      crashG:2.0, crashMinSpd:5, crashCooldown:5000,
+      maxScale:60, mapZoom:16, ptRes:2
+    }
+  }
+];
+
+function getCustomPresets(){ try{return JSON.parse(localStorage.getItem('ws_presets'))||[];}catch{return[];} }
+function saveCustomPresets(p){ localStorage.setItem('ws_presets',JSON.stringify(p)); }
+function getAllPresets(){ return [...PRESETS_BUILTIN, ...getCustomPresets()]; }
+
+function applyPreset(preset) {
+  const settings = preset.settings;
+  Object.keys(settings).forEach(k => { CFG[k] = settings[k]; });
+  CFG.activePresetId = preset.id;
+  saveCFG();
+  KALMAN.reset();
+  const u=$('spd-unit'); if(u) u.textContent=unitLabel();
+  const pn=$('active-preset-name');
+  if(pn) pn.textContent=`Aktiv: ${preset.icon} ${preset.name}`;
+  // Rebuild adv settings if open
+  if($('as-panel').style.display!=='none') buildAdvSettings();
+  toast(`✅ Preset '${preset.name}' aktiviert`);
+}
 
 /* ═══ DB ════════════════════════════════════════════════════════ */
 const DB={
@@ -563,8 +781,14 @@ const DB={
   getSession:  ()=>DB.g('ws_session'),
   saveSession: s=>DB.s('ws_session',s),
   clearSession:()=>localStorage.removeItem('ws_session'),
-  exportAll:   ()=>({profile:DB.getProfile(),folders:DB.getFolders(),runs:DB.getRuns(),settings:CFG,at:Date.now()}),
-  importAll:   d=>{if(d.profile)DB.saveProfile(d.profile);if(d.folders)DB.saveFolders(d.folders);if(d.runs)DB.saveRuns(d.runs);if(d.settings){CFG={...DEFAULT_CFG,...d.settings};saveCFG();}},
+  exportAll:   ()=>({profile:DB.getProfile(),folders:DB.getFolders(),runs:DB.getRuns(),settings:CFG,presets:getCustomPresets(),at:Date.now()}),
+  importAll:   d=>{
+    if(d.profile)DB.saveProfile(d.profile);
+    if(d.folders)DB.saveFolders(d.folders);
+    if(d.runs)DB.saveRuns(d.runs);
+    if(d.presets)saveCustomPresets(d.presets);
+    if(d.settings){CFG={...DEFAULT_CFG,...d.settings};saveCFG();}
+  },
 };
 
 /* ═══ UTILS ═════════════════════════════════════════════════════ */
@@ -588,18 +812,12 @@ const S={
   speed:0, maxSpd:0, avgSpd:0, dist:0, elapsed:0, t0:null,
   buf:[], hist:[], pts:[], falls:[], fc:0, lastPt:null,
   timerID:null, watchID:null,
-  map:null, lg:null, prevLL:null, smkr:null, pmkr:null,
+  map:null, lg:null, prevLL:null, smkr:null, pmkr:null, _idleMkr:null,
   dmap:null,
   locked:false, folderID:null, page:'track',
-  // New
-  followMode:true,     // map follows GPS position
-  compassMode:false,   // map rotates with device heading
-  heading:0,           // current compass heading (degrees from North)
-  lastPos:null,        // {lat, lon} – always updated, even when not tracking
-  lastAccuracy:null,
-  lastGForce:0,
-  wakeLock:null,
-  asLiveTimer:null,
+  followMode:true, compassMode:false, heading:0,
+  lastPos:null, lastAccuracy:null, lastGForce:0,
+  wakeLock:null, asLiveTimer:null,
 };
 
 /* ═══ TOAST ═════════════════════════════════════════════════════ */
@@ -608,7 +826,7 @@ const toast=(m,d=2600)=>{const e=$('toast');e.textContent=m;e.classList.add('on'
 
 /* ═══ NAVIGATION ════════════════════════════════════════════════ */
 function goPage(pg){
-  closeDetail(); closeAdvSettings();
+  closeDetail(); closeAdvSettings(); closePresetsPanel(); closeGuidePanel();
   S.page=pg;
   document.querySelectorAll('.page').forEach(el=>el.classList.toggle('on',el.id==='page-'+pg));
   document.querySelectorAll('.nbt').forEach(b=>b.classList.toggle('on',b.dataset.pg===pg));
@@ -618,21 +836,12 @@ function goPage(pg){
 }
 document.querySelectorAll('.nbt').forEach(b=>b.addEventListener('click',()=>goPage(b.dataset.pg)));
 
-/* ═══ WAKE LOCK ══════════════════════════════════════════════════
-   Verhindert, dass der Bildschirm während der Aufnahme ausgeht.
-   Ersetzt Dynamic Island (nicht möglich in Web-Apps).
-════════════════════════════════════════════════════════════════ */
+/* ═══ WAKE LOCK ══════════════════════════════════════════════════ */
 async function requestWakeLock(){
   if(!('wakeLock' in navigator)) return;
-  try{
-    S.wakeLock=await navigator.wakeLock.request('screen');
-    S.wakeLock.addEventListener('release',()=>{S.wakeLock=null;});
-  }catch(e){console.log('Wake Lock nicht verfügbar:',e.message);}
+  try{S.wakeLock=await navigator.wakeLock.request('screen');S.wakeLock.addEventListener('release',()=>{S.wakeLock=null;});}catch(e){}
 }
-async function releaseWakeLock(){
-  if(S.wakeLock){try{await S.wakeLock.release();}catch{}S.wakeLock=null;}
-}
-// Wenn Tab wieder sichtbar und Tracking läuft: Wake Lock neu anfordern
+async function releaseWakeLock(){if(S.wakeLock){try{await S.wakeLock.release();}catch{}S.wakeLock=null;}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.tracking)requestWakeLock();});
 
 /* ═══ GPS ═══════════════════════════════════════════════════════ */
@@ -665,23 +874,60 @@ function setGPS(s){
   if(!S.tracking)b.disabled=(s!=='ready');
 }
 
-/* ═══ POSITION HANDLER ═════════════════════════════════════════
-   Split into two parts:
-   1. Always: update map position, keep S.lastPos current
-   2. Only when tracking: speed, distance, metrics
-════════════════════════════════════════════════════════════════ */
+/* ═══ POSITION HANDLER ═════════════════════════════════════════ */
+function getMapVerticalOffset(){
+  // Compute how many px to shift so GPS point sits in the center of
+  // the visible (unobstructed) map area between the top bar and the HUD.
+  try {
+    const topH = document.querySelector('.trk-top')?.offsetHeight || 100;
+    const hudH = document.querySelector('.trk-hud')?.offsetHeight || 260;
+    const screenH = window.innerHeight;
+    // Center of free area measured from top of screen:
+    const freeCenterFromTop = topH + (screenH - topH - hudH) / 2;
+    // Difference from screen center (positive = above center):
+    return Math.round(screenH / 2 - freeCenterFromTop);
+  } catch(e) { return 80; }
+}
+
+function panToWithOffset(lat, lon) {
+  if(!S.map || !S.followMode) return;
+  const zoom = S.map.getZoom();
+  // Shift map center so the GPS point lands at the visual center of the
+  // free (unobstructed) map area, not the raw screen center.
+  const offset = getMapVerticalOffset(); // px to shift map center DOWN → GPS appears that many px ABOVE center
+  try {
+    const targetPt = S.map.project([lat, lon], zoom);
+    const shiftedPt = L.point(targetPt.x, targetPt.y + offset);
+    const newCenter = S.map.unproject(shiftedPt, zoom);
+    S.map.panTo(newCenter, {animate:true, duration:0.8, easeLinearity:0.5});
+  } catch(e) {
+    S.map.panTo([lat, lon], {animate:true, duration:0.8});
+  }
+}
+
 function onPos(pos){
   const lat=pos.coords.latitude, lon=pos.coords.longitude;
+  const isFirstFix=!S.lastPos;
   S.lastPos={lat,lon};
 
-  // ── Always: follow position on map ──
-  if(S.map && S.followMode){
-    S.map.panTo([lat,lon],{animate:true,duration:0.8,easeLinearity:0.5});
+  // Jump to first GPS fix with appropriate zoom even when not tracking
+  if(isFirstFix && S.map){
+    S.map.setView([lat,lon], CFG.mapZoom, {animate:false});
   }
 
-  if(!S.tracking) return;
+  // Always update map position
+  panToWithOffset(lat, lon);
 
-  // ── Only during active recording ────────────────────────────
+  if(!S.tracking){
+    // Show idle position dot when not recording
+    updateIdleMarker(lat, lon);
+    return;
+  }
+
+  // Hide idle marker once tracking starts
+  clearIdleMarker();
+
+  // Active recording only
   const now=Date.now();
   let raw=0;
   if(typeof pos.coords.speed==='number'&&pos.coords.speed>=0) raw=pos.coords.speed*3.6;
@@ -696,19 +942,17 @@ function onPos(pos){
   }
   S.lastPt=curPt;
 
-  // Speed algorithm
   if(CFG.speedAlgo==='raw') S.speed=raw;
   else if(CFG.speedAlgo==='kalman') S.speed=KALMAN.update(raw);
   else{ S.buf.push(raw); while(S.buf.length>CFG.smoothBuf)S.buf.shift(); S.speed=S.buf.reduce((a,b)=>a+b,0)/S.buf.length; }
 
-  // Trackpoint
   if(S.pts.length===0||S.pts.length%CFG.ptRes===0) S.pts.push({lat,lon,time:now,speed:S.speed});
 
   if(S.speed>S.maxSpd){
     S.maxSpd=S.speed;
     if(CFG.voiceRecord&&'speechSynthesis' in window){
       const u=new SpeechSynthesisUtterance(`Neue Höchstgeschwindigkeit: ${Math.round(toUnit(S.speed))} ${unitLabel()}`);
-      u.lang='de-DE'; u.volume=.8; speechSynthesis.cancel(); speechSynthesis.speak(u);
+      u.lang='de-DE';u.volume=.8;speechSynthesis.cancel();speechSynthesis.speak(u);
     }
   }
   S.hist.push({s:+(S.speed.toFixed(1)),t:now});
@@ -732,7 +976,7 @@ function updateDOM(){
   if(bar){
     const pct=Math.min(spd/MAX,1)*100;
     bar.style.width=pct+'%';
-    const col=spd>MAX*.75?'#ff453a':spd>MAX*.5?'#ffd60a':'#0a84ff';
+    const col=spd>MAX*.75?'#ff453a':spd>MAX*.5?'#ffd60a':CFG.accentColor||'#0a84ff';
     bar.style.background=col; bar.style.boxShadow=`0 0 10px ${col}`;
   }
   $('mmax').textContent=fmtSpd(S.maxSpd);
@@ -742,43 +986,33 @@ function updateDOM(){
   else{$('mdist').textContent=d.toFixed(2);$('mdistl').textContent='km';}
 }
 
-/* ═══ COMPASS / MAP ROTATION ════════════════════════════════════
-   iOS:     event.webkitCompassHeading (degrees CW from North, 0–360)
-   Android: event.alpha (device rotation, need conversion)
-   
-   leaflet-rotate plugin: map.setBearing(degrees) rotates the map
-   so that the device's heading faces "up" on screen.
-════════════════════════════════════════════════════════════════ */
+/* ── Reset display to zero after run stops ── */
+function resetDisplay(){
+  S.speed=0; S.maxSpd=0; S.avgSpd=0; S.dist=0; S.elapsed=0;
+  const num=$('snum'); if(num){num.textContent='0';num.className='trk-spd-num';}
+  const bar=$('spd-bar'); if(bar){bar.style.width='0%';}
+  $('mmax').textContent='0.0';
+  $('mavg').textContent='0.0';
+  $('mdist').textContent='0'; $('mdistl').textContent='m';
+  $('mtime').textContent='0:00';
+}
+
+/* ═══ COMPASS ════════════════════════════════════════════════════ */
 function initCompass(){
   const handler=(e)=>{
     let heading=null;
-    if(e.webkitCompassHeading!=null){
-      // iOS – most accurate
-      heading=e.webkitCompassHeading;
-    } else if(e.absolute===true && e.alpha!=null){
-      // Android with absolute orientation
-      heading=(360-e.alpha)%360;
-    } else if(e.alpha!=null){
-      // Android fallback (may drift without magnetometer)
-      heading=(360-e.alpha)%360;
-    }
+    if(e.webkitCompassHeading!=null) heading=e.webkitCompassHeading;
+    else if(e.alpha!=null) heading=(360-e.alpha)%360;
     if(heading==null) return;
     S.heading=heading;
-
-    // Rotate compass needle SVG in the button (counter-rotation so N always points up in icon)
     const svg=$('compass-svg');
     if(svg) svg.style.transform=`rotate(${heading}deg)`;
-
-    // Rotate map if compass mode is on
-    if(S.compassMode && S.map && typeof S.map.setBearing==='function'){
+    if(S.compassMode&&S.map&&typeof S.map.setBearing==='function'){
       S.map.setBearing(heading);
     }
   };
-
-  // iOS 13+ requires explicit permission (already requested in perm-btn)
-  window.addEventListener('deviceorientation', handler, {passive:true});
-  // Android absolute heading (preferred over relative)
-  window.addEventListener('deviceorientationabsolute', handler, {passive:true});
+  window.addEventListener('deviceorientation',handler,{passive:true});
+  window.addEventListener('deviceorientationabsolute',handler,{passive:true});
 }
 
 function setFollowMode(on){
@@ -791,51 +1025,113 @@ function toggleCompass(){
   S.compassMode=!S.compassMode;
   const btn=$('compass-btn');
   if(btn) btn.classList.toggle('active',S.compassMode);
-  if(!S.compassMode && S.map && typeof S.map.setBearing==='function'){
-    // Reset to North-up
-    S.map.setBearing(0);
-  }
+  if(!S.compassMode&&S.map&&typeof S.map.setBearing==='function') S.map.setBearing(0);
   toast(S.compassMode?'🧭 Karte dreht mit Kompass':'🧭 Karte zeigt nach Norden');
 }
 
 $('follow-btn').addEventListener('click',()=>setFollowMode(!S.followMode));
 $('compass-btn').addEventListener('click',toggleCompass);
 
-/* ═══ MAP ═══════════════════════════════════════════════════════
-   leaflet-rotate plugin: initialize with {rotate: true}
-   map.setBearing(degrees) rotates the tile layer and overlays together
-   → polylines and markers rotate correctly with the map
-════════════════════════════════════════════════════════════════ */
+/* ═══ MAP ═══════════════════════════════════════════════════════ */
 function initMap(){
   if(S.map) return;
-  const rotateSupported=typeof L.Map.prototype.setBearing==='function'||
-    (typeof L.map({}).setBearing==='function');
-  // Try to init with rotate option; fall back silently if plugin not loaded
-  let mapOpts={zoomControl:true,attributionControl:false,fadeAnimation:false,markerZoomAnimation:false};
-  try{ mapOpts.rotate=true; mapOpts.bearing=0; }catch{}
+  let mapOpts={
+    zoomControl:true, attributionControl:false,
+    fadeAnimation:false, markerZoomAnimation:false,
+    rotate:true, bearing:0,
+    // touchRotate: handled manually below for wider compatibility
+  };
 
-  const map=L.map('lmap',mapOpts);
+  const map=L.map('lmap', mapOpts);
   map.zoomControl.setPosition('bottomright');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,updateWhenIdle:false,keepBuffer:4}).addTo(map);
-
   S.lg=L.layerGroup().addTo(map);
   map.setView([48.2,13.5],15);
   S.map=map;
 
-  // Turn off follow mode when user manually pans
+  // Sync follow mode from saved config
+  S.followMode = CFG.mapFollow !== false;
+  const fb=$('follow-btn');
+  if(fb) fb.classList.toggle('active', S.followMode);
+
+  // Disable follow when user manually pans
   map.on('dragstart',()=>setFollowMode(false));
+
+  // Apply tile filter
+  if(CFG.theme==='light'){
+    const pane=document.querySelector('.leaflet-tile-pane');
+    if(pane) pane.style.filter='none';
+  }
+
+  // ── Two-finger rotation handler ──────────────────────────────────
+  // Intercepts two-pointer touches on the map container and rotates
+  // the map bearing. Disables compass-auto-rotate while the user is
+  // manually rotating.
+  let _rotTouches=null, _rotStartAngle=0, _rotStartBearing=0;
+
+  const mapEl=document.getElementById('lmap');
+
+  function getTouchAngle(t1,t2){
+    return Math.atan2(t2.clientY-t1.clientY, t2.clientX-t1.clientX) * 180/Math.PI;
+  }
+
+  mapEl.addEventListener('touchstart', e=>{
+    if(e.touches.length===2){
+      // Don't call preventDefault here – let Leaflet handle zooming too
+      _rotTouches=[
+        {clientX:e.touches[0].clientX, clientY:e.touches[0].clientY},
+        {clientX:e.touches[1].clientX, clientY:e.touches[1].clientY}
+      ];
+      _rotStartAngle=getTouchAngle(_rotTouches[0],_rotTouches[1]);
+      _rotStartBearing=(typeof S.map.getBearing==='function')?S.map.getBearing():0;
+    } else {
+      _rotTouches=null;
+    }
+  },{passive:true});
+
+  mapEl.addEventListener('touchmove', e=>{
+    if(e.touches.length!==2||!_rotTouches) return;
+    const cur0={clientX:e.touches[0].clientX,clientY:e.touches[0].clientY};
+    const cur1={clientX:e.touches[1].clientX,clientY:e.touches[1].clientY};
+    const curAngle=getTouchAngle(cur0,cur1);
+    const delta=curAngle-_rotStartAngle;
+    const newBearing=(_rotStartBearing+delta+360)%360;
+    if(typeof S.map.setBearing==='function'){
+      S.map.setBearing(newBearing);
+      // Disable compass auto-rotate since user is manually rotating
+      if(S.compassMode){
+        S.compassMode=false;
+        const btn=$('compass-btn');
+        if(btn) btn.classList.remove('active');
+      }
+    }
+  },{passive:true});
+
+  mapEl.addEventListener('touchend', e=>{
+    if(e.touches.length<2) _rotTouches=null;
+  },{passive:true});
 
   setTimeout(()=>{ if(S.map)S.map.invalidateSize(); },200);
 }
 
-/* ── Line color: speed-based interpolation ──────────────────────
-   0 km/h → red (#ff453a)   [stopped / crash]
-   25 km/h → yellow (#ffd60a)
-   50+ km/h → green (#30d158)
-   
-   FIX: moved tile filter to .leaflet-tile-pane (not .leaflet-tile)
-   so SVG polylines are NOT affected by the dark map filter.
-─────────────────────────────────────────────────────────────── */
+// ── Idle position dot: shows current location even when not tracking ──
+function updateIdleMarker(lat,lon){
+  if(!S.map||!S.lg) return;
+  if(S.tracking) return; // tracking uses the regular smkr/pmkr
+  if(!S._idleMkr){
+    S._idleMkr=L.circleMarker([lat,lon],{
+      radius:8, color:'#fff', weight:2.5,
+      fillColor:'#0a84ff', fillOpacity:.9
+    }).addTo(S.lg);
+  } else {
+    S._idleMkr.setLatLng([lat,lon]);
+  }
+}
+function clearIdleMarker(){
+  if(S._idleMkr){ S.lg.removeLayer(S._idleMkr); S._idleMkr=null; }
+}
+
+/* ── Speed → color: red (0) → yellow (25 km/h) → green (50+) ── */
 function spdColor(spd){
   const t=Math.min(Math.max(spd,0)/50,1);
   let r,g,b;
@@ -852,7 +1148,6 @@ function mapAddPoint(lat,lon,spd){
     S.map.setView([lat,lon],CFG.mapZoom,{animate:false});
   }
   if(S.prevLL){
-    // Weight 6 + opacity 1 ensures colors are clearly visible against dark tiles
     L.polyline([S.prevLL,[lat,lon]],{color:spdColor(spd),weight:6,opacity:1,lineCap:'round',lineJoin:'round'}).addTo(S.lg);
   }
   S.prevLL=[lat,lon];
@@ -863,12 +1158,16 @@ function mapAddPoint(lat,lon,spd){
     S.pmkr.setLatLng([lat,lon]);
     S.pmkr.setStyle({fillColor:col});
   }
-  // Follow: handled in onPos via panTo (not here, to avoid double-pan)
 }
 
-function clearMapSession(){
-  if(S.lg) S.lg.clearLayers();
-  S.smkr=null; S.pmkr=null; S.prevLL=null;
+function clearMapSession(){ if(S.lg)S.lg.clearLayers(); S.smkr=null; S.pmkr=null; S.prevLL=null; }
+
+/* ── Clean fall marker icon (red circle, no emoji) ── */
+function fallMarkerIcon(index){
+  return L.divIcon({
+    html:`<div style="width:18px;height:18px;border-radius:50%;background:#ff453a;border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(255,69,58,.6);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;font-family:-apple-system,sans-serif">${index}</div>`,
+    iconSize:[18,18], iconAnchor:[9,9], className:''
+  });
 }
 
 /* ═══ TRACKING ══════════════════════════════════════════════════ */
@@ -879,13 +1178,19 @@ function startT(){
   S.speed=0; S.maxSpd=0; S.avgSpd=0; S.dist=0; S.elapsed=0;
   S.buf=[]; S.hist=[]; S.pts=[]; S.falls=[]; S.fc=0; S.lastPt=null;
   KALMAN.reset();
+  clearIdleMarker();  // remove idle position dot before drawing track
   clearMapSession();
-  requestWakeLock(); // Bildschirm bleibt an
+  requestWakeLock();
   if(CFG.autoLock){$('wl').classList.add('on'); S.locked=true;}
   if(CFG.vibStart&&navigator.vibrate) navigator.vibrate(60);
-  S.timerID=setInterval(()=>{S.elapsed=Date.now()-S.t0;$('mtime').textContent=fmtT(S.elapsed);updateDOM();},1000);
+  S.timerID=setInterval(()=>{
+    S.elapsed=Date.now()-S.t0;
+    $('mtime').textContent=fmtT(S.elapsed);
+    updateDOM();
+  },1000);
   const b=$('tbtn'); b.disabled=false; b.className='tbtn st'; $('tbtl').textContent='Run beenden';
-  updateDOM(); toast('⏱ Run gestartet · Bildschirm bleibt an');
+  updateDOM();
+  toast('⏱ Run gestartet · Bildschirm bleibt an');
 }
 
 function stopT(){
@@ -895,11 +1200,22 @@ function stopT(){
   $('tbtl').textContent='Run starten';
   if(S.hist.length>CFG.minRunPts) saveRun();
   else toast('Zu kurz – nicht gespeichert');
+  // Reset all displayed values to zero
+  resetDisplay();
+  // Show idle dot again at last known position
+  if(S.lastPos) updateIdleMarker(S.lastPos.lat, S.lastPos.lon);
 }
 
 function saveRun(){
-  DB.addRun({id:Date.now().toString(),name:`Run ${new Date().toLocaleDateString('de-DE')}`,folderId:null,startTime:S.t0,duration:S.elapsed,maxSpeed:S.maxSpd,avgSpeed:S.avgSpd,distance:S.dist,speedHistory:S.hist,trackPoints:S.pts,falls:S.falls});
-  DB.clearSession(); toast(`✅ Gespeichert · ${fmtSpd(S.maxSpd)} ${unitLabel()} max`);
+  DB.addRun({
+    id:Date.now().toString(),
+    name:`Run ${new Date().toLocaleDateString('de-DE')}`,
+    folderId:null, startTime:S.t0, duration:S.elapsed,
+    maxSpeed:S.maxSpd, avgSpeed:S.avgSpd, distance:S.dist,
+    speedHistory:S.hist, trackPoints:S.pts, falls:S.falls
+  });
+  DB.clearSession();
+  toast(`✅ Gespeichert · ${fmtSpd(S.maxSpd)} ${unitLabel()} max`);
 }
 
 /* ═══ MOTION (Sturzerkennung) ═══════════════════════════════════ */
@@ -914,11 +1230,14 @@ function initMotion(){
       const now=Date.now(), last=S.falls[S.falls.length-1];
       if(!last||now-last.time>CFG.crashCooldown){
         S.falls.push({time:now,speed:S.speed,gForce:g.toFixed(2)}); S.fc++;
-        $('fat').textContent=`💥 Sturz #${S.fc} erkannt!`;
+        $('fat').textContent=`Sturz #${S.fc} erkannt!`;
         $('fas').textContent=`${g.toFixed(1)}g · ${fmtSpd(S.speed)} ${unitLabel()}`;
         const el=$('falert'); el.style.display='flex'; el.style.animation='shk .5s ease,fup .4s cubic-bezier(.34,1.4,.64,1)';
         if(CFG.crashVibrate&&navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
-        if(CFG.crashVoice&&'speechSynthesis' in window){const u=new SpeechSynthesisUtterance(`Sturz erkannt! ${g.toFixed(1)} G`);u.lang='de-DE';speechSynthesis.speak(u);}
+        if(CFG.crashVoice&&'speechSynthesis' in window){
+          const u=new SpeechSynthesisUtterance(`Sturz erkannt! ${g.toFixed(1)} G`);
+          u.lang='de-DE'; speechSynthesis.speak(u);
+        }
         setTimeout(()=>{el.style.display='none';},5000);
       }
     }
@@ -928,7 +1247,7 @@ function initMotion(){
   } else window.addEventListener('devicemotion',h,{passive:true});
 }
 
-/* ═══ HISTORY ═══════════════════════════════════════════════════ */
+/* ═══ HISTORY ════════════════════════════════════════════════════ */
 const COLS=['#0a84ff','#30d158','#ff9f0a','#ff2d55','#bf5af2','#5ac8fa','#ff6b35'];
 
 function renderFTabs(){
@@ -980,54 +1299,159 @@ function showFolderPicker(r){const flds=DB.getFolders();const rows=flds.map(f=>`
 /* ═══ DETAIL ════════════════════════════════════════════════════ */
 function openDetail(r){
   const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'Distanz km';
-  const hf=(r.falls||[]).length>0,ht=(r.trackPoints||[]).length>2;
+  const hf=(r.falls||[]).length>0, ht=(r.trackPoints||[]).length>2;
   $('dtitle').textContent=r.name||'Run';$('ddate').textContent=fmtD(r.startTime);
-  $('dcont').innerHTML=`<div class="dhero" style="animation:fup .32s cubic-bezier(.34,1.28,.64,1) both"><div class="dspd">${Math.round(r.maxSpeed||0)}</div><div class="dspdl">km/h Maximalgeschwindigkeit</div></div><div class="dgrid" style="animation:fup .32s .05s cubic-bezier(.34,1.28,.64,1) both"><div class="dst"><div class="dstv">${(r.avgSpeed||0).toFixed(1)}</div><div class="dstl">Ø Geschwindigkeit</div></div><div class="dst"><div class="dstv">${ds}</div><div class="dstl">${dl}</div></div><div class="dst"><div class="dstv">${fmtT(r.duration||0)}</div><div class="dstl">Fahrzeit</div></div><div class="dst" style="border-color:${hf?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}"><div class="dstv" style="color:${hf?'var(--red)':'var(--green)'}">${(r.falls||[]).length}</div><div class="dstl">Stürze</div></div></div>${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:80px;display:block"></canvas></div>`:''}${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit"><div style="font-size:22px">💥</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}<button class="delbtn" id="ddel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
+  $('dcont').innerHTML=`
+    <div class="dhero" style="animation:fup .32s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="dspd">${Math.round(r.maxSpeed||0)}</div>
+      <div class="dspdl">km/h Maximalgeschwindigkeit</div>
+    </div>
+    <div class="dgrid" style="animation:fup .32s .05s cubic-bezier(.34,1.28,.64,1) both">
+      <div class="dst"><div class="dstv">${(r.avgSpeed||0).toFixed(1)}</div><div class="dstl">Ø Geschwindigkeit</div></div>
+      <div class="dst"><div class="dstv">${ds}</div><div class="dstl">${dl}</div></div>
+      <div class="dst"><div class="dstv">${fmtT(r.duration||0)}</div><div class="dstl">Fahrzeit</div></div>
+      <div class="dst" style="border-color:${hf?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}">
+        <div class="dstv" style="color:${hf?'var(--red)':'var(--green)'}">${(r.falls||[]).length}</div>
+        <div class="dstl">Stürze</div>
+      </div>
+    </div>
+    ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:90px;display:block"></canvas></div>`:''}
+    ${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}
+    ${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit"><div style="width:28px;height:28px;border-radius:50%;background:#ff453a;border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
+    <button class="delbtn" id="ddel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
   $('pd').style.display='block';
-  requestAnimationFrame(()=>{if(ht)initDMap(r.trackPoints,r.falls||[]);const cv=$('dchrt');if(cv)setTimeout(()=>drawChart(cv,r.speedHistory),120);});
+  requestAnimationFrame(()=>{
+    if(ht) initDMap(r.trackPoints, r.falls||[]);
+    const cv=$('dchrt');
+    if(cv) setTimeout(()=>drawChart(cv, r.speedHistory, r.falls||[]),120);
+  });
   $('ddel').addEventListener('click',()=>confirm2('Fahrt löschen?','Nicht rückgängig.',()=>{DB.deleteRun(r.id);closeDetail();renderHistory();toast('Fahrt gelöscht');}));
 }
 
 function closeDetail(){if($('pd').style.display!=='none'){if(S.dmap){S.dmap.remove();S.dmap=null;}$('pd').style.display='none';}}
 $('bbtn').addEventListener('click',closeDetail);
 
-function initDMap(pts,falls){
+function initDMap(pts, falls){
   const el=$('dmap'); if(!el||pts.length<2) return;
   if(S.dmap){S.dmap.remove();S.dmap=null;}
-  const map=L.map(el,{zoomControl:true,attributionControl:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map); S.dmap=map;
+  const map=L.map(el,{zoomControl:true,attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  S.dmap=map;
+
+  // Draw speed-colored route
   const hasSpdData=pts.length>1&&pts[1].speed!==undefined;
-  if(hasSpdData){for(let i=1;i<pts.length;i++)L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{color:spdColor(pts[i].speed||0),weight:5,opacity:1,lineCap:'round'}).addTo(map);}
-  else L.polyline(pts.map(p=>[p.lat,p.lon]),{color:'#0a84ff',weight:5,opacity:1,lineCap:'round'}).addTo(map);
+  if(hasSpdData){
+    for(let i=1;i<pts.length;i++)
+      L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{color:spdColor(pts[i].speed||0),weight:5,opacity:1,lineCap:'round'}).addTo(map);
+  } else {
+    L.polyline(pts.map(p=>[p.lat,p.lon]),{color:'#0a84ff',weight:5,opacity:1,lineCap:'round'}).addTo(map);
+  }
+
+  // Start/End markers
   const ll=pts.map(p=>[p.lat,p.lon]);
   const mk=col=>L.divIcon({html:`<div style="width:11px;height:11px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[11,11],iconAnchor:[5.5,5.5],className:''});
   L.marker(ll[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Start');
   L.marker(ll[ll.length-1],{icon:mk('#ff453a')}).addTo(map).bindPopup('Ende');
-  falls.forEach(f=>{const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);L.marker([cp.lat,cp.lon],{icon:L.divIcon({html:'<div style="font-size:18px;line-height:1">💥</div>',iconSize:[20,20],iconAnchor:[10,10],className:''})}).addTo(map);});
-  const bounds=L.latLngBounds(ll); map.fitBounds(bounds,{padding:[20,20]});
+
+  // Clean fall markers with number (no emojis)
+  falls.forEach((f,idx)=>{
+    const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);
+    L.marker([cp.lat,cp.lon],{icon:fallMarkerIcon(idx+1)}).addTo(map).bindPopup(`Sturz #${idx+1} – ${(f.speed||0).toFixed(1)} km/h`);
+  });
+
+  const bounds=L.latLngBounds(ll);
+  map.fitBounds(bounds,{padding:[20,20]});
   setTimeout(()=>{map.invalidateSize();map.fitBounds(bounds,{padding:[20,20]});},300);
 }
 
-function drawChart(cv,hist){
+/* ── Chart with fall markers as red dashed vertical lines ── */
+function drawChart(cv, hist, falls){
   if(!cv||!hist||hist.length<2) return;
-  const ctx=cv.getContext('2d'),W=cv.offsetWidth||300,H=cv.offsetHeight||80;
-  cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio; ctx.scale(devicePixelRatio,devicePixelRatio);
-  const vals=hist.map(p=>p.s!==undefined?p.s:p.speed||0),mx=Math.max(...vals,1);
-  const step=Math.max(1,Math.floor(vals.length/120)),pts2=vals.filter((_,i)=>i%step===0);
-  const grad=ctx.createLinearGradient(0,0,0,H); grad.addColorStop(0,'rgba(10,132,255,.35)'); grad.addColorStop(1,'rgba(10,132,255,0)');
+  const ctx=cv.getContext('2d'), W=cv.offsetWidth||300, H=cv.offsetHeight||90;
+  cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio;
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+  const vals=hist.map(p=>p.s!==undefined?p.s:p.speed||0), mx=Math.max(...vals,1);
+  const step=Math.max(1,Math.floor(vals.length/120)), pts2=vals.filter((_,i)=>i%step===0);
+  const t0=hist[0].t, tEnd=hist[hist.length-1].t, totalTime=tEnd-t0;
+
   ctx.clearRect(0,0,W,H);
-  ctx.beginPath(); pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
-  ctx.beginPath(); pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-6);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}); ctx.strokeStyle='#0a84ff'; ctx.lineWidth=2; ctx.stroke();
+
+  // Area gradient fill
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(10,132,255,.35)'); grad.addColorStop(1,'rgba(10,132,255,0)');
+  ctx.beginPath();
+  pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-8);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+
+  // Speed line
+  ctx.beginPath();
+  pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-8);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.strokeStyle='#0a84ff'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+
+  // Fall vertical lines (red dashed)
+  if(falls && falls.length>0 && totalTime>0){
+    falls.forEach((fall,idx)=>{
+      if(fall.time<t0||fall.time>tEnd) return;
+      const ratio=(fall.time-t0)/totalTime;
+      const x=ratio*W;
+
+      // Dashed vertical red line
+      ctx.save();
+      ctx.setLineDash([3,3]);
+      ctx.strokeStyle='rgba(255,69,58,.85)';
+      ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+      ctx.restore();
+
+      // Small circle marker at top
+      ctx.save();
+      ctx.fillStyle='#ff453a';
+      ctx.beginPath(); ctx.arc(x,10,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff';
+      ctx.font=`bold 7px -apple-system,sans-serif`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(idx+1),x,10);
+      ctx.restore();
+    });
+  }
 }
 
 /* ═══ SETTINGS ══════════════════════════════════════════════════ */
 function renderSettings(){
-  const p=DB.getProfile(),runs=DB.getRuns(),dist=runs.reduce((a,r)=>a+(r.distance||0),0);
-  const av=$('sav'); av.textContent=p.initial||'?';
+  const p=DB.getProfile(), runs=DB.getRuns(), dist=runs.reduce((a,r)=>a+(r.distance||0),0);
+  const av=$('sav');
+  av.textContent=p.initial||'?';
   av.style.background=`linear-gradient(135deg,${p.color},${shd(p.color,-40)})`;
   av.style.boxShadow=`0 4px 20px ${p.color}55`;
   $('snm').textContent=p.name;
   $('sst').textContent=`${runs.length} Fahrten · ${dist<0.1?Math.round(dist*1000)+'m':dist.toFixed(1)+' km'}`;
+
+  // Update theme buttons
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('on',b.dataset.theme===CFG.theme));
+
+  // Active preset label
+  const pn=$('active-preset-name');
+  if(pn && CFG.activePresetId){
+    const all=getAllPresets(), ap=all.find(p=>p.id===CFG.activePresetId);
+    if(ap) pn.textContent=`Aktiv: ${ap.icon} ${ap.name}`;
+  }
+
+  // Accent color dots
+  const dots=$('accent-dots');
+  if(dots){
+    dots.innerHTML=ACCENT_COLORS.map(c=>`<div class="accent-dot${CFG.accentColor===c.hex?' on':''}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.name}"></div>`).join('');
+    dots.querySelectorAll('.accent-dot').forEach(d=>d.addEventListener('click',()=>{
+      const hex=d.dataset.hex;
+      CFG.accentColor=hex; saveCFG();
+      applyAccentColor(hex);
+      dots.querySelectorAll('.accent-dot').forEach(x=>x.classList.toggle('on',x.dataset.hex===hex));
+    }));
+  }
 }
+
+// Theme toggle buttons
+document.querySelectorAll('.theme-btn').forEach(b=>b.addEventListener('click',()=>applyTheme(b.dataset.theme)));
 
 $('pcrd').addEventListener('click',showProfileEdit);
 function showProfileEdit(){
@@ -1045,6 +1469,231 @@ $('simport').addEventListener('click',()=>$('fimp').click());
 $('fimp').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.runs&&!d.profile)throw 0;confirm2('Daten importieren?',`${(d.runs||[]).length} Fahrten werden geladen.`,()=>{DB.importAll(d);renderSettings();toast('Import abgeschlossen');});}catch{toast('❌ Ungültige Datei');}e.target.value='';};r.readAsText(f);});
 $('sclear').addEventListener('click',()=>confirm2('Alle Fahrten löschen?','Ordner und Profil bleiben.',()=>{DB.clearRuns();renderSettings();toast('Alle Fahrten gelöscht');}));
 
+/* ═══ PRESETS PANEL ═════════════════════════════════════════════ */
+$('spresets').addEventListener('click',openPresetsPanel);
+$('presets-back').addEventListener('click',closePresetsPanel);
+
+function openPresetsPanel(){ buildPresetsPanel(); $('presets-panel').style.display='block'; }
+function closePresetsPanel(){ $('presets-panel').style.display='none'; }
+
+function buildPresetsPanel(){
+  const customs=getCustomPresets();
+  const all=[...PRESETS_BUILTIN, ...customs];
+  let html=`<div style="margin:16px 16px 4px;font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:1.2px">Integrierte Presets</div>`;
+  PRESETS_BUILTIN.forEach(p=>{
+    const isActive=CFG.activePresetId===p.id;
+    html+=`<div class="preset-card${isActive?' active-preset':''}" data-pid="${p.id}">
+      <div class="preset-top">
+        <div class="preset-ico">${p.icon}</div>
+        <div>
+          <div class="preset-name">${esc(p.name)}${isActive?' <span style="font-size:10px;color:var(--green);font-weight:600;margin-left:4px">✓ Aktiv</span>':''}</div>
+          <div class="preset-desc">${esc(p.desc)}</div>
+        </div>
+      </div>
+      <div class="preset-tags">${p.tags.map(t=>`<div class="preset-tag">${t}</div>`).join('')}</div>
+      <div class="preset-actions">
+        <button class="preset-btn apply" data-apply="${p.id}">Anwenden</button>
+      </div>
+    </div>`;
+  });
+
+  if(customs.length){
+    html+=`<div style="margin:16px 16px 4px;font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:1.2px">Eigene Presets</div>`;
+    customs.forEach(p=>{
+      const isActive=CFG.activePresetId===p.id;
+      html+=`<div class="preset-card${isActive?' active-preset':''}" data-pid="${p.id}">
+        <div class="preset-top">
+          <div class="preset-ico">${p.icon||'📐'}</div>
+          <div>
+            <div class="preset-name">${esc(p.name)}${isActive?' <span style="font-size:10px;color:var(--green);font-weight:600;margin-left:4px">✓ Aktiv</span>':''}</div>
+            <div class="preset-desc">${esc(p.desc||'Eigenes Preset')}</div>
+          </div>
+        </div>
+        <div class="preset-actions">
+          <button class="preset-btn apply" data-apply="${p.id}">Anwenden</button>
+          <button class="preset-btn edit" data-edit="${p.id}">Bearbeiten</button>
+          <button class="preset-btn del" data-del="${p.id}">Löschen</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  // New preset button
+  html+=`<div style="padding:12px 16px"><button class="btn bp" id="new-preset-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Aktuellen Stand als Preset speichern</button></div>`;
+
+  const cont=$('presets-content');
+  cont.innerHTML=html;
+
+  // Apply buttons
+  cont.querySelectorAll('[data-apply]').forEach(btn=>btn.addEventListener('click',()=>{
+    const pid=btn.dataset.apply;
+    const preset=getAllPresets().find(p=>p.id===pid);
+    if(preset){ applyPreset(preset); buildPresetsPanel(); renderSettings(); }
+  }));
+
+  // Edit buttons
+  cont.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',()=>{
+    const pid=btn.dataset.edit;
+    const cp=getCustomPresets(); const pi=cp.findIndex(p=>p.id===pid);
+    if(pi<0) return;
+    showPresetEdit(cp[pi], (updated)=>{ cp[pi]=updated; saveCustomPresets(cp); buildPresetsPanel(); toast('Preset gespeichert'); });
+  }));
+
+  // Delete buttons
+  cont.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',()=>{
+    const pid=btn.dataset.del;
+    confirm2('Preset löschen?','Einstellungen bleiben unverändert.',()=>{
+      saveCustomPresets(getCustomPresets().filter(p=>p.id!==pid));
+      if(CFG.activePresetId===pid){CFG.activePresetId=null;saveCFG();}
+      buildPresetsPanel(); renderSettings(); toast('Preset gelöscht');
+    });
+  }));
+
+  $('new-preset-btn').addEventListener('click',()=>{
+    showPresetEdit({id:'c'+Date.now(),name:'',icon:'📐',desc:'',settings:{...CFG}}, (newP)=>{
+      const cp=getCustomPresets(); cp.push(newP); saveCustomPresets(cp);
+      buildPresetsPanel(); renderSettings(); toast(`Preset '${newP.name}' erstellt`);
+    });
+  });
+}
+
+function showPresetEdit(preset, onSave){
+  const icons=['📐','🚀','🌊','⚡','🎯','🏆','🔥','💪','🛡️','🌙'];
+  let selIcon=preset.icon||'📐';
+  const ov=mkOv(`<div class="sh" style="padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow-y:auto">
+    <div style="font-size:19px;font-weight:700;margin-bottom:16px">${preset.name?'Preset bearbeiten':'Neues Preset'}</div>
+    <div class="lbl">Name</div>
+    <input class="inp" id="pen" placeholder="Mein Preset" value="${esc(preset.name)}" style="margin-bottom:12px"/>
+    <div class="lbl">Beschreibung</div>
+    <input class="inp" id="ped" placeholder="Kurze Beschreibung" value="${esc(preset.desc||'')}" style="margin-bottom:12px"/>
+    <div class="lbl">Icon</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${icons.map(ic=>`<div class="sw${ic===selIcon?' on':''}" data-ico="${ic}" style="background:var(--gs);font-size:18px;display:flex;align-items:center;justify-content:center;border:.5px solid var(--gb)">${ic}</div>`).join('')}</div>
+    <div style="padding:10px 12px;background:var(--acl);border-radius:10px;font-size:12px;color:var(--tx2);margin-bottom:16px">Die aktuellen Einstellungen aus den Erweiterten Einstellungen werden gespeichert.</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn bg" id="pe-cancel">Abbrechen</button>
+      <button class="btn bp" id="pe-save">Speichern</button>
+    </div>
+  </div>`);
+
+  ov.querySelectorAll('[data-ico]').forEach(el=>el.addEventListener('click',()=>{
+    selIcon=el.dataset.ico;
+    ov.querySelectorAll('[data-ico]').forEach(x=>{x.classList.remove('on');x.style.boxShadow='';});
+    el.classList.add('on');
+  }));
+  ov.querySelector('#pe-cancel').addEventListener('click',()=>ov.remove());
+  ov.querySelector('#pe-save').addEventListener('click',()=>{
+    const nm=ov.querySelector('#pen').value.trim();
+    if(!nm){ov.querySelector('#pen').style.borderColor='var(--red)';ov.querySelector('#pen').focus();return;}
+    onSave({...preset, name:nm, icon:selIcon, desc:ov.querySelector('#ped').value.trim(), settings:{...CFG}});
+    ov.remove();
+  });
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+  setTimeout(()=>ov.querySelector('#pen').focus(),80);
+}
+
+/* ═══ GUIDE PANEL ════════════════════════════════════════════════ */
+$('sguide').addEventListener('click',openGuidePanel);
+$('guide-back').addEventListener('click',closeGuidePanel);
+
+function openGuidePanel(){ buildGuidePanel(); $('guide-panel').style.display='block'; }
+function closeGuidePanel(){ $('guide-panel').style.display='none'; }
+
+function buildGuidePanel(){
+  const sections=[
+    {
+      icon:'🏄',title:'Überblick',sub:'Was kann WakeSki Pro?',
+      items:[
+        {t:'GPS-Geschwindigkeit',b:'Die App misst deine Geschwindigkeit in Echtzeit via GPS. Der Kalman-Filter glättet das GPS-Rauschen für präzise Werte.'},
+        {t:'Run aufnehmen',b:'Tippe auf "Run starten" sobald GPS bereit ist (grüner Punkt). Die App zeichnet Geschwindigkeit, Distanz, Zeit und Stürze auf.'},
+        {t:'Offline-fähig',b:'Alle Fahrten werden lokal gespeichert. Kein Internet nötig. Du kannst Daten als JSON exportieren und als Backup sichern.'},
+      ]
+    },
+    {
+      icon:'📡',title:'GPS & Track-Seite',sub:'Karte, Sensoren, Anzeigen',
+      items:[
+        {t:'GPS-Status',b:'Der farbige Punkt oben links zeigt: Gelb = GPS sucht, Grün = GPS bereit, Rot = kein GPS. Den Run erst bei grünem Status starten.'},
+        {t:'Geschwindigkeitsanzeige',b:'Die große Zahl zeigt deine aktuelle Geschwindigkeit. Weiß = normal, Gelb = über 50% des Maximalwerts, Rot = über 75%.'},
+        {t:'Karte folgt dir',b:'Das blaue Kreis-Icon rechts aktiviert den Follow-Modus – die Karte zentriert sich automatisch auf deine Position.'},
+        {t:'Kompass-Modus',b:'Das Kompass-Icon dreht die Karte entsprechend deiner Fahrtrichtung. Nützlich bei kurvigen Strecken.'},
+        {t:'Water Lock',b:'Tippe "Sperren" um alle Bildschirm-Berührungen zu deaktivieren. Verhindert ungewollte Eingaben durch Wasser/Gischt. 2 Sekunden halten zum Entsperren.'},
+      ],
+      tip:'Die Karte ist absichtlich oberhalb der Mitte des Bildschirms zentriert – zwischen Statusleiste und Geschwindigkeitsanzeige.'
+    },
+    {
+      icon:'💥',title:'Sturzerkennung',sub:'Impact-Algorithmus & Alarme',
+      items:[
+        {t:'Wie funktioniert es?',b:'Die App liest kontinuierlich den 3-Achsen-Beschleunigungssensor aus. Ein plötzlicher Ausschlag über den eingestellten G-Wert (Standard: 2.5g) bei ausreichend Geschwindigkeit gilt als Sturz.'},
+        {t:'G-Kraft Schwelle',b:'Niedriger = sensitiver (mehr Fehlalarme möglich). Höher = toleranter. Für Wakeboard empfehlen sich 3.0–3.5g, für Wasserski 2.0–2.5g.'},
+        {t:'Mindestgeschwindigkeit',b:'Stürze werden nur erkannt, wenn du mindestens so schnell fährst. Verhindert Fehlalarme beim Einsteigen oder beim Stehen.'},
+        {t:'Cooldown',b:'Wartezeit nach einem erkannten Sturz. Verhindert, dass mehrere Ereignisse bei einem einzigen Sturz ausgelöst werden.'},
+        {t:'Stürze im Chart',b:'Im Detailbereich einer Fahrt werden Stürze als rote gestrichelte Linien im Geschwindigkeitsdiagramm angezeigt.'},
+      ],
+      tip:'Kalibriere den G-Schwellenwert für deinen Fahrstil. Starte mit 2.5g und passe ihn an, wenn zu viele Fehlalarme erscheinen.'
+    },
+    {
+      icon:'⚙️',title:'Einstellungen & Presets',sub:'Algorithmus, Anzeige, Presets',
+      items:[
+        {t:'Presets',b:'Presets speichern alle erweiterten Einstellungen auf einmal. Wähle ein Preset für deinen Fahrstil oder erstelle dein eigenes. "Wakeboard Pro" für hohe Geschwindigkeiten, "Einsteiger" für langsame Fahrten.'},
+        {t:'Geschwindigkeitsalgorithmus',b:'Gleitend: Durchschnitt der letzten N Messungen. Kalman: intelligenter Filter, der Messrauschen und Bewegungsmodell abwägt. Direkt: rohe GPS-Werte, ungefiltert.'},
+        {t:'GPS-Genauigkeit',b:'Hoch: beste Ergebnisse, höherer Akku-Verbrauch. Mittel/Niedrig: längere Akkulaufzeit, etwas ungenauer.'},
+        {t:'Kalman R/Q',b:'R (Messrauschen): groß = mehr Glättung, träger. Q (Prozessrauschen): groß = folgt Änderungen schneller. Für Profi-Fahren: R=0.3, Q=0.2.'},
+        {t:'Akzentfarbe',b:'Ändert die Hauptfarbe der App-Oberfläche. Alle Buttons, Balken und Highlights übernehmen die neue Farbe sofort.'},
+      ],
+      tip:'Speichere nach dem Optimieren deiner Einstellungen ein eigenes Preset – so kannst du schnell zwischen verschiedenen Szenarien wechseln.'
+    },
+    {
+      icon:'📂',title:'Verlauf & Export',sub:'Fahrten verwalten',
+      items:[
+        {t:'Ordner',b:'Tippe oben rechts auf "Ordner" um Ordner zu erstellen. Fahrten können per Kontextmenü (drei Punkte) in Ordner verschoben werden.'},
+        {t:'Fahrt umbenennen',b:'Tippe die drei Punkte neben einer Fahrt → "Umbenennen". Standardname ist das Datum.'},
+        {t:'Fahrt-Details',b:'Tippe auf eine Fahrt für die Detailansicht: Maximalgeschwindigkeit, Durchschnitt, Streckenkarte mit Farbkodierung und Geschwindigkeitsdiagramm.'},
+        {t:'Export/Import',b:'In den Einstellungen unter "Daten" kannst du alle Fahrten + Profil + Einstellungen als JSON exportieren. Das Backup kann jederzeit importiert werden.'},
+      ]
+    },
+    {
+      icon:'🗺️',title:'Karte & Strecke',sub:'Farbkodierte GPS-Route',
+      items:[
+        {t:'Farbskala',b:'Die aufgezeichnete Strecke ist geschwindigkeitsbasiert eingefärbt: Rot = langsam (0 km/h), Gelb = mittel (~25 km/h), Grün = schnell (50+ km/h).'},
+        {t:'Strecke im Detail',b:'In der Detailansicht einer Fahrt zeigt eine eingebettete Karte die Strecke mit Startpunkt (grün), Endpunkt (rot) und Sturz-Markierungen (rote Kreise mit Nummern).'},
+        {t:'Zoom',b:'Der Zoom beim Start bestimmt, wie weit die Karte beim ersten GPS-Fix einzoomt. Zoom 17 ist für die meisten Wasserskiseen ideal.'},
+      ]
+    },
+  ];
+
+  let html=`<div class="guide-hero"><div class="guide-logo">WakeSki Pro</div><div class="guide-version">v3.0 · GPS · Kalman · Sturzerkennung</div></div>`;
+
+  sections.forEach((sec,si)=>{
+    html+=`<div class="guide-section">
+      <div class="guide-sec-hdr" data-si="${si}">
+        <div class="guide-sec-ico">${sec.icon}</div>
+        <div><div class="guide-sec-title">${sec.title}</div><div class="guide-sec-sub">${sec.sub}</div></div>
+        <svg style="margin-left:auto;flex-shrink:0;color:var(--tx3);transition:transform .2s" class="gsarr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </div>
+      <div class="guide-sec-body" id="gsb-${si}">
+        ${sec.items.map(it=>`<div class="guide-item"><div class="guide-item-title"><div class="gi-dot"></div>${it.t}</div><div class="guide-item-body">${it.b}</div></div>`).join('')}
+        ${sec.tip?`<div class="guide-tip">💡 ${sec.tip}</div>`:''}
+      </div>
+    </div>`;
+  });
+
+  $('guide-content').innerHTML=html;
+
+  // Toggle sections on click
+  document.querySelectorAll('.guide-sec-hdr').forEach(hdr=>{
+    hdr.addEventListener('click',()=>{
+      const si=hdr.dataset.si;
+      const body=$(`gsb-${si}`);
+      const arr=hdr.querySelector('.gsarr');
+      const open=body.classList.toggle('open');
+      if(arr) arr.style.transform=open?'rotate(90deg)':'';
+    });
+  });
+
+  // Open first section by default
+  const first=$('gsb-0');
+  if(first){ first.classList.add('open'); const arr=document.querySelector('.gsarr'); if(arr)arr.style.transform='rotate(90deg)'; }
+}
+
 /* ═══ ADVANCED SETTINGS ════════════════════════════════════════ */
 $('sadv').addEventListener('click',openAdvSettings);
 $('as-back').addEventListener('click',closeAdvSettings);
@@ -1055,7 +1704,7 @@ function closeAdvSettings(){if($('as-panel').style.display==='none')return;$('as
 function seg(key,opts){return`<div class="as-seg">${opts.map(o=>`<button class="as-sbt${String(CFG[key])===String(o.v)?' on':''}" data-key="${key}" data-val="${o.v}">${o.l}</button>`).join('')}</div>`;}
 function tog(key){return`<button class="as-tog${CFG[key]?' on':''}" data-tog="${key}"></button>`;}
 function slRow(key,label,sub,min,max,step,fmt){return`<div class="as-slrow"><div class="as-sl-top"><span class="as-sl-label">${label}</span><span class="as-sl-val" id="sl-val-${key}">${fmt(CFG[key])}</span></div><div class="as-sl-sub">${sub}</div><input type="range" class="as-slider" id="sl-${key}" data-key="${key}" min="${min}" max="${max}" step="${step}" value="${CFG[key]}"/></div>`;}
-function arow(label,sub,liveId,control){return`<div class="as-row"><div class="as-row-top"><div class="as-row-left"><div class="as-rl">${label}</div>${sub?`<div class="as-rs">${sub}</div>`:''} ${liveId?`<div class="as-live-val" id="${liveId}">–</div>`:''}</div>${control}</div></div>`;}
+function arow(label,sub,liveId,control){return`<div class="as-row"><div class="as-row-top"><div class="as-row-left"><div class="as-rl">${label}</div>${sub?`<div class="as-rs">${sub}</div>`:''}${liveId?`<div class="as-live-val" id="${liveId}">–</div>`:''}</div>${control}</div></div>`;}
 
 function buildAdvSettings(){
   $('as-content').innerHTML=`
@@ -1068,8 +1717,8 @@ function buildAdvSettings(){
   </div>
   <div class="as-card" style="margin-top:8px">
     ${slRow('smoothBuf','Puffergröße','Punkte für gleitenden Mittelwert',2,10,1,v=>Math.round(v)+' Pkt.')}
-    ${slRow('kalmanR','Kalman R','Messrauschen: groß = mehr Glättung',0.1,5,0.1,v=>(+v).toFixed(1))}
-    ${slRow('kalmanQ','Kalman Q','Prozessrauschen: groß = schneller',0.01,1,0.01,v=>(+v).toFixed(2))}
+    ${slRow('kalmanR','Kalman R','Messrauschen – groß = mehr Glättung',0.1,5,0.1,v=>(+v).toFixed(1))}
+    ${slRow('kalmanQ','Kalman Q','Prozessrauschen – groß = schnellere Reaktion',0.01,1,0.01,v=>(+v).toFixed(2))}
   </div></div>
 
   <div class="as-section"><div class="as-stitle">💥 Sturzerkennung</div>
@@ -1084,7 +1733,7 @@ function buildAdvSettings(){
   <div class="as-section"><div class="as-stitle">🎯 Anzeige & Karte</div>
   <div class="as-card">
     ${arow('Geschwindigkeitseinheit',null,'as-l-unit',seg('speedUnit',[{v:'kmh',l:'km/h'},{v:'mph',l:'mph'},{v:'ms',l:'m/s'}]))}
-    ${arow('Max-Skala',null,null,seg('maxScale',[{v:60,l:'60'},{v:80,l:'80'},{v:100,l:'100'},{v:120,l:'120 km/h'}]))}
+    ${arow('Max-Skala','Obere Grenze der Geschwindigkeitsbalkenanzeige',null,seg('maxScale',[{v:60,l:'60'},{v:80,l:'80'},{v:100,l:'100'},{v:120,l:'120 km/h'}]))}
     ${arow('Karte folgt Position',null,null,tog('mapFollow'))}
     ${arow('Zoom beim Start',null,null,seg('mapZoom',[{v:15,l:'15'},{v:16,l:'16'},{v:17,l:'17'},{v:18,l:'18'}]))}
     ${arow('Nacht-Filter Karte',null,null,tog('nightMap'))}
@@ -1100,7 +1749,7 @@ function buildAdvSettings(){
   <div class="as-section"><div class="as-stitle">💾 Datenspeicherung</div>
   <div class="as-card">
     ${arow('Autosave-Interval',null,null,seg('autoSaveInt',[{v:5,l:'5s'},{v:10,l:'10s'},{v:30,l:'30s'},{v:60,l:'60s'}]))}
-    ${arow('Min. Run-Länge',null,null,seg('minRunPts',[{v:3,l:'3'},{v:5,l:'5'},{v:10,l:'10'},{v:20,l:'20'}]))}
+    ${arow('Min. Run-Länge','Mindestanzahl GPS-Punkte zum Speichern',null,seg('minRunPts',[{v:3,l:'3'},{v:5,l:'5'},{v:10,l:'10'},{v:20,l:'20'}]))}
     ${arow('Trackpunkt-Auflösung',null,null,seg('ptRes',[{v:1,l:'Alle'},{v:2,l:'Jed. 2.'},{v:5,l:'Jed. 5.'}]))}
   </div></div>
 
@@ -1108,55 +1757,72 @@ function buildAdvSettings(){
   <div class="as-card">
     ${arow('Auto-Sperre beim Start',null,null,tog('autoLock'))}
     ${arow('Check-in nach Sturz',null,null,seg('crashCheckin',[{v:0,l:'Aus'},{v:15,l:'15s'},{v:30,l:'30s'},{v:60,l:'60s'}]))}
-  </div></div><div style="height:16px"></div>`;
+  </div></div>`;
 
+  // Wire up all controls
   $('as-content').querySelectorAll('.as-sbt').forEach(btn=>btn.addEventListener('click',()=>{
     const key=btn.dataset.key; let val=btn.dataset.val;
     if(!isNaN(val)&&val!=='') val=parseFloat(val);
     setCFG(key,val);
     $('as-content').querySelectorAll(`.as-sbt[data-key="${key}"]`).forEach(b=>b.classList.toggle('on',String(b.dataset.val)===String(val)));
   }));
-  $('as-content').querySelectorAll('.as-tog').forEach(btn=>btn.addEventListener('click',()=>{const k=btn.dataset.tog;setCFG(k,!CFG[k]);btn.classList.toggle('on',CFG[k]);}));
+  $('as-content').querySelectorAll('.as-tog').forEach(btn=>btn.addEventListener('click',()=>{
+    const k=btn.dataset.tog; setCFG(k,!CFG[k]); btn.classList.toggle('on',CFG[k]);
+  }));
   $('as-content').querySelectorAll('.as-slider').forEach(sl=>sl.addEventListener('input',()=>{
-    const key=sl.dataset.key; let val=parseFloat(sl.value);
+    const key=sl.dataset.key, val=parseFloat(sl.value);
     setCFG(key,val);
     const fmts={smoothBuf:v=>Math.round(v)+' Pkt.',kalmanR:v=>(+v).toFixed(1),kalmanQ:v=>(+v).toFixed(2)};
-    const vEl=$('sl-val-'+key); if(vEl)vEl.textContent=(fmts[key]||String)(val);
+    const vEl=$('sl-val-'+key); if(vEl) vEl.textContent=(fmts[key]||String)(val);
   }));
   updateAdvLive();
 }
 
 function updateAdvLive(){
-  const la=$('as-l-acc'); if(la)la.textContent=S.lastAccuracy!=null?`Live: ±${Math.round(S.lastAccuracy)} m`:'Live: kein Fix';
-  const lg=$('as-l-gforce'); if(lg)lg.textContent=`Live: ${S.lastGForce.toFixed(2)} g`;
-  const lu=$('as-l-unit'); if(lu)lu.textContent=`Live: ${fmtSpd(S.speed,1)} ${unitLabel()}`;
+  const la=$('as-l-acc'); if(la) la.textContent=S.lastAccuracy!=null?`Live: ±${Math.round(S.lastAccuracy)} m`:'Live: kein Fix';
+  const lg=$('as-l-gforce'); if(lg) lg.textContent=`Live: ${S.lastGForce.toFixed(2)} g`;
+  const lu=$('as-l-unit'); if(lu) lu.textContent=`Live: ${fmtSpd(S.speed,1)} ${unitLabel()}`;
 }
 
-function getSliderFmt(k){return{smoothBuf:v=>Math.round(v)+' Pkt.',kalmanR:v=>(+v).toFixed(1),kalmanQ:v=>(+v).toFixed(2)}[k]||String;}
-
 /* ═══ CONFIRM ═══════════════════════════════════════════════════ */
-function confirm2(t,s,fn){$('ctxt').textContent=t;$('cstxt').textContent=s;$('cov').style.display='flex';const hide=()=>$('cov').style.display='none';const y=$('cyes'),n=$('cno'),yc=y.cloneNode(true),nc=n.cloneNode(true);y.parentNode.replaceChild(yc,y);n.parentNode.replaceChild(nc,n);$('cyes').addEventListener('click',()=>{hide();fn();});$('cno').addEventListener('click',hide);}
+function confirm2(t,s,fn){
+  $('ctxt').textContent=t; $('cstxt').textContent=s; $('cov').style.display='flex';
+  const hide=()=>$('cov').style.display='none';
+  const y=$('cyes'),n=$('cno'),yc=y.cloneNode(true),nc=n.cloneNode(true);
+  y.parentNode.replaceChild(yc,y); n.parentNode.replaceChild(nc,n);
+  $('cyes').addEventListener('click',()=>{hide();fn();});
+  $('cno').addEventListener('click',hide);
+}
 function mkOv(html){const o=document.createElement('div');o.className='ov';o.innerHTML=html;document.body.appendChild(o);return o;}
 
 /* ═══ WATER LOCK ════════════════════════════════════════════════ */
 $('lbtn').addEventListener('click',()=>{$('wl').classList.add('on');S.locked=true;if(navigator.vibrate)navigator.vibrate(60);});
-let _lt=null; const wb=$('wlbtn'),wp=$('wlprog');
+let _lt=null; const wb=$('wlbtn'), wp=$('wlprog');
 wb.addEventListener('pointerdown',e=>{if(!S.locked)return;e.preventDefault();wb.classList.add('p');wp.style.width='0';wp.className='wlprog go';_lt=setTimeout(()=>{$('wl').classList.remove('on');S.locked=false;wb.classList.remove('p');wp.className='wlprog';if(navigator.vibrate)navigator.vibrate([80,40,80]);},2000);});
 ['pointerup','pointerleave','pointercancel'].forEach(ev=>wb.addEventListener(ev,()=>{clearTimeout(_lt);_lt=null;wb.classList.remove('p');wp.className='wlprog';}));
 
 /* ═══ AUTO SESSION SAVE ════════════════════════════════════════ */
-setInterval(()=>{if(!S.tracking)return;DB.saveSession({maxSpd:S.maxSpd,avgSpd:S.avgSpd,dist:S.dist,elapsed:S.elapsed,t0:S.t0});},CFG.autoSaveInt*1000||10000);
+setInterval(()=>{
+  if(!S.tracking) return;
+  DB.saveSession({maxSpd:S.maxSpd,avgSpd:S.avgSpd,dist:S.dist,elapsed:S.elapsed,t0:S.t0});
+}, CFG.autoSaveInt*1000||10000);
 
 /* ═══ APP START ═════════════════════════════════════════════════ */
 function launchApp(){
   $('sp').style.display='none';
   const app=$('app'); app.style.display='flex'; app.style.flexDirection='column';
+
+  // Apply saved theme and accent color
+  applyTheme(CFG.theme||'dark');
+  applyAccentColor(CFG.accentColor||'#0a84ff');
+
   const su=$('spd-unit'); if(su) su.textContent=unitLabel();
   goPage('track');
   initGPS();
   initMotion();
   initCompass();
   setTimeout(initMap, 150);
+
   const sess=DB.getSession();
   if(sess&&sess.maxSpd){S.maxSpd=sess.maxSpd||0;S.dist=sess.dist||0;updateDOM();}
 }
@@ -1164,17 +1830,18 @@ function launchApp(){
 $('perm-btn').addEventListener('click',async()=>{
   const b=$('perm-btn'); b.disabled=true;
   b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M12 2a10 10 0 0110 10"/></svg> Aktiviere…';
-  // iOS: explizite Erlaubnis für DeviceMotion + DeviceOrientation anfordern
   for(const E of[window.DeviceMotionEvent,window.DeviceOrientationEvent]){
     if(typeof E?.requestPermission==='function') await E.requestPermission().catch(()=>{});
   }
   setTimeout(()=>{$('sp').style.opacity='0';$('sp').style.transition='opacity .35s';setTimeout(launchApp,350);},400);
 });
 
+// Auto-launch if GPS permission already granted
 (async()=>{
   if(!navigator.permissions) return;
   try{const r=await navigator.permissions.query({name:'geolocation'});if(r.state==='granted')launchApp();}catch{}
 })();
 </script>
+
 </body>
 </html>
