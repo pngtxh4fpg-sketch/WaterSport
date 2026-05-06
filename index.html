@@ -775,27 +775,36 @@ function updateQPSBtn(){
 
 function openQPSSheet(){
   if(S.tracking){ toast('Preset-Wechsel während der Fahrt nicht möglich'); return; }
-  const pinned=(CFG.quickPresetIds||[]);
   const all=getAllPresets();
-  const shown=all.filter(p=>pinned.includes(p.id));
-  if(!shown.length){ toast('Keine Presets in Quick-Select. In Einstellungen › Presets konfigurieren.'); return; }
+  // Always normalise quickPresetIds – if missing/stale, default to all builtin IDs
+  let pinned=CFG.quickPresetIds||[];
+  if(!Array.isArray(pinned)||pinned.length===0){
+    pinned=PRESETS_BUILTIN.map(p=>p.id);
+    CFG.quickPresetIds=pinned; saveCFG();
+  }
+  // Filter to presets that actually exist; fall back to all if nothing matches
+  let shown=all.filter(p=>pinned.includes(p.id));
+  if(!shown.length) shown=all;
+
   const rows=shown.map(p=>{
     const isActive=CFG.activePresetId===p.id;
     return `<div class="qps-sheet-item${isActive?' active':''}" data-qpid="${p.id}">
       <div class="qps-sheet-ico">${p.icon}</div>
-      <span>${esc(p.name)}</span>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:600">${esc(p.name)}</div>
+        ${p.desc?`<div style="font-size:11px;color:var(--tx2);margin-top:1px">${esc(p.desc)}</div>`:''}
+      </div>
       ${isActive?'<div class="qps-sheet-check">✓</div>':''}
     </div>`;
   }).join('');
   const ov=mkOv(`<div class="sh">
-    <div class="shhdr"><div class="shht">Preset wählen</div><div class="shhs">Schnellauswahl – max. 5 Presets</div></div>
+    <div class="shhdr"><div class="shht">Preset wählen</div><div class="shhs">Schnellauswahl · In Einst. › Presets anpassen</div></div>
     ${rows}
     <div class="shrow c" id="qps-cancel">Abbrechen</div>
   </div>`);
   ov.querySelectorAll('[data-qpid]').forEach(el=>el.addEventListener('click',()=>{
-    const pid=el.dataset.qpid;
-    const preset=getAllPresets().find(p=>p.id===pid);
-    if(preset){ applyPreset(preset); }
+    const preset=getAllPresets().find(p=>p.id===el.dataset.qpid);
+    if(preset) applyPreset(preset);
     ov.remove();
   }));
   ov.querySelector('#qps-cancel').addEventListener('click',()=>ov.remove());
