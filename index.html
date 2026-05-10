@@ -414,11 +414,23 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
   <!-- Track Page -->
   <div id="page-track" class="page">
     <div id="lmap"></div>
-    <!-- Camera cinematic overlay -->
-    <div id="cam-overlay">
+    <!-- Camera island - floating over map -->
+    <div id="cam-island">
       <video id="cam-video" autoplay playsinline muted></video>
-      <div class="cam-vignette"></div>
-      <div class="cam-focus-ring"></div>
+      <div id="cam-reticle" class="hidden">
+        <div class="cr-tl"></div><div class="cr-tr"></div>
+        <div class="cr-bl"></div><div class="cr-br"></div>
+      </div>
+      <div class="cam-bar">
+        <div class="cam-rec-dot" id="cam-rec-dot"></div>
+        <div class="cam-dur" id="cam-dur">00:00</div>
+        <button class="cam-bar-btn" id="cam-reticle-btn" title="Fahrer-Tracking">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="trk-ov">
       <div class="trk-top">
@@ -1056,6 +1068,8 @@ function onPos(pos){
 
   updateDOM();
   mapAddPoint(lat,lon,S.speed);
+  // Update camera reticle to follow rider
+  if(_camReticleOn) updateReticle({lat,lon});
 }
 
 /* ═══ DOM UPDATE ════════════════════════════════════════════════ */
@@ -1127,34 +1141,117 @@ function toggleCompass(){
 $('follow-btn').addEventListener('click',()=>setFollowMode(!S.followMode));
 $('compass-btn').addEventListener('click',toggleCompass);
 
-/* ═══ CAMERA CINEMATIC MODE ════════════════════════════════════ */
-let _camStream=null;
+/* ═══ CAMERA ISLAND + RECORDING ════════════════════════════════ */
+let _camStream=null, _camRecorder=null, _camChunks=[], _camDurID=null;
+let _camReticleOn=false, _camDurSec=0;
+
+function camDurTick(){
+  _camDurSec++;
+  const m=Math.floor(_camDurSec/60), s=_camDurSec%60;
+  const el=$('cam-dur'); if(el) el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
 async function toggleCam(){
-  const btn=$('cam-btn'), ov=$('cam-overlay'), vid=$('cam-video');
+  const btn=$('cam-btn'), island=$('cam-island'), vid=$('cam-video'), dot=$('cam-rec-dot');
   if(_camStream){
-    // Turn off
+    // Stop recording first
+    if(_camRecorder&&_camRecorder.state!=='inactive') _camRecorder.stop();
     _camStream.getTracks().forEach(t=>t.stop());
-    _camStream=null;
+    _camStream=null; _camRecorder=null;
     vid.srcObject=null;
-    ov.classList.remove('on');
+    island.classList.remove('on');
     btn.classList.remove('active');
-    toast('📷 Kamera-Modus aus');
+    clearInterval(_camDurID); _camDurID=null; _camDurSec=0;
+    if(dot){ dot.classList.remove('rec'); }
+    const d=$('cam-dur'); if(d) d.textContent='00:00';
+    updateReticle(null);
+    toast('📷 Kamera aus');
     return;
   }
   try{
     const stream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},
-      audio:false
+      audio:true
     });
     _camStream=stream;
     vid.srcObject=stream;
-    ov.classList.add('on');
+    island.classList.add('on');
     btn.classList.add('active');
-    toast('📷 Kamera-Modus aktiv');
+
+    // Start MediaRecorder if tracking, else wait for startT
+    if(S.tracking) startCamRecording();
+
+    toast('📷 Kamera aktiv');
   }catch(e){
     toast('❌ Kamerazugriff verweigert');
   }
 }
+
+function startCamRecording(){
+  if(!_camStream||(_camRecorder&&_camRecorder.state!=='inactive')) return;
+  _camChunks=[];
+  const mimeType=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4']
+    .find(m=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))||'';
+  try{
+    _camRecorder=new MediaRecorder(_camStream, mimeType?{mimeType}:{});
+    _camRecorder.ondataavailable=e=>{ if(e.data&&e.data.size>0) _camChunks.push(e.data); };
+    _camRecorder.onstop=()=>{ saveCamVideo(new Blob(_camChunks,{type:mimeType||'video/webm'})); };
+    _camRecorder.start(1000);
+    // Duration timer
+    _camDurSec=0; clearInterval(_camDurID); _camDurID=setInterval(camDurTick,1000);
+    const dot=$('cam-rec-dot'); if(dot) dot.classList.add('rec');
+  }catch(e){ console.warn('MediaRecorder error',e); }
+}
+
+function stopCamRecording(){
+  if(_camRecorder&&_camRecorder.state!=='inactive') _camRecorder.stop();
+  clearInterval(_camDurID); _camDurID=null;
+  const dot=$('cam-rec-dot'); if(dot) dot.classList.remove('rec');
+}
+
+// Save video blob into DB keyed by run id (set in saveRun)
+let _pendingVideoRunId=null;
+function saveCamVideo(blob){
+  if(!_pendingVideoRunId||!blob||blob.size<1000) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    DB.updateRun(_pendingVideoRunId,{videoDataUrl:reader.result});
+    _pendingVideoRunId=null;
+  };
+  reader.readAsDataURL(blob);
+}
+
+// ── Reticle: project GPS point into island video frame ──
+function updateReticle(latLon){
+  const ret=$('cam-reticle'); if(!ret) return;
+  if(!_camReticleOn||!latLon||!S.map){
+    ret.classList.add('hidden'); return;
+  }
+  ret.classList.remove('hidden');
+  // Get GPS screen position on main map
+  try{
+    const mapEl=$('lmap');
+    const gpsPx=S.map.latLngToContainerPoint(L.latLng(latLon.lat,latLon.lon));
+    const island=$('cam-island');
+    const ir=island.getBoundingClientRect(), mr=mapEl.getBoundingClientRect();
+    // Normalize GPS pos within map rect, project into island rect
+    const nx=(gpsPx.x)/mr.width, ny=(gpsPx.y)/mr.height;
+    const ix=Math.max(10,Math.min(ir.width-10,nx*ir.width));
+    const iy=Math.max(10,Math.min(ir.height-26-10,ny*ir.height)); // 26=bar height
+    ret.style.left=ix+'px';
+    ret.style.top=iy+'px';
+  }catch(e){ ret.classList.add('hidden'); }
+}
+
+// Toggle reticle button
+$('cam-reticle-btn').addEventListener('click',()=>{
+  _camReticleOn=!_camReticleOn;
+  $('cam-reticle-btn').classList.toggle('on',_camReticleOn);
+  const ret=$('cam-reticle');
+  if(ret){ if(_camReticleOn) ret.classList.remove('hidden'); else ret.classList.add('hidden'); }
+  toast(_camReticleOn?'🎯 Fahrer-Tracking an':'🎯 Fahrer-Tracking aus');
+});
+
 $('cam-btn').addEventListener('click',toggleCam);
 
 /* ═══ MAP ═══════════════════════════════════════════════════════ */
@@ -1316,6 +1413,8 @@ function startT(){
   const b=$('tbtn'); b.disabled=false; b.className='tbtn st'; $('tbtl').textContent='Run beenden';
   updateDOM();
   toast('⏱ Run gestartet · Bildschirm bleibt an');
+  // Start camera recording if camera is active
+  if(_camStream) startCamRecording();
 }
 
 function stopT(){
@@ -1323,6 +1422,8 @@ function stopT(){
   releaseWakeLock();
   const b=$('tbtn'); b.className='tbtn go'; b.disabled=(S.gps!=='ready');
   $('tbtl').textContent='Run starten';
+  // Stop camera recording if active
+  if(_camStream) stopCamRecording();
   if(S.hist.length>CFG.minRunPts) saveRun();
   else toast('Zu kurz – nicht gespeichert');
   // Reset all displayed values to zero
@@ -1332,12 +1433,14 @@ function stopT(){
 }
 
 function saveRun(){
+  const id=Date.now().toString();
+  _pendingVideoRunId=id;
   DB.addRun({
-    id:Date.now().toString(),
-    name:`Run ${new Date().toLocaleDateString('de-DE')}`,
+    id, name:`Run ${new Date().toLocaleDateString('de-DE')}`,
     folderId:null, startTime:S.t0, duration:S.elapsed,
     maxSpeed:S.maxSpd, avgSpeed:S.avgSpd, distance:S.dist,
-    speedHistory:S.hist, trackPoints:S.pts, falls:S.falls
+    speedHistory:S.hist, trackPoints:S.pts, falls:S.falls,
+    videoDataUrl:null
   });
   DB.clearSession();
   toast(`✅ Gespeichert · ${fmtSpd(S.maxSpd)} ${unitLabel()} max`);
@@ -1440,6 +1543,10 @@ function openDetail(r){
         <div class="dstl">Stürze</div>
       </div>
     </div>
+    ${r.videoDataUrl?`<div class="slbl">Kamera-Aufnahme</div>
+    <div style="margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);background:#000;position:relative">
+      <video src="${r.videoDataUrl}" controls playsinline style="width:100%;display:block;max-height:220px;object-fit:contain"></video>
+    </div>`:''}
     ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:90px;display:block"></canvas></div>`:''}
     ${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}
     ${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit"><div style="width:28px;height:28px;border-radius:50%;background:#ff453a;border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
