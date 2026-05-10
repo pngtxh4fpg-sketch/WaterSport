@@ -99,14 +99,14 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--tx);
 #cam-island.on{display:block}
 #cam-video{width:100%;height:100%;object-fit:cover;display:block}
 /* Corner-bracket reticle */
-#cam-reticle{position:absolute;width:44px;height:44px;transform:translate(-50%,-50%);left:50%;top:46%;pointer-events:none;transition:left .28s ease,top .28s ease}
+#cam-reticle{position:absolute;width:52px;height:52px;transform:translate(-50%,-50%);left:50%;top:46%;pointer-events:none;transition:left .18s ease,top .18s ease,width .18s ease,height .18s ease}
 #cam-reticle.hidden{display:none}
-.cr-tl,.cr-tr,.cr-bl,.cr-br{position:absolute;width:11px;height:11px;border-color:rgba(255,255,255,.95);border-style:solid}
+#cam-reticle.locked .cr-tl,#cam-reticle.locked .cr-tr,#cam-reticle.locked .cr-bl,#cam-reticle.locked .cr-br{border-color:var(--ac)}
+.cr-tl,.cr-tr,.cr-bl,.cr-br{position:absolute;width:30%;height:30%;min-width:10px;min-height:10px;border-color:rgba(255,255,255,.95);border-style:solid}
 .cr-tl{top:0;left:0;border-width:2px 0 0 2px;border-radius:2px 0 0 0}
 .cr-tr{top:0;right:0;border-width:2px 2px 0 0;border-radius:0 2px 0 0}
 .cr-bl{bottom:0;left:0;border-width:0 0 2px 2px;border-radius:0 0 0 2px}
 .cr-br{bottom:0;right:0;border-width:0 2px 2px 0;border-radius:0 0 2px 0}
-@keyframes ret-lock{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 1px rgba(255,255,255,.18)}}
 /* Bottom control bar */
 .cam-bar{position:absolute;bottom:0;left:0;right:0;height:26px;background:rgba(0,0,0,.52);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;padding:0 8px;gap:6px}
 .cam-rec-dot{width:7px;height:7px;border-radius:50%;background:#48484a;flex-shrink:0;transition:background .2s}
@@ -639,6 +639,8 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
 <input type="file" id="fimp" accept=".json" style="display:none"/>
 
 <!-- ═══ SCRIPTS ═══════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 <script>
@@ -1068,8 +1070,6 @@ function onPos(pos){
 
   updateDOM();
   mapAddPoint(lat,lon,S.speed);
-  // Update camera reticle to follow rider
-  if(_camReticleOn) updateReticle({lat,lon});
 }
 
 /* ═══ DOM UPDATE ════════════════════════════════════════════════ */
@@ -1141,9 +1141,76 @@ function toggleCompass(){
 $('follow-btn').addEventListener('click',()=>setFollowMode(!S.followMode));
 $('compass-btn').addEventListener('click',toggleCompass);
 
-/* ═══ CAMERA ISLAND + RECORDING ════════════════════════════════ */
+/* ═══ CAMERA ISLAND + RECORDING + OBJECT DETECTION ════════════ */
 let _camStream=null, _camRecorder=null, _camChunks=[], _camDurID=null;
 let _camReticleOn=false, _camDurSec=0;
+let _cocoModel=null, _detLoopID=null, _detRunning=false;
+
+/* Load COCO-SSD model lazily when camera first opens */
+async function ensureModel(){
+  if(_cocoModel) return _cocoModel;
+  try{
+    toast('🧠 KI-Modell wird geladen…',4000);
+    _cocoModel=await cocoSsd.load({base:'lite_mobilenet_v2'});
+    toast('✅ Objekterkennung bereit');
+    return _cocoModel;
+  }catch(e){
+    console.warn('COCO-SSD load failed',e);
+    return null;
+  }
+}
+
+/* Detection loop – runs every ~200ms on the video frame */
+async function detectionLoop(){
+  if(_detRunning) return;
+  _detRunning=true;
+  const vid=$('cam-video');
+  const ret=$('cam-reticle');
+  const island=$('cam-island');
+  if(!vid||!ret||!island||!_camReticleOn||!_cocoModel||vid.readyState<2){
+    _detRunning=false; return;
+  }
+  try{
+    const predictions=await _cocoModel.detect(vid);
+    // Pick the "person" with highest score
+    const person=predictions
+      .filter(p=>p.class==='person'&&p.score>0.35)
+      .sort((a,b)=>b.score-a.score)[0];
+
+    if(person){
+      const [bx,by,bw,bh]=person.bbox;
+      const vW=vid.videoWidth||1, vH=vid.videoHeight||1;
+      const iW=island.offsetWidth, iH=island.offsetHeight-26; // subtract bar
+      // Centre of bounding box in island pixel space
+      const cx=(bx+bw/2)/vW*iW;
+      const cy=(by+bh/2)/vH*iH;
+      // Reticle size scaled to bbox
+      const rW=Math.max(32,Math.min(bw/vW*iW,iW-8));
+      const rH=Math.max(32,Math.min(bh/vH*iH,iH-8));
+      ret.style.left=cx+'px';
+      ret.style.top=cy+'px';
+      ret.style.width=rW+'px';
+      ret.style.height=rH+'px';
+      ret.classList.remove('hidden');
+      ret.classList.add('locked');
+    } else {
+      ret.classList.add('hidden');
+      ret.classList.remove('locked');
+    }
+  }catch(e){}
+  _detRunning=false;
+}
+
+function startDetectionLoop(){
+  stopDetectionLoop();
+  _detLoopID=setInterval(detectionLoop,220);
+}
+function stopDetectionLoop(){
+  if(_detLoopID){ clearInterval(_detLoopID); _detLoopID=null; }
+  _detRunning=false;
+  const ret=$('cam-reticle');
+  if(ret){ ret.classList.add('hidden'); ret.classList.remove('locked'); }
+}
 
 function camDurTick(){
   _camDurSec++;
@@ -1154,7 +1221,7 @@ function camDurTick(){
 async function toggleCam(){
   const btn=$('cam-btn'), island=$('cam-island'), vid=$('cam-video'), dot=$('cam-rec-dot');
   if(_camStream){
-    // Stop recording first
+    stopDetectionLoop();
     if(_camRecorder&&_camRecorder.state!=='inactive') _camRecorder.stop();
     _camStream.getTracks().forEach(t=>t.stop());
     _camStream=null; _camRecorder=null;
@@ -1162,9 +1229,8 @@ async function toggleCam(){
     island.classList.remove('on');
     btn.classList.remove('active');
     clearInterval(_camDurID); _camDurID=null; _camDurSec=0;
-    if(dot){ dot.classList.remove('rec'); }
+    if(dot) dot.classList.remove('rec');
     const d=$('cam-dur'); if(d) d.textContent='00:00';
-    updateReticle(null);
     toast('📷 Kamera aus');
     return;
   }
@@ -1177,10 +1243,9 @@ async function toggleCam(){
     vid.srcObject=stream;
     island.classList.add('on');
     btn.classList.add('active');
-
-    // Start MediaRecorder if tracking, else wait for startT
     if(S.tracking) startCamRecording();
-
+    // Pre-load model in background
+    ensureModel().then(m=>{ if(m&&_camReticleOn) startDetectionLoop(); });
     toast('📷 Kamera aktiv');
   }catch(e){
     toast('❌ Kamerazugriff verweigert');
@@ -1197,7 +1262,6 @@ function startCamRecording(){
     _camRecorder.ondataavailable=e=>{ if(e.data&&e.data.size>0) _camChunks.push(e.data); };
     _camRecorder.onstop=()=>{ saveCamVideo(new Blob(_camChunks,{type:mimeType||'video/webm'})); };
     _camRecorder.start(1000);
-    // Duration timer
     _camDurSec=0; clearInterval(_camDurID); _camDurID=setInterval(camDurTick,1000);
     const dot=$('cam-rec-dot'); if(dot) dot.classList.add('rec');
   }catch(e){ console.warn('MediaRecorder error',e); }
@@ -1209,7 +1273,6 @@ function stopCamRecording(){
   const dot=$('cam-rec-dot'); if(dot) dot.classList.remove('rec');
 }
 
-// Save video blob into DB keyed by run id (set in saveRun)
 let _pendingVideoRunId=null;
 function saveCamVideo(blob){
   if(!_pendingVideoRunId||!blob||blob.size<1000) return;
@@ -1217,39 +1280,24 @@ function saveCamVideo(blob){
   reader.onload=()=>{
     DB.updateRun(_pendingVideoRunId,{videoDataUrl:reader.result});
     _pendingVideoRunId=null;
+    toast('🎬 Video gespeichert');
   };
   reader.readAsDataURL(blob);
 }
 
-// ── Reticle: project GPS point into island video frame ──
-function updateReticle(latLon){
-  const ret=$('cam-reticle'); if(!ret) return;
-  if(!_camReticleOn||!latLon||!S.map){
-    ret.classList.add('hidden'); return;
-  }
-  ret.classList.remove('hidden');
-  // Get GPS screen position on main map
-  try{
-    const mapEl=$('lmap');
-    const gpsPx=S.map.latLngToContainerPoint(L.latLng(latLon.lat,latLon.lon));
-    const island=$('cam-island');
-    const ir=island.getBoundingClientRect(), mr=mapEl.getBoundingClientRect();
-    // Normalize GPS pos within map rect, project into island rect
-    const nx=(gpsPx.x)/mr.width, ny=(gpsPx.y)/mr.height;
-    const ix=Math.max(10,Math.min(ir.width-10,nx*ir.width));
-    const iy=Math.max(10,Math.min(ir.height-26-10,ny*ir.height)); // 26=bar height
-    ret.style.left=ix+'px';
-    ret.style.top=iy+'px';
-  }catch(e){ ret.classList.add('hidden'); }
-}
-
-// Toggle reticle button
-$('cam-reticle-btn').addEventListener('click',()=>{
+/* Toggle reticle + detection */
+$('cam-reticle-btn').addEventListener('click',async ()=>{
   _camReticleOn=!_camReticleOn;
   $('cam-reticle-btn').classList.toggle('on',_camReticleOn);
-  const ret=$('cam-reticle');
-  if(ret){ if(_camReticleOn) ret.classList.remove('hidden'); else ret.classList.add('hidden'); }
-  toast(_camReticleOn?'🎯 Fahrer-Tracking an':'🎯 Fahrer-Tracking aus');
+  if(_camReticleOn){
+    toast('🎯 Fahrer-Tracking wird geladen…',3000);
+    const model=await ensureModel();
+    if(model&&_camStream) startDetectionLoop();
+    else if(!model){ _camReticleOn=false; $('cam-reticle-btn').classList.remove('on'); toast('❌ KI-Modell nicht verfügbar'); }
+  } else {
+    stopDetectionLoop();
+    toast('🎯 Fahrer-Tracking aus');
+  }
 });
 
 $('cam-btn').addEventListener('click',toggleCam);
