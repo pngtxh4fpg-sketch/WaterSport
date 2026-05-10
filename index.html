@@ -95,9 +95,13 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--tx);
 .lock-pill svg{width:13px;height:13px;flex-shrink:0}
 
 /* ── Camera Island ── */
-#cam-island{position:absolute;left:14px;bottom:calc(var(--nav) + env(safe-area-inset-bottom,0px) + 300px);width:196px;height:118px;border-radius:18px;overflow:hidden;border:.5px solid rgba(255,255,255,.22);box-shadow:0 12px 40px rgba(0,0,0,.65),0 2px 8px rgba(0,0,0,.4),inset 0 .5px 0 rgba(255,255,255,.08);display:none;z-index:3;pointer-events:auto;animation:fup .32s cubic-bezier(.34,1.3,.64,1) both}
+#cam-island{position:absolute;left:14px;bottom:calc(var(--nav) + env(safe-area-inset-bottom,0px) + 300px);width:196px;height:118px;border-radius:18px;overflow:hidden;border:.5px solid rgba(255,255,255,.22);box-shadow:0 12px 40px rgba(0,0,0,.65),0 2px 8px rgba(0,0,0,.4),inset 0 .5px 0 rgba(255,255,255,.08);display:none;z-index:3;pointer-events:auto;animation:fup .32s cubic-bezier(.34,1.3,.64,1) both;touch-action:none}
 #cam-island.on{display:block}
-#cam-video{width:100%;height:100%;object-fit:cover;display:block}
+#cam-video{width:100%;height:100%;object-fit:cover;display:block;transition:filter .3s}
+/* top badge row */
+.cam-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:5px 7px;pointer-events:none}
+.cam-zoom-badge{font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);padding:2px 6px;border-radius:6px;backdrop-filter:blur(6px);letter-spacing:.3px;pointer-events:auto;cursor:default}
+.cam-lens-badge{font-size:9px;font-weight:600;color:var(--yellow);background:rgba(0,0,0,.55);padding:2px 6px;border-radius:6px;backdrop-filter:blur(6px);letter-spacing:.5px}
 /* Corner-bracket reticle */
 #cam-reticle{position:absolute;width:52px;height:52px;transform:translate(-50%,-50%);left:50%;top:46%;pointer-events:none;transition:left .18s ease,top .18s ease,width .18s ease,height .18s ease}
 #cam-reticle.hidden{display:none}
@@ -113,7 +117,7 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--tx);
 .cam-rec-dot.rec{background:var(--red);animation:pulse .9s ease-in-out infinite;box-shadow:0 0 6px rgba(255,69,58,.7)}
 .cam-dur{font-size:10px;font-weight:600;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;flex:1}
 .cam-bar-btn{width:20px;height:20px;background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.65);flex-shrink:0}
-.cam-bar-btn.on{color:#fff}
+.cam-bar-btn.on{color:var(--ac)}
 .cam-bar-btn svg{width:14px;height:14px}
 
 /* ── Map Controls ── */
@@ -160,6 +164,7 @@ html,body{height:100%;width:100%;background:var(--bg);color:var(--tx);
 .rname{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
 .rdate{font-size:12px;color:var(--tx2)}
 .rfb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:500;color:var(--tx2);background:rgba(255,255,255,.05);margin-bottom:5px}
+.rfb.vid{color:var(--ac);background:var(--acl)}
 .rfbd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .rsb{font-family:'Barlow Condensed',-apple-system,sans-serif;font-size:34px;font-weight:800;line-height:1;text-align:right}
 .rsu{font-size:11px;color:var(--tx2);text-align:right}
@@ -417,6 +422,10 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
     <!-- Camera island - floating over map -->
     <div id="cam-island">
       <video id="cam-video" autoplay playsinline muted></video>
+      <div class="cam-top">
+        <div class="cam-zoom-badge" id="cam-zoom-badge">1×</div>
+        <div class="cam-lens-badge" id="cam-lens-badge" style="display:none">TELE</div>
+      </div>
       <div id="cam-reticle" class="hidden">
         <div class="cr-tl"></div><div class="cr-tr"></div>
         <div class="cr-bl"></div><div class="cr-br"></div>
@@ -424,6 +433,12 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
       <div class="cam-bar">
         <div class="cam-rec-dot" id="cam-rec-dot"></div>
         <div class="cam-dur" id="cam-dur">00:00</div>
+        <button class="cam-bar-btn" id="cam-enhance-btn" title="Bild verbessern">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            <path d="M11 8v6M8 11h6"/>
+          </svg>
+        </button>
         <button class="cam-bar-btn" id="cam-reticle-btn" title="Fahrer-Tracking">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -873,7 +888,7 @@ const DB={
   saveRuns:   r=>DB.s('ws_runs',r),
   addRun:     r=>{const a=DB.getRuns();a.unshift(r);DB.saveRuns(a);},
   updateRun:  (id,p)=>{const a=DB.getRuns(),i=a.findIndex(r=>r.id===id);if(i>=0){a[i]={...a[i],...p};DB.saveRuns(a);}},
-  deleteRun:  id=>DB.saveRuns(DB.getRuns().filter(r=>r.id!==id)),
+  deleteRun:  id=>{DB.saveRuns(DB.getRuns().filter(r=>r.id!==id));VideoDB.delete(id).catch(()=>{});},
   clearRuns:  ()=>localStorage.removeItem('ws_runs'),
   getFolders:   ()=>DB.g('ws_folders')||[],
   saveFolders:  f=>DB.s('ws_folders',f),
@@ -895,7 +910,43 @@ const DB={
   },
 };
 
-/* ═══ UTILS ═════════════════════════════════════════════════════ */
+/* ═══ VIDEO DB (IndexedDB – blobs, no localStorage limit) ══════ */
+const VideoDB={
+  _db:null,
+  open(){
+    if(this._db) return Promise.resolve(this._db);
+    return new Promise((res,rej)=>{
+      const req=indexedDB.open('ws_videos',1);
+      req.onupgradeneeded=e=>e.target.result.createObjectStore('videos');
+      req.onsuccess=e=>{this._db=e.target.result;res(this._db);};
+      req.onerror=e=>rej(e);
+    });
+  },
+  async save(runId, blob){
+    const db=await this.open();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction('videos','readwrite');
+      tx.objectStore('videos').put(blob, runId);
+      tx.oncomplete=res; tx.onerror=rej;
+    });
+  },
+  async get(runId){
+    const db=await this.open();
+    return new Promise((res,rej)=>{
+      const req=db.transaction('videos','readonly').objectStore('videos').get(runId);
+      req.onsuccess=e=>res(e.target.result||null);
+      req.onerror=rej;
+    });
+  },
+  async delete(runId){
+    const db=await this.open();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction('videos','readwrite');
+      tx.objectStore('videos').delete(runId);
+      tx.oncomplete=res; tx.onerror=rej;
+    });
+  },
+};
 function hav(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 const fmtT=ms=>{const s=Math.floor(ms/1e3),m=Math.floor(s/60);return`${m}:${(s%60).toString().padStart(2,'0')}`;};
 const fmtD=ts=>new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -1141,12 +1192,22 @@ function toggleCompass(){
 $('follow-btn').addEventListener('click',()=>setFollowMode(!S.followMode));
 $('compass-btn').addEventListener('click',toggleCompass);
 
-/* ═══ CAMERA ISLAND + RECORDING + OBJECT DETECTION ════════════ */
+/* ═══ CAMERA ISLAND + RECORDING + ZOOM + ENHANCE ══════════════ */
 let _camStream=null, _camRecorder=null, _camChunks=[], _camDurID=null;
 let _camReticleOn=false, _camDurSec=0;
 let _cocoModel=null, _detLoopID=null, _detRunning=false;
+let _camZoom=1.0, _camEnhanced=false;
+// Available lenses: each has a facingMode + optional zoom and label
+// We probe which are available after first getUserMedia call
+const LENS_PRESETS=[
+  {label:'0.5×', zoom:1.0, facingMode:'environment', advZoom:0.5},
+  {label:'1×',   zoom:1.0, facingMode:'environment', advZoom:1.0},
+  {label:'2×',   zoom:2.0, facingMode:'environment', advZoom:2.0},
+  {label:'3×',   zoom:3.0, facingMode:'environment', advZoom:3.0},
+];
+let _activeLens=1; // index into LENS_PRESETS
 
-/* Load COCO-SSD model lazily when camera first opens */
+/* ── Load COCO-SSD lazily ── */
 async function ensureModel(){
   if(_cocoModel) return _cocoModel;
   try{
@@ -1154,104 +1215,202 @@ async function ensureModel(){
     _cocoModel=await cocoSsd.load({base:'lite_mobilenet_v2'});
     toast('✅ Objekterkennung bereit');
     return _cocoModel;
-  }catch(e){
-    console.warn('COCO-SSD load failed',e);
-    return null;
-  }
+  }catch(e){ console.warn('COCO-SSD load failed',e); return null; }
 }
 
-/* Detection loop – runs every ~200ms on the video frame */
+/* ── Detection loop every 220ms ── */
 async function detectionLoop(){
-  if(_detRunning) return;
-  _detRunning=true;
-  const vid=$('cam-video');
-  const ret=$('cam-reticle');
-  const island=$('cam-island');
-  if(!vid||!ret||!island||!_camReticleOn||!_cocoModel||vid.readyState<2){
-    _detRunning=false; return;
-  }
+  if(_detRunning) return; _detRunning=true;
+  const vid=$('cam-video'), ret=$('cam-reticle'), island=$('cam-island');
+  if(!vid||!ret||!island||!_camReticleOn||!_cocoModel||vid.readyState<2){_detRunning=false;return;}
   try{
     const predictions=await _cocoModel.detect(vid);
-    // Pick the "person" with highest score
-    const person=predictions
-      .filter(p=>p.class==='person'&&p.score>0.35)
-      .sort((a,b)=>b.score-a.score)[0];
-
+    const person=predictions.filter(p=>p.class==='person'&&p.score>0.35).sort((a,b)=>b.score-a.score)[0];
     if(person){
       const [bx,by,bw,bh]=person.bbox;
       const vW=vid.videoWidth||1, vH=vid.videoHeight||1;
-      const iW=island.offsetWidth, iH=island.offsetHeight-26; // subtract bar
-      // Centre of bounding box in island pixel space
-      const cx=(bx+bw/2)/vW*iW;
-      const cy=(by+bh/2)/vH*iH;
-      // Reticle size scaled to bbox
+      const iW=island.offsetWidth, iH=island.offsetHeight-26;
+      const cx=(bx+bw/2)/vW*iW, cy=(by+bh/2)/vH*iH;
       const rW=Math.max(32,Math.min(bw/vW*iW,iW-8));
       const rH=Math.max(32,Math.min(bh/vH*iH,iH-8));
-      ret.style.left=cx+'px';
-      ret.style.top=cy+'px';
-      ret.style.width=rW+'px';
-      ret.style.height=rH+'px';
-      ret.classList.remove('hidden');
-      ret.classList.add('locked');
-    } else {
-      ret.classList.add('hidden');
-      ret.classList.remove('locked');
-    }
+      ret.style.left=cx+'px'; ret.style.top=cy+'px';
+      ret.style.width=rW+'px'; ret.style.height=rH+'px';
+      ret.classList.remove('hidden'); ret.classList.add('locked');
+    }else{ ret.classList.add('hidden'); ret.classList.remove('locked'); }
   }catch(e){}
   _detRunning=false;
 }
-
-function startDetectionLoop(){
-  stopDetectionLoop();
-  _detLoopID=setInterval(detectionLoop,220);
-}
+function startDetectionLoop(){ stopDetectionLoop(); _detLoopID=setInterval(detectionLoop,220); }
 function stopDetectionLoop(){
-  if(_detLoopID){ clearInterval(_detLoopID); _detLoopID=null; }
-  _detRunning=false;
-  const ret=$('cam-reticle');
-  if(ret){ ret.classList.add('hidden'); ret.classList.remove('locked'); }
+  if(_detLoopID){ clearInterval(_detLoopID); _detLoopID=null; } _detRunning=false;
+  const ret=$('cam-reticle'); if(ret){ret.classList.add('hidden');ret.classList.remove('locked');}
 }
 
+/* ── Apply hardware zoom via ImageCapture / track constraints ── */
+async function applyHardwareZoom(zoomVal){
+  if(!_camStream) return;
+  const track=_camStream.getVideoTracks()[0]; if(!track) return;
+  try{
+    const caps=track.getCapabilities();
+    if(caps.zoom){
+      const mn=caps.zoom.min||1, mx=caps.zoom.max||10;
+      const clamped=Math.min(mx,Math.max(mn,zoomVal));
+      await track.applyConstraints({advanced:[{zoom:clamped}]});
+    }
+  }catch(e){ /* hardware zoom not supported – CSS zoom fallback */ }
+  // CSS scale fallback (crops but works everywhere)
+  const vid=$('cam-video');
+  if(vid) vid.style.transform=`scale(${zoomVal})`;
+}
+
+/* ── Switch to a different lens / zoom level ── */
+async function switchLens(idx){
+  if(idx===_activeLens) return;
+  const lp=LENS_PRESETS[idx];
+  _activeLens=idx; _camZoom=lp.advZoom;
+  updateZoomUI();
+  // Try hardware advancedZoom first
+  await applyHardwareZoom(lp.advZoom);
+}
+
+function updateZoomUI(){
+  const lp=LENS_PRESETS[_activeLens];
+  const zb=$('cam-zoom-badge'); if(zb) zb.textContent=lp.label;
+  const lb=$('cam-lens-badge'); if(lb){
+    if(_activeLens===0){lb.textContent='ULTRA';lb.style.display='';}
+    else if(_activeLens>=2){lb.textContent='TELE';lb.style.display='';}
+    else lb.style.display='none';
+  }
+}
+
+/* ── Pinch-to-zoom on cam island ── */
+let _pinchDist0=null, _pinchZoom0=1;
+function pinchDist(e){ return Math.hypot(e.touches[1].clientX-e.touches[0].clientX, e.touches[1].clientY-e.touches[0].clientY); }
+
+(function(){
+  const island=document.getElementById('cam-island');
+  if(!island) return;
+  island.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){ _pinchDist0=pinchDist(e); _pinchZoom0=_camZoom; }
+  },{passive:true});
+  island.addEventListener('touchmove',async e=>{
+    if(e.touches.length!==2||!_pinchDist0) return;
+    const ratio=pinchDist(e)/_pinchDist0;
+    const newZoom=Math.min(10, Math.max(0.5, _pinchZoom0*ratio));
+    _camZoom=newZoom;
+    // Auto-switch lens at thresholds
+    let targetLens=1;
+    if(newZoom<0.85) targetLens=0;
+    else if(newZoom>=2.5&&newZoom<4) targetLens=2;
+    else if(newZoom>=4) targetLens=3;
+    if(targetLens!==_activeLens){ _activeLens=targetLens; }
+    const zb=$('cam-zoom-badge'); if(zb) zb.textContent=newZoom.toFixed(1)+'×';
+    await applyHardwareZoom(newZoom);
+  },{passive:true});
+  island.addEventListener('touchend',e=>{
+    if(e.touches.length<2){ _pinchDist0=null; updateZoomUI(); }
+  },{passive:true});
+})();
+
+/* ── Software enhancement: contrast + saturation + sharpness via CSS filter ── */
+function applyEnhancement(on){
+  _camEnhanced=on;
+  const vid=$('cam-video'); if(!vid) return;
+  if(on){
+    // Increase contrast 15%, saturation 20%, slight brightness, sharpen via drop-shadow trick
+    vid.style.filter='contrast(1.15) saturate(1.22) brightness(1.04)';
+    // WebGL-grade sharpness isn't possible in CSS alone – canvas convolution below
+    startSharpenLoop();
+  }else{
+    vid.style.filter='none';
+    stopSharpenLoop();
+  }
+  $('cam-enhance-btn').classList.toggle('on',on);
+  toast(on?'✨ Bildverbesserung an':'✨ Bildverbesserung aus');
+}
+
+/* Canvas-based unsharp mask sharpening – runs on a hidden canvas, output piped back */
+let _sharpenCanvas=null, _sharpenCtx=null, _sharpenLoopID=null;
+function startSharpenLoop(){
+  stopSharpenLoop();
+  // We apply: draw video frame → convolve with unsharp mask kernel → draw back
+  // Since we can't pipe canvas back to video directly (no MediaStream → video src assignment without extra steps),
+  // we overlay a semi-transparent sharpened canvas on top of the video instead.
+  if(!_sharpenCanvas){
+    _sharpenCanvas=document.createElement('canvas');
+    _sharpenCanvas.style.cssText='position:absolute;inset:0;width:100%;height:calc(100% - 26px);pointer-events:none;opacity:.55;mix-blend-mode:overlay';
+    document.getElementById('cam-island')?.insertBefore(_sharpenCanvas, document.querySelector('.cam-bar'));
+    _sharpenCtx=_sharpenCanvas.getContext('2d',{willReadFrequently:true});
+  }
+  _sharpenCanvas.style.display='block';
+  const kernel=[0,-1,0,-1,5,-1,0,-1,0]; // simple laplacian sharpen
+  _sharpenLoopID=setInterval(()=>{
+    const vid=$('cam-video'); if(!vid||vid.readyState<2) return;
+    const W=_sharpenCanvas.width=vid.videoWidth/4; // quarter res for perf
+    const H=_sharpenCanvas.height=vid.videoHeight/4;
+    if(!W||!H) return;
+    _sharpenCtx.drawImage(vid,0,0,W,H);
+    const img=_sharpenCtx.getImageData(0,0,W,H);
+    const src=new Uint8ClampedArray(img.data), dst=img.data;
+    for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){
+      const i=(y*W+x)*4;
+      for(let c=0;c<3;c++){
+        let acc=0;
+        for(let ky=-1;ky<=1;ky++) for(let kx=-1;kx<=1;kx++)
+          acc+=src[((y+ky)*W+(x+kx))*4+c]*kernel[(ky+1)*3+(kx+1)];
+        dst[i+c]=Math.min(255,Math.max(0,acc));
+      }
+      dst[i+3]=255;
+    }
+    _sharpenCtx.putImageData(img,0,0);
+  },120);
+}
+function stopSharpenLoop(){
+  if(_sharpenLoopID){ clearInterval(_sharpenLoopID); _sharpenLoopID=null; }
+  if(_sharpenCanvas) _sharpenCanvas.style.display='none';
+}
+
+/* ── Duration tick ── */
 function camDurTick(){
   _camDurSec++;
   const m=Math.floor(_camDurSec/60), s=_camDurSec%60;
   const el=$('cam-dur'); if(el) el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
+/* ── Main toggle ── */
 async function toggleCam(){
   const btn=$('cam-btn'), island=$('cam-island'), vid=$('cam-video'), dot=$('cam-rec-dot');
   if(_camStream){
-    stopDetectionLoop();
+    stopDetectionLoop(); stopSharpenLoop();
     if(_camRecorder&&_camRecorder.state!=='inactive') _camRecorder.stop();
     _camStream.getTracks().forEach(t=>t.stop());
     _camStream=null; _camRecorder=null;
-    vid.srcObject=null;
-    island.classList.remove('on');
-    btn.classList.remove('active');
+    vid.srcObject=null; vid.style.filter='none'; vid.style.transform='';
+    island.classList.remove('on'); btn.classList.remove('active');
     clearInterval(_camDurID); _camDurID=null; _camDurSec=0;
     if(dot) dot.classList.remove('rec');
     const d=$('cam-dur'); if(d) d.textContent='00:00';
+    _camZoom=1; _activeLens=1; _camEnhanced=false;
+    $('cam-enhance-btn').classList.remove('on');
+    updateZoomUI();
     toast('📷 Kamera aus');
     return;
   }
   try{
     const stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},
+      video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},
       audio:true
     });
-    _camStream=stream;
-    vid.srcObject=stream;
-    island.classList.add('on');
-    btn.classList.add('active');
+    _camStream=stream; vid.srcObject=stream;
+    island.classList.add('on'); btn.classList.add('active');
+    _activeLens=1; _camZoom=1; updateZoomUI();
     if(S.tracking) startCamRecording();
-    // Pre-load model in background
     ensureModel().then(m=>{ if(m&&_camReticleOn) startDetectionLoop(); });
-    toast('📷 Kamera aktiv');
-  }catch(e){
-    toast('❌ Kamerazugriff verweigert');
-  }
+    toast('📷 Kamera aktiv – Pinch zum Zoomen');
+  }catch(e){ toast('❌ Kamerazugriff verweigert'); }
 }
 
+/* ── Recording ── */
 function startCamRecording(){
   if(!_camStream||(_camRecorder&&_camRecorder.state!=='inactive')) return;
   _camChunks=[];
@@ -1266,40 +1425,38 @@ function startCamRecording(){
     const dot=$('cam-rec-dot'); if(dot) dot.classList.add('rec');
   }catch(e){ console.warn('MediaRecorder error',e); }
 }
-
 function stopCamRecording(){
   if(_camRecorder&&_camRecorder.state!=='inactive') _camRecorder.stop();
   clearInterval(_camDurID); _camDurID=null;
   const dot=$('cam-rec-dot'); if(dot) dot.classList.remove('rec');
 }
 
+/* ── Save ── */
 let _pendingVideoRunId=null;
-function saveCamVideo(blob){
-  if(!_pendingVideoRunId||!blob||blob.size<1000) return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    DB.updateRun(_pendingVideoRunId,{videoDataUrl:reader.result});
-    _pendingVideoRunId=null;
+async function saveCamVideo(blob){
+  if(!_pendingVideoRunId||!blob||blob.size<1000){_pendingVideoRunId=null;return;}
+  const id=_pendingVideoRunId; _pendingVideoRunId=null;
+  try{
+    await VideoDB.save(id,blob);
+    DB.updateRun(id,{hasVideo:true,videoBlobSize:blob.size});
     toast('🎬 Video gespeichert');
-  };
-  reader.readAsDataURL(blob);
+  }catch(e){ console.warn('Video save failed',e); toast('❌ Video konnte nicht gespeichert werden'); }
 }
 
-/* Toggle reticle + detection */
-$('cam-reticle-btn').addEventListener('click',async ()=>{
+/* ── Button wiring ── */
+$('cam-enhance-btn').addEventListener('click',()=>applyEnhancement(!_camEnhanced));
+$('cam-reticle-btn').addEventListener('click',async()=>{
   _camReticleOn=!_camReticleOn;
   $('cam-reticle-btn').classList.toggle('on',_camReticleOn);
   if(_camReticleOn){
     toast('🎯 Fahrer-Tracking wird geladen…',3000);
     const model=await ensureModel();
     if(model&&_camStream) startDetectionLoop();
-    else if(!model){ _camReticleOn=false; $('cam-reticle-btn').classList.remove('on'); toast('❌ KI-Modell nicht verfügbar'); }
-  } else {
-    stopDetectionLoop();
-    toast('🎯 Fahrer-Tracking aus');
+    else if(!model){_camReticleOn=false;$('cam-reticle-btn').classList.remove('on');toast('❌ KI-Modell nicht verfügbar');}
+  }else{
+    stopDetectionLoop(); toast('🎯 Fahrer-Tracking aus');
   }
 });
-
 $('cam-btn').addEventListener('click',toggleCam);
 
 /* ═══ MAP ═══════════════════════════════════════════════════════ */
@@ -1488,7 +1645,7 @@ function saveRun(){
     folderId:null, startTime:S.t0, duration:S.elapsed,
     maxSpeed:S.maxSpd, avgSpeed:S.avgSpd, distance:S.dist,
     speedHistory:S.hist, trackPoints:S.pts, falls:S.falls,
-    videoDataUrl:null
+    hasVideo:false
   });
   DB.clearSession();
   toast(`✅ Gespeichert · ${fmtSpd(S.maxSpd)} ${unitLabel()} max`);
@@ -1548,7 +1705,9 @@ function renderHistory(){
     const f=r.folderId?fm[r.folderId]:null;
     const d=r.distance||0, ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2), dl=d<0.1?'Meter':'km';
     const c=document.createElement('div'); c.className='rcard'; c.style.animationDelay=`${i*.04}s`;
-    c.innerHTML=`<div class="rctop"><div class="rcl">${f?`<div class="rfb"><div class="rfbd" style="background:${f.color}"></div>${esc(f.name)}</div>`:''}<div class="rname">${esc(r.name||'Run')}</div><div class="rdate">${fmtD(r.startTime)}</div></div><div style="display:flex;align-items:flex-start;gap:6px;flex-shrink:0;margin-left:10px"><button class="rmenu"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><div><div class="rsb">${Math.round(r.maxSpeed||0)}</div><div class="rsu">km/h max</div></div></div></div><div class="rstats"><div class="rs"><div class="rsv">${(r.avgSpeed||0).toFixed(1)}</div><div class="rsl">Ø km/h</div></div><div class="rs"><div class="rsv">${ds}</div><div class="rsl">${dl}</div></div><div class="rs"><div class="rsv">${fmtT(r.duration||0)}</div><div class="rsl">Zeit</div></div><div class="rs" style="color:${(r.falls||[]).length?'var(--red)':'var(--green)'}"><div class="rsv">${(r.falls||[]).length}</div><div class="rsl">Stürze</div></div></div>`;
+    c.innerHTML=`<div class="rctop"><div class="rcl">${f?`<div class="rfb"><div class="rfbd" style="background:${f.color}"></div>${esc(f.name)}</div>`:''}`
+      +`${r.hasVideo?`<div class="rfb vid"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M15 10l4.55-2.27A1 1 0 0121 8.72v6.56a1 1 0 01-1.45.9L15 14v-4z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg> Video</div>`:''}`
+      +`<div class="rname">${esc(r.name||'Run')}</div><div class="rdate">${fmtD(r.startTime)}</div></div><div style="display:flex;align-items:flex-start;gap:6px;flex-shrink:0;margin-left:10px"><button class="rmenu"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button><div><div class="rsb">${Math.round(r.maxSpeed||0)}</div><div class="rsu">km/h max</div></div></div></div><div class="rstats"><div class="rs"><div class="rsv">${(r.avgSpeed||0).toFixed(1)}</div><div class="rsl">Ø km/h</div></div><div class="rs"><div class="rsv">${ds}</div><div class="rsl">${dl}</div></div><div class="rs"><div class="rsv">${fmtT(r.duration||0)}</div><div class="rsl">Zeit</div></div><div class="rs" style="color:${(r.falls||[]).length?'var(--red)':'var(--green)'}"><div class="rsv">${(r.falls||[]).length}</div><div class="rsl">Stürze</div></div></div>`;
     c.querySelector('.rcl').addEventListener('click',()=>openDetail(r));
     c.querySelectorAll('.rs').forEach(s=>s.addEventListener('click',()=>openDetail(r)));
     c.querySelector('.rmenu').addEventListener('click',e=>{e.stopPropagation();showRunOpts(r);});
@@ -1591,9 +1750,11 @@ function openDetail(r){
         <div class="dstl">Stürze</div>
       </div>
     </div>
-    ${r.videoDataUrl?`<div class="slbl">Kamera-Aufnahme</div>
-    <div style="margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);background:#000;position:relative">
-      <video src="${r.videoDataUrl}" controls playsinline style="width:100%;display:block;max-height:220px;object-fit:contain"></video>
+    ${r.hasVideo?`<div class="slbl">Kamera-Aufnahme</div>
+    <div id="vid-wrap" style="margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);background:#000">
+      <div style="padding:18px;text-align:center;color:var(--tx2);font-size:13px" id="vid-loading">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;margin-bottom:6px"><path d="M12 2a10 10 0 0110 10"/></svg><br>Video wird geladen…
+      </div>
     </div>`:''}
     ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:90px;display:block"></canvas></div>`:''}
     ${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}
@@ -1604,6 +1765,26 @@ function openDetail(r){
     if(ht) initDMap(r.trackPoints, r.falls||[]);
     const cv=$('dchrt');
     if(cv) setTimeout(()=>drawChart(cv, r.speedHistory, r.falls||[]),120);
+    // Load video from IndexedDB
+    if(r.hasVideo){
+      VideoDB.get(r.id).then(blob=>{
+        const wrap=$('vid-wrap'); if(!wrap) return;
+        if(!blob){ wrap.innerHTML=`<div style="padding:14px;text-align:center;font-size:12px;color:var(--tx3)">Video nicht gefunden</div>`; return; }
+        const url=URL.createObjectURL(blob);
+        const ext=blob.type.includes('mp4')?'mp4':'webm';
+        wrap.innerHTML=`
+          <video src="${url}" controls playsinline style="width:100%;display:block;max-height:220px;object-fit:contain;background:#000"></video>
+          <div style="display:flex;gap:8px;padding:10px 12px;background:var(--gs)">
+            <a id="vid-dl" href="${url}" download="WakeSki_${r.id}.${ext}" style="flex:1;text-align:center;padding:9px;border-radius:10px;background:var(--ac);color:#fff;font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Video herunterladen
+            </a>
+            <div style="padding:9px 12px;border-radius:10px;background:var(--glass);border:.5px solid var(--gb);font-size:11px;color:var(--tx2);display:flex;align-items:center">${(blob.size/1048576).toFixed(1)} MB</div>
+          </div>`;
+      }).catch(()=>{
+        const wrap=$('vid-wrap'); if(wrap) wrap.innerHTML=`<div style="padding:14px;text-align:center;font-size:12px;color:var(--tx3)">Video konnte nicht geladen werden</div>`;
+      });
+    }
   });
   $('ddel').addEventListener('click',()=>confirm2('Fahrt löschen?','Nicht rückgängig.',()=>{DB.deleteRun(r.id);closeDetail();renderHistory();toast('Fahrt gelöscht');}));
 }
