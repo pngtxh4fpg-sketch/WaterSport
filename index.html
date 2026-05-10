@@ -377,7 +377,22 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
 .pt{font-size:15px;font-weight:600;margin-bottom:2px}.ps{font-size:12px;color:var(--tx2)}
 .pbw{width:100%;animation:fup .4s .32s cubic-bezier(.34,1.2,.64,1) both}
 
-/* ── Keyframes ── */
+/* ── Fullscreen cam viewer overlay ── */
+#cam-fullscreen{position:fixed;inset:0;z-index:500;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
+#cam-fullscreen.on{display:flex}
+#cam-fs-video{width:100%;height:100%;object-fit:cover}
+/* When device is landscape, the fullscreen video just fills naturally */
+@media (orientation:landscape){
+  #cam-fullscreen #cam-fs-video{object-fit:contain}
+}
+.cam-fs-close{position:absolute;top:calc(env(safe-area-inset-top,0px)+12px);right:16px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.55);backdrop-filter:blur(12px);border:.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;z-index:1}
+.cam-fs-zoom{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px)+24px);left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.cam-fs-zoom-btn{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);backdrop-filter:blur(12px);border:.5px solid rgba(255,255,255,.22);cursor:pointer;transition:all .15s}
+.cam-fs-zoom-btn.on{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5)}
+/* Force app to always stay portrait; video viewer allows landscape */
+#app,#nav,#wl,#pd,#as-panel,#presets-panel,#guide-panel,#sp{
+  /* These stay portrait – handled by body lock + individual CSS */
+}
 @keyframes fup  {from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes fin  {from{opacity:0}to{opacity:1}}
 @keyframes sup  {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
@@ -445,6 +460,19 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
             <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
           </svg>
         </button>
+      </div>
+    </div>
+    <!-- Fullscreen cam viewer (tap island to expand) -->
+    <div id="cam-fullscreen">
+      <video id="cam-fs-video" autoplay playsinline muted></video>
+      <button class="cam-fs-close" id="cam-fs-close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="cam-fs-zoom" id="cam-fs-zoom-bar">
+        <div class="cam-fs-zoom-btn" data-z="0">0.5×</div>
+        <div class="cam-fs-zoom-btn on" data-z="1">1×</div>
+        <div class="cam-fs-zoom-btn" data-z="2">2×</div>
+        <div class="cam-fs-zoom-btn" data-z="3">3×</div>
       </div>
     </div>
     <div class="trk-ov">
@@ -746,6 +774,8 @@ const DEFAULT_CFG = {
   theme:'dark', accentColor:'#0a84ff',
   activePresetId: null,
   quickPresetIds: ['preset_fast','preset_medium','preset_slow'],
+  ropeLength:20,   // metres – tow rope length, used for skier position estimation
+  camHFOV:65,      // degrees – approximate horizontal field of view of rear camera
 };
 let CFG = {...DEFAULT_CFG, ...(()=>{try{return JSON.parse(localStorage.getItem('ws_cfg'))||{};}catch{return{};}})()};
 function saveCFG(){ localStorage.setItem('ws_cfg', JSON.stringify(CFG)); }
@@ -967,7 +997,7 @@ const S={
   speed:0, maxSpd:0, avgSpd:0, dist:0, elapsed:0, t0:null,
   buf:[], hist:[], pts:[], falls:[], fc:0, lastPt:null,
   timerID:null, watchID:null,
-  map:null, lg:null, prevLL:null, smkr:null, pmkr:null, _idleMkr:null,
+  map:null, lg:null, prevLL:null, smkr:null, pmkr:null, _idleMkr:null, skierMkr:null,
   dmap:null,
   locked:false, folderID:null, page:'track',
   followMode:true, compassMode:false, heading:0,
@@ -1075,8 +1105,8 @@ function onPos(pos){
     S.map.setView([lat,lon], CFG.mapZoom, {animate:false});
   }
 
-  // Always update map position
-  panToWithOffset(lat, lon);
+  // Pan map to boat unless the skier marker is actively tracked (it pans itself)
+  if(!S.skierMkr) panToWithOffset(lat, lon);
 
   if(!S.tracking){
     // Show idle position dot when not recording
@@ -1192,7 +1222,61 @@ function toggleCompass(){
 $('follow-btn').addEventListener('click',()=>setFollowMode(!S.followMode));
 $('compass-btn').addEventListener('click',toggleCompass);
 
-/* ═══ CAMERA ISLAND + RECORDING + ZOOM + ENHANCE ══════════════ */
+/* ═══ SKIER WORLD-POSITION ESTIMATION ════════════════════════════
+ * The phone is on the boat, rear camera pointing toward the skier.
+ * Inputs:
+ *   bboxCenterX  – pixel x of bounding-box centre in the video frame
+ *   videoWidth   – video frame width in pixels
+ * Physics:
+ *   1. Normalised horizontal offset:  nx = bboxCenterX/videoWidth − 0.5
+ *      → −0.5 = far left edge,  0 = frame centre,  +0.5 = far right edge
+ *   2. Lateral angle to skier (deg):  α = nx × CFG.camHFOV
+ *      e.g. nx=0.3, FOV=65° → α = +19.5° (skier is 19.5° right of camera axis)
+ *   3. Camera axis points BACKWARD from boat:
+ *      cameraDir = (boatHeading + 180°) mod 360°
+ *      This is compass-independent – no matter how the phone is rotated,
+ *      `S.heading` is always updated from deviceorientation, so the
+ *      camera-backward direction is always correct in world space.
+ *   4. Direction from boat to skier:
+ *      skierDir = (cameraDir + α + 360°) mod 360°
+ *   5. World offset using polar→cartesian (standard geodesy):
+ *      dLat = ropeLength × cos(skierDir_rad) / 111320
+ *      dLon = ropeLength × sin(skierDir_rad) / (111320 × cos(boatLat_rad))
+ *   6. skierPos = boatPos + (dLat, dLon)
+ * ──────────────────────────────────────────────────────────────── */
+function computeSkierWorldPos(bboxCenterX, videoWidth){
+  if(!S.lastPos) return null;
+  const nx = (bboxCenterX / (videoWidth||1)) - 0.5;          // [−0.5, +0.5]
+  const lateralDeg = nx * (CFG.camHFOV||65);                  // degrees
+  const cameraDirDeg = (S.heading + 180) % 360;               // camera points backward
+  const skierDirDeg  = (cameraDirDeg + lateralDeg + 360) % 360;
+  const skierDirRad  = skierDirDeg * Math.PI / 180;
+  const rope = CFG.ropeLength || 20;                           // metres
+  const boatLat = S.lastPos.lat;
+  const boatLon = S.lastPos.lon;
+  const dLat = (rope * Math.cos(skierDirRad)) / 111320;
+  const dLon = (rope * Math.sin(skierDirRad)) / (111320 * Math.cos(boatLat * Math.PI / 180));
+  return { lat: boatLat + dLat, lon: boatLon + dLon };
+}
+
+function updateSkierMarker(pos){
+  if(!S.map||!S.lg||!pos) return;
+  if(!S.skierMkr){
+    // Yellow ring marker – distinct from the blue boat dot
+    S.skierMkr = L.circleMarker([pos.lat, pos.lon],{
+      radius:8, color:'#ffd60a', weight:2.5,
+      fillColor:'#ffd60a', fillOpacity:.85
+    }).addTo(S.lg).bindTooltip('Fahrer',{permanent:false,direction:'top'});
+  } else {
+    S.skierMkr.setLatLng([pos.lat, pos.lon]);
+  }
+  // If follow mode on, pan to the skier (not the boat) when detection is active
+  if(S.followMode) panToWithOffset(pos.lat, pos.lon);
+}
+
+function clearSkierMarker(){
+  if(S.skierMkr){ S.lg.removeLayer(S.skierMkr); S.skierMkr=null; }
+}
 let _camStream=null, _camRecorder=null, _camChunks=[], _camDurID=null;
 let _camReticleOn=false, _camDurSec=0;
 let _cocoModel=null, _detLoopID=null, _detRunning=false;
@@ -1381,7 +1465,7 @@ function camDurTick(){
 async function toggleCam(){
   const btn=$('cam-btn'), island=$('cam-island'), vid=$('cam-video'), dot=$('cam-rec-dot');
   if(_camStream){
-    stopDetectionLoop(); stopSharpenLoop();
+    stopDetectionLoop(); clearSkierMarker(); stopSharpenLoop();
     if(_camRecorder&&_camRecorder.state!=='inactive') _camRecorder.stop();
     _camStream.getTracks().forEach(t=>t.stop());
     _camStream=null; _camRecorder=null;
@@ -1443,8 +1527,100 @@ async function saveCamVideo(blob){
   }catch(e){ console.warn('Video save failed',e); toast('❌ Video konnte nicht gespeichert werden'); }
 }
 
-/* ── Button wiring ── */
-$('cam-enhance-btn').addEventListener('click',()=>applyEnhancement(!_camEnhanced));
+/* ── Fullscreen cam viewer ── */
+function openCamFullscreen(){
+  if(!_camStream) return;
+  const fs=$('cam-fullscreen'), fsv=$('cam-fs-video');
+  if(!fs||!fsv) return;
+  fsv.srcObject=_camStream;
+  fs.classList.add('on');
+  // Request landscape when in fullscreen cam
+  if(screen.orientation&&screen.orientation.lock){
+    screen.orientation.lock('landscape').catch(()=>{});
+  }
+  // Sync zoom buttons
+  document.querySelectorAll('.cam-fs-zoom-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.z)===_activeLens));
+}
+function closeCamFullscreen(){
+  const fs=$('cam-fullscreen'), fsv=$('cam-fs-video');
+  if(!fs) return;
+  fs.classList.remove('on');
+  if(fsv) fsv.srcObject=null;
+  // Re-lock to portrait
+  if(screen.orientation&&screen.orientation.lock){
+    screen.orientation.lock('portrait').catch(()=>{});
+  }
+}
+$('cam-island').addEventListener('click',e=>{
+  // Only expand on click of the video area, not the bar buttons
+  if(e.target.closest('.cam-bar')||e.target.closest('.cam-top')) return;
+  openCamFullscreen();
+});
+$('cam-fs-close').addEventListener('click',closeCamFullscreen);
+document.querySelectorAll('.cam-fs-zoom-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+  const idx=parseInt(btn.dataset.z);
+  await switchLens(idx);
+  document.querySelectorAll('.cam-fs-zoom-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.z)===idx));
+  // Also sync the zoom badge in island
+  updateZoomUI();
+}));
+
+// Portrait lock for the main app (allow landscape only in cam fullscreen)
+(function lockPortrait(){
+  if(screen.orientation&&screen.orientation.lock){
+    screen.orientation.lock('portrait').catch(()=>{});
+  }
+})();
+
+/* ── Combined crash detection: G-force + vision (no person in frame) ── */
+// _crashVisionMiss tracks consecutive detection frames with no person
+let _crashVisionMiss=0;
+const CRASH_VISION_MISS_THRESHOLD=8; // ~1.8s of no detection after fast speed
+
+function checkVisionCrash(){
+  // Called from detectionLoop when reticle mode is on
+  // If rider disappears from frame for several consecutive frames at speed → flag as crash
+  if(!S.tracking||!_camReticleOn) return false;
+  return _crashVisionMiss>=CRASH_VISION_MISS_THRESHOLD && S.speed>CFG.crashMinSpd;
+}
+
+// Patch detection loop: person found → compute world pos + update marker + reset miss
+// person not found → increment miss, check vision crash, clear marker
+async function detectionLoopWithCrash(){
+  if(_detRunning) return; _detRunning=true;
+  const vid=$('cam-video'), ret=$('cam-reticle'), island=$('cam-island');
+  if(!vid||!ret||!island||!_camReticleOn||!_cocoModel||vid.readyState<2){_detRunning=false;return;}
+  try{
+    const predictions=await _cocoModel.detect(vid);
+    const person=predictions.filter(p=>p.class==='person'&&p.score>0.35).sort((a,b)=>b.score-a.score)[0];
+    if(person){
+      _crashVisionMiss=0;
+      const [bx,by,bw,bh]=person.bbox;
+      const vW=vid.videoWidth||1, vH=vid.videoHeight||1;
+      const iW=island.offsetWidth, iH=island.offsetHeight-26;
+      // ── Reticle UI ──
+      const cx=(bx+bw/2)/vW*iW, cy=(by+bh/2)/vH*iH;
+      const rW=Math.max(32,Math.min(bw/vW*iW,iW-8));
+      const rH=Math.max(32,Math.min(bh/vH*iH,iH-8));
+      ret.style.left=cx+'px'; ret.style.top=cy+'px';
+      ret.style.width=rW+'px'; ret.style.height=rH+'px';
+      ret.classList.remove('hidden'); ret.classList.add('locked');
+      // ── World position ──
+      // bbox centre x in video pixels (accounting for CSS zoom which doesn't affect videoWidth)
+      const worldPos = computeSkierWorldPos(bx + bw/2, vW);
+      if(worldPos) updateSkierMarker(worldPos);
+    }else{
+      ret.classList.add('hidden'); ret.classList.remove('locked');
+      clearSkierMarker(); // no person: remove skier marker, map follows boat GPS
+      if(S.tracking&&S.speed>CFG.crashMinSpd) _crashVisionMiss++;
+      else _crashVisionMiss=0;
+      if(checkVisionCrash()){ _crashVisionMiss=0; triggerCrash(S.lastGForce||0,'vision'); }
+    }
+  }catch(e){}
+  _detRunning=false;
+}
+const _origDetLoop=detectionLoop;
+function detectionLoop(){ return detectionLoopWithCrash(); }
 $('cam-reticle-btn').addEventListener('click',async()=>{
   _camReticleOn=!_camReticleOn;
   $('cam-reticle-btn').classList.toggle('on',_camReticleOn);
@@ -1454,7 +1630,7 @@ $('cam-reticle-btn').addEventListener('click',async()=>{
     if(model&&_camStream) startDetectionLoop();
     else if(!model){_camReticleOn=false;$('cam-reticle-btn').classList.remove('on');toast('❌ KI-Modell nicht verfügbar');}
   }else{
-    stopDetectionLoop(); toast('🎯 Fahrer-Tracking aus');
+    stopDetectionLoop(); clearSkierMarker(); toast('🎯 Fahrer-Tracking aus');
   }
 });
 $('cam-btn').addEventListener('click',toggleCam);
@@ -1651,6 +1827,24 @@ function saveRun(){
   toast(`✅ Gespeichert · ${fmtSpd(S.maxSpd)} ${unitLabel()} max`);
 }
 
+/* ── Shared crash trigger ── */
+function triggerCrash(gForce, source){
+  if(!S.tracking) return;
+  const now=Date.now(), last=S.falls[S.falls.length-1];
+  if(last&&now-last.time<CFG.crashCooldown) return;
+  S.falls.push({time:now,speed:S.speed,gForce:gForce.toFixed(2),source:source||'sensor'}); S.fc++;
+  const srcLabel=source==='vision'?'Fahrer verschwunden':''+gForce.toFixed(1)+'g';
+  $('fat').textContent=`Sturz #${S.fc} erkannt!`;
+  $('fas').textContent=`${srcLabel} · ${fmtSpd(S.speed)} ${unitLabel()}`;
+  const el=$('falert'); el.style.display='flex'; el.style.animation='shk .5s ease,fup .4s cubic-bezier(.34,1.4,.64,1)';
+  if(CFG.crashVibrate&&navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
+  if(CFG.crashVoice&&'speechSynthesis' in window){
+    const u=new SpeechSynthesisUtterance(source==='vision'?'Sturz erkannt! Fahrer nicht mehr im Bild!':`Sturz erkannt! ${gForce.toFixed(1)} G`);
+    u.lang='de-DE'; speechSynthesis.speak(u);
+  }
+  setTimeout(()=>{const el=$('falert');if(el)el.style.display='none';},5000);
+}
+
 /* ═══ MOTION (Sturzerkennung) ═══════════════════════════════════ */
 function initMotion(){
   if(!window.DeviceMotionEvent) return;
@@ -1659,21 +1853,10 @@ function initMotion(){
     const g=Math.sqrt((ag.x||0)**2+(ag.y||0)**2+(ag.z||0)**2)/9.81;
     S.lastGForce=g;
     if(!S.tracking) return;
-    if(g>CFG.crashG&&S.speed>CFG.crashMinSpd){
-      const now=Date.now(), last=S.falls[S.falls.length-1];
-      if(!last||now-last.time>CFG.crashCooldown){
-        S.falls.push({time:now,speed:S.speed,gForce:g.toFixed(2)}); S.fc++;
-        $('fat').textContent=`Sturz #${S.fc} erkannt!`;
-        $('fas').textContent=`${g.toFixed(1)}g · ${fmtSpd(S.speed)} ${unitLabel()}`;
-        const el=$('falert'); el.style.display='flex'; el.style.animation='shk .5s ease,fup .4s cubic-bezier(.34,1.4,.64,1)';
-        if(CFG.crashVibrate&&navigator.vibrate) navigator.vibrate([200,80,200,80,400]);
-        if(CFG.crashVoice&&'speechSynthesis' in window){
-          const u=new SpeechSynthesisUtterance(`Sturz erkannt! ${g.toFixed(1)} G`);
-          u.lang='de-DE'; speechSynthesis.speak(u);
-        }
-        setTimeout(()=>{el.style.display='none';},5000);
-      }
-    }
+    // If camera + vision tracking active: G-force alone is less reliable (water spray)
+    // Use a higher threshold when vision is also monitoring
+    const threshold=(_camStream&&_camReticleOn)?CFG.crashG*1.25:CFG.crashG;
+    if(g>threshold&&S.speed>CFG.crashMinSpd) triggerCrash(g,'sensor');
   };
   if(typeof DeviceMotionEvent.requestPermission==='function'){
     DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')window.addEventListener('devicemotion',h,{passive:true});}).catch(()=>{});
@@ -1750,15 +1933,15 @@ function openDetail(r){
         <div class="dstl">Stürze</div>
       </div>
     </div>
+    ${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}
+    ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:90px;display:block"></canvas></div>`:''}
+    ${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit"><div style="width:28px;height:28px;border-radius:50%;background:#ff453a;border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
     ${r.hasVideo?`<div class="slbl">Kamera-Aufnahme</div>
     <div id="vid-wrap" style="margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);background:#000">
       <div style="padding:18px;text-align:center;color:var(--tx2);font-size:13px" id="vid-loading">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;margin-bottom:6px"><path d="M12 2a10 10 0 0110 10"/></svg><br>Video wird geladen…
       </div>
     </div>`:''}
-    ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:90px;display:block"></canvas></div>`:''}
-    ${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}
-    ${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit"><div style="width:28px;height:28px;border-radius:50%;background:#ff453a;border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
     <button class="delbtn" id="ddel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
   $('pd').style.display='block';
   requestAnimationFrame(()=>{
@@ -2243,6 +2426,12 @@ function buildAdvSettings(){
     ${arow('Autosave-Interval',null,null,segWithCustom('autoSaveInt',[{v:5,l:'5s'},{v:10,l:'10s'},{v:30,l:'30s'},{v:60,l:'60s'}],'s',1,120,'int'))}
     ${arow('Min. Run-Länge','Mindestanzahl GPS-Punkte zum Speichern',null,segWithCustom('minRunPts',[{v:3,l:'3'},{v:5,l:'5'},{v:10,l:'10'},{v:20,l:'20'}],'Pkt.',1,100,'int'))}
     ${arow('Trackpunkt-Auflösung',null,null,seg('ptRes',[{v:1,l:'Alle'},{v:2,l:'Jed. 2.'},{v:5,l:'Jed. 5.'}]))}
+  </div></div>
+
+  <div class="as-section"><div class="as-stitle">📷 Kamera & Positionserkennung</div>
+  <div class="as-card">
+    ${arow('Seillänge','Abstand Boot→Fahrer (Meter)',null,segWithCustom('ropeLength',[{v:15,l:'15m'},{v:18,l:'18m'},{v:20,l:'20m'},{v:23,l:'23m'},{v:26,l:'26m'}],'m',5,60,'int'))}
+    ${arow('Kamera-Sichtfeld','Horizontales FoV der Rückkamera',null,segWithCustom('camHFOV',[{v:55,l:'55°'},{v:65,l:'65°'},{v:75,l:'75°'},{v:85,l:'85°'}],'°',30,120,'int'))}
   </div></div>
 
   <div class="as-section"><div class="as-stitle">🔒 Sicherheit</div>
