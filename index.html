@@ -919,7 +919,12 @@ const DB={
   addRun:     r=>{const a=DB.getRuns();a.unshift(r);DB.saveRuns(a);},
   updateRun:  (id,p)=>{const a=DB.getRuns(),i=a.findIndex(r=>r.id===id);if(i>=0){a[i]={...a[i],...p};DB.saveRuns(a);}},
   deleteRun:  id=>{DB.saveRuns(DB.getRuns().filter(r=>r.id!==id));VideoDB.delete(id).catch(()=>{});},
-  clearRuns:  ()=>localStorage.removeItem('ws_runs'),
+  clearRuns:  ()=>{
+    // Also delete all stored videos from IndexedDB
+    const ids=DB.getRuns().map(r=>r.id);
+    ids.forEach(id=>VideoDB.delete(id).catch(()=>{}));
+    localStorage.removeItem('ws_runs');
+  },
   getFolders:   ()=>DB.g('ws_folders')||[],
   saveFolders:  f=>DB.s('ws_folders',f),
   addFolder:    f=>{const a=DB.getFolders();a.push(f);DB.saveFolders(a);},
@@ -977,6 +982,8 @@ const VideoDB={
     });
   },
 };
+
+/* ═══ UTILS ═════════════════════════════════════════════════════ */
 function hav(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
 const fmtT=ms=>{const s=Math.floor(ms/1e3),m=Math.floor(s/60);return`${m}:${(s%60).toString().padStart(2,'0')}`;};
 const fmtD=ts=>new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -1302,28 +1309,7 @@ async function ensureModel(){
   }catch(e){ console.warn('COCO-SSD load failed',e); return null; }
 }
 
-/* ── Detection loop every 220ms ── */
-async function detectionLoop(){
-  if(_detRunning) return; _detRunning=true;
-  const vid=$('cam-video'), ret=$('cam-reticle'), island=$('cam-island');
-  if(!vid||!ret||!island||!_camReticleOn||!_cocoModel||vid.readyState<2){_detRunning=false;return;}
-  try{
-    const predictions=await _cocoModel.detect(vid);
-    const person=predictions.filter(p=>p.class==='person'&&p.score>0.35).sort((a,b)=>b.score-a.score)[0];
-    if(person){
-      const [bx,by,bw,bh]=person.bbox;
-      const vW=vid.videoWidth||1, vH=vid.videoHeight||1;
-      const iW=island.offsetWidth, iH=island.offsetHeight-26;
-      const cx=(bx+bw/2)/vW*iW, cy=(by+bh/2)/vH*iH;
-      const rW=Math.max(32,Math.min(bw/vW*iW,iW-8));
-      const rH=Math.max(32,Math.min(bh/vH*iH,iH-8));
-      ret.style.left=cx+'px'; ret.style.top=cy+'px';
-      ret.style.width=rW+'px'; ret.style.height=rH+'px';
-      ret.classList.remove('hidden'); ret.classList.add('locked');
-    }else{ ret.classList.add('hidden'); ret.classList.remove('locked'); }
-  }catch(e){}
-  _detRunning=false;
-}
+/* ── Detection loop every 220ms – includes world position + vision crash ── */
 function startDetectionLoop(){ stopDetectionLoop(); _detLoopID=setInterval(detectionLoop,220); }
 function stopDetectionLoop(){
   if(_detLoopID){ clearInterval(_detLoopID); _detLoopID=null; } _detRunning=false;
@@ -1584,9 +1570,9 @@ function checkVisionCrash(){
   return _crashVisionMiss>=CRASH_VISION_MISS_THRESHOLD && S.speed>CFG.crashMinSpd;
 }
 
-// Patch detection loop: person found → compute world pos + update marker + reset miss
+// Detection loop: person found → compute world pos + update marker + reset miss
 // person not found → increment miss, check vision crash, clear marker
-async function detectionLoopWithCrash(){
+async function detectionLoop(){
   if(_detRunning) return; _detRunning=true;
   const vid=$('cam-video'), ret=$('cam-reticle'), island=$('cam-island');
   if(!vid||!ret||!island||!_camReticleOn||!_cocoModel||vid.readyState<2){_detRunning=false;return;}
@@ -1619,8 +1605,6 @@ async function detectionLoopWithCrash(){
   }catch(e){}
   _detRunning=false;
 }
-const _origDetLoop=detectionLoop;
-function detectionLoop(){ return detectionLoopWithCrash(); }
 $('cam-reticle-btn').addEventListener('click',async()=>{
   _camReticleOn=!_camReticleOn;
   $('cam-reticle-btn').classList.toggle('on',_camReticleOn);
@@ -1724,7 +1708,7 @@ function updateIdleMarker(lat,lon){
   if(!S._idleMkr){
     S._idleMkr=L.circleMarker([lat,lon],{
       radius:8, color:'#fff', weight:2.5,
-      fillColor:'#0a84ff', fillOpacity:.9
+      fillColor:CFG.accentColor||'#0a84ff', fillOpacity:.9
     }).addTo(S.lg);
   } else {
     S._idleMkr.setLatLng([lat,lon]);
@@ -1763,7 +1747,11 @@ function mapAddPoint(lat,lon,spd){
   }
 }
 
-function clearMapSession(){ if(S.lg)S.lg.clearLayers(); S.smkr=null; S.pmkr=null; S.prevLL=null; }
+function clearMapSession(){
+  if(S.lg) S.lg.clearLayers();
+  S.smkr=null; S.pmkr=null; S.prevLL=null;
+  S._idleMkr=null; S.skierMkr=null; // already removed by clearLayers
+}
 
 /* ── Clean fall marker icon (red circle, no emoji) ── */
 function fallMarkerIcon(index){
@@ -1916,7 +1904,7 @@ function showFolderPicker(r){const flds=DB.getFolders();const rows=flds.map(f=>`
 
 /* ═══ DETAIL ════════════════════════════════════════════════════ */
 function openDetail(r){
-  const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'Distanz km';
+  const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'km';
   const hf=(r.falls||[]).length>0, ht=(r.trackPoints||[]).length>2;
   $('dtitle').textContent=r.name||'Run';$('ddate').textContent=fmtD(r.startTime);
   $('dcont').innerHTML=`
@@ -2021,8 +2009,9 @@ function drawChart(cv, hist, falls){
   ctx.clearRect(0,0,W,H);
 
   // Area gradient fill
+  const ac=CFG.accentColor||'#0a84ff';
   const grad=ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'rgba(10,132,255,.35)'); grad.addColorStop(1,'rgba(10,132,255,0)');
+  grad.addColorStop(0,hexToRgba(ac,.35)); grad.addColorStop(1,hexToRgba(ac,0));
   ctx.beginPath();
   pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-8);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
   ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
@@ -2031,7 +2020,7 @@ function drawChart(cv, hist, falls){
   // Speed line
   ctx.beginPath();
   pts2.forEach((v,i)=>{const x=(i/(pts2.length-1))*W,y=H-(v/mx)*(H-8);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
-  ctx.strokeStyle='#0a84ff'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+  ctx.strokeStyle=ac; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
 
   // Fall vertical lines (red dashed)
   if(falls && falls.length>0 && totalTime>0){
