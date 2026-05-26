@@ -389,10 +389,21 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
 .cam-fs-zoom{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px)+24px);left:50%;transform:translateX(-50%);display:flex;gap:8px}
 .cam-fs-zoom-btn{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);backdrop-filter:blur(12px);border:.5px solid rgba(255,255,255,.22);cursor:pointer;transition:all .15s}
 .cam-fs-zoom-btn.on{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5)}
-/* Force app to always stay portrait; video viewer allows landscape */
-#app,#nav,#wl,#pd,#as-panel,#presets-panel,#guide-panel,#sp{
-  /* These stay portrait – handled by body lock + individual CSS */
+/* ── Portrait lock: app shell always stays portrait ── */
+/* When device rotates, #app is capped to the shorter screen dimension */
+@media (orientation:landscape) and (max-height:600px){
+  body{overflow:hidden}
+  #app{
+    max-width:100vh;           /* use portrait width = landscape height */
+    height:100vw;              /* use portrait height = landscape width */
+    height:100dvw;
+  }
 }
+/* Detail panel view-switch tab row */
+.dview-tabs{display:flex;gap:6px;margin:0 16px 12px;background:var(--gs);border-radius:12px;padding:3px}
+.dview-tab{flex:1;padding:8px;border-radius:9px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--tx2);transition:all .15s}
+.dview-tab.on{background:var(--ac);color:#fff}
+
 @keyframes fup  {from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes fin  {from{opacity:0}to{opacity:1}}
 @keyframes sup  {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
@@ -1005,6 +1016,8 @@ const S={
   buf:[], hist:[], pts:[], falls:[], fc:0, lastPt:null,
   timerID:null, watchID:null,
   map:null, lg:null, prevLL:null, smkr:null, pmkr:null, _idleMkr:null, skierMkr:null,
+  skierPrevLL:null, skierLg:null,  // separate layer for skier track (yellow)
+  detailView:'boat', // 'boat' | 'skier' – which track the detail map follows
   dmap:null,
   locked:false, folderID:null, page:'track',
   followMode:true, compassMode:false, heading:0,
@@ -1267,22 +1280,33 @@ function computeSkierWorldPos(bboxCenterX, videoWidth){
 }
 
 function updateSkierMarker(pos){
-  if(!S.map||!S.lg||!pos) return;
-  if(!S.skierMkr){
-    // Yellow ring marker – distinct from the blue boat dot
-    S.skierMkr = L.circleMarker([pos.lat, pos.lon],{
-      radius:8, color:'#ffd60a', weight:2.5,
-      fillColor:'#ffd60a', fillOpacity:.85
-    }).addTo(S.lg).bindTooltip('Fahrer',{permanent:false,direction:'top'});
-  } else {
-    S.skierMkr.setLatLng([pos.lat, pos.lon]);
+  if(!S.map||!pos) return;
+  // Draw yellow skier track line
+  if(S.skierLg && S.skierPrevLL){
+    L.polyline([S.skierPrevLL,[pos.lat,pos.lon]],{
+      color:'#ffd60a',weight:4,opacity:.85,lineCap:'round',lineJoin:'round',
+      dashArray:null
+    }).addTo(S.skierLg);
   }
-  // If follow mode on, pan to the skier (not the boat) when detection is active
+  S.skierPrevLL=[pos.lat,pos.lon];
+  // Update or create yellow skier marker dot
+  if(!S.skierMkr){
+    S.skierMkr=L.circleMarker([pos.lat,pos.lon],{
+      radius:8,color:'#fff',weight:2,fillColor:'#ffd60a',fillOpacity:1
+    }).addTo(S.skierLg||S.lg).bindTooltip('Fahrer',{permanent:false,direction:'top'});
+  }else{
+    S.skierMkr.setLatLng([pos.lat,pos.lon]);
+  }
+  // Store skier point for detail map
+  if(!S.skierPts) S.skierPts=[];
+  S.skierPts.push({lat:pos.lat,lon:pos.lon,time:Date.now(),speed:S.speed});
+  // If follow mode on, pan to skier
   if(S.followMode) panToWithOffset(pos.lat, pos.lon);
 }
 
 function clearSkierMarker(){
-  if(S.skierMkr){ S.lg.removeLayer(S.skierMkr); S.skierMkr=null; }
+  if(S.skierLg) S.skierLg.clearLayers();
+  S.skierMkr=null; S.skierPrevLL=null;
 }
 let _camStream=null, _camRecorder=null, _camChunks=[], _camDurID=null;
 let _camReticleOn=false, _camDurSec=0;
@@ -1468,7 +1492,8 @@ async function toggleCam(){
   }
   try{
     const stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},
+      // Force landscape: width always > height
+      video:{facingMode:{ideal:'environment'},width:{ideal:1920,min:640},height:{ideal:1080,min:360}},
       audio:true
     });
     _camStream=stream; vid.srcObject=stream;
@@ -1633,6 +1658,7 @@ function initMap(){
   map.zoomControl.setPosition('bottomright');
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,updateWhenIdle:false,keepBuffer:4}).addTo(map);
   S.lg=L.layerGroup().addTo(map);
+  S.skierLg=L.layerGroup().addTo(map); // yellow skier track drawn on top
   map.setView([48.2,13.5],15);
   S.map=map;
 
@@ -1749,8 +1775,9 @@ function mapAddPoint(lat,lon,spd){
 
 function clearMapSession(){
   if(S.lg) S.lg.clearLayers();
+  if(S.skierLg) S.skierLg.clearLayers();
   S.smkr=null; S.pmkr=null; S.prevLL=null;
-  S._idleMkr=null; S.skierMkr=null; // already removed by clearLayers
+  S._idleMkr=null; S.skierMkr=null; S.skierPrevLL=null;
 }
 
 /* ── Clean fall marker icon (red circle, no emoji) ── */
@@ -1767,7 +1794,7 @@ $('tbtn').addEventListener('click',()=>S.tracking?stopT():startT());
 function startT(){
   S.tracking=true; S.t0=Date.now();
   S.speed=0; S.maxSpd=0; S.avgSpd=0; S.dist=0; S.elapsed=0;
-  S.buf=[]; S.hist=[]; S.pts=[]; S.falls=[]; S.fc=0; S.lastPt=null;
+  S.buf=[]; S.hist=[]; S.pts=[]; S.falls=[]; S.fc=0; S.lastPt=null; S.skierPts=[];
   KALMAN.reset();
   clearIdleMarker();  // remove idle position dot before drawing track
   clearMapSession();
@@ -1808,7 +1835,7 @@ function saveRun(){
     id, name:`Run ${new Date().toLocaleDateString('de-DE')}`,
     folderId:null, startTime:S.t0, duration:S.elapsed,
     maxSpeed:S.maxSpd, avgSpeed:S.avgSpd, distance:S.dist,
-    speedHistory:S.hist, trackPoints:S.pts, falls:S.falls,
+    speedHistory:S.hist, trackPoints:S.pts, skierPoints:S.skierPts||[], falls:S.falls,
     hasVideo:false
   });
   DB.clearSession();
@@ -1906,14 +1933,24 @@ function showFolderPicker(r){const flds=DB.getFolders();const rows=flds.map(f=>`
 function openDetail(r){
   const d=r.distance||0,ds=d<0.1?Math.round(d*1000)+'m':d.toFixed(2),dl=d<0.1?'Meter':'km';
   const hf=(r.falls||[]).length>0, ht=(r.trackPoints||[]).length>2;
+  const hs=(r.skierPoints||[]).length>2;
+  S.detailView='boat';
   $('dtitle').textContent=r.name||'Run';$('ddate').textContent=fmtD(r.startTime);
+
+  // Build falls summary text
+  const fallsSummary=hf
+    ? r.falls.map((f,i)=>`<span style="color:var(--red);font-size:11px;font-weight:600">#${i+1} ${new Date(f.time).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · ${(f.speed||0).toFixed(0)} km/h · ${f.gForce||'–'}g${f.source==='vision'?' · 📷':''}</span>`).join('<br>')
+    : '<span style="color:var(--green);font-size:12px">Keine Stürze</span>';
+
   $('dcont').innerHTML=`
+    <!-- Hero speed -->
     <div class="dhero" style="animation:fup .32s cubic-bezier(.34,1.28,.64,1) both">
       <div class="dspd">${Math.round(r.maxSpeed||0)}</div>
       <div class="dspdl">km/h Maximalgeschwindigkeit</div>
     </div>
+    <!-- Stats grid -->
     <div class="dgrid" style="animation:fup .32s .05s cubic-bezier(.34,1.28,.64,1) both">
-      <div class="dst"><div class="dstv">${(r.avgSpeed||0).toFixed(1)}</div><div class="dstl">Ø Geschwindigkeit</div></div>
+      <div class="dst"><div class="dstv">${(r.avgSpeed||0).toFixed(1)}</div><div class="dstl">Ø km/h</div></div>
       <div class="dst"><div class="dstv">${ds}</div><div class="dstl">${dl}</div></div>
       <div class="dst"><div class="dstv">${fmtT(r.duration||0)}</div><div class="dstl">Fahrzeit</div></div>
       <div class="dst" style="border-color:${hf?'rgba(255,69,58,.25)':'rgba(48,209,88,.25)'}">
@@ -1921,9 +1958,26 @@ function openDetail(r){
         <div class="dstl">Stürze</div>
       </div>
     </div>
-    ${ht?`<div class="slbl">Strecke</div><div class="dmw"><div id="dmap"></div></div>`:''}
-    ${(r.speedHistory||[]).length>5?`<div class="slbl">Geschwindigkeitsprofil</div><div class="cwrap"><canvas id="dchrt" style="width:100%;height:90px;display:block"></canvas></div>`:''}
-    ${hf?`<div class="slbl">Stürze</div><div class="flist">${r.falls.map((f,i)=>`<div class="fit"><div style="width:28px;height:28px;border-radius:50%;background:#ff453a;border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">${i+1}</div><div><div class="fitt">Sturz #${i+1}</div><div class="fits">${new Date(f.time).toLocaleTimeString('de-DE')} · ${(f.speed||0).toFixed(1)} km/h · ${f.gForce||'–'}g</div></div></div>`).join('')}</div>`:''}
+    <!-- Speed chart (falls shown as red lines inside) -->
+    ${(r.speedHistory||[]).length>5?`
+    <div class="slbl" style="display:flex;justify-content:space-between;align-items:center;padding-right:20px">
+      <span>Geschwindigkeitsprofil</span>
+      ${hf?`<span style="font-size:10px;color:var(--red);font-weight:600">${r.falls.length} Sturz${r.falls.length>1?'e':''} markiert</span>`:''}
+    </div>
+    <div class="cwrap"><canvas id="dchrt" style="width:100%;height:100px;display:block"></canvas></div>`:''}
+    <!-- Falls collapsed -->
+    ${hf?`<div style="margin:0 16px 10px;padding:12px 14px;background:rgba(255,69,58,.06);border:.5px solid rgba(255,69,58,.18);border-radius:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🔴 Stürze</div>
+      <div style="line-height:1.8">${fallsSummary}</div>
+    </div>`:''}
+    <!-- Map with boat/skier toggle -->
+    ${ht?`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:6px">
+      <span class="slbl" style="padding:0;margin:0">Strecke</span>
+      ${hs?`<div class="dview-tabs" style="margin:0;width:auto"><div class="dview-tab on" id="dtab-boat">⛵ Boot</div><div class="dview-tab" id="dtab-skier">🏄 Fahrer</div></div>`:''}
+    </div>
+    <div class="dmw"><div id="dmap"></div></div>`:''}
+    <!-- Video at end, muted by default -->
     ${r.hasVideo?`<div class="slbl">Kamera-Aufnahme</div>
     <div id="vid-wrap" style="margin:0 16px 14px;border-radius:18px;overflow:hidden;border:.5px solid var(--gb);background:#000">
       <div style="padding:18px;text-align:center;color:var(--tx2);font-size:13px" id="vid-loading">
@@ -1931,12 +1985,30 @@ function openDetail(r){
       </div>
     </div>`:''}
     <button class="delbtn" id="ddel"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>Fahrt löschen</button>`;
+
   $('pd').style.display='block';
+
+  // Wire view tabs
+  if(hs){
+    $('dtab-boat')?.addEventListener('click',()=>{
+      S.detailView='boat';
+      $('dtab-boat').classList.add('on'); $('dtab-skier').classList.remove('on');
+      if(S.dmap){ S.dmap.remove(); S.dmap=null; }
+      initDMap(r.trackPoints, r.falls||[], 'boat');
+    });
+    $('dtab-skier')?.addEventListener('click',()=>{
+      S.detailView='skier';
+      $('dtab-skier').classList.add('on'); $('dtab-boat').classList.remove('on');
+      if(S.dmap){ S.dmap.remove(); S.dmap=null; }
+      initDMap(r.skierPoints||[], r.falls||[], 'skier');
+    });
+  }
+
   requestAnimationFrame(()=>{
-    if(ht) initDMap(r.trackPoints, r.falls||[]);
+    if(ht) initDMap(r.trackPoints, r.falls||[], 'boat');
     const cv=$('dchrt');
     if(cv) setTimeout(()=>drawChart(cv, r.speedHistory, r.falls||[]),120);
-    // Load video from IndexedDB
+    // Load video with muted default + unmute button
     if(r.hasVideo){
       VideoDB.get(r.id).then(blob=>{
         const wrap=$('vid-wrap'); if(!wrap) return;
@@ -1944,14 +2016,26 @@ function openDetail(r){
         const url=URL.createObjectURL(blob);
         const ext=blob.type.includes('mp4')?'mp4':'webm';
         wrap.innerHTML=`
-          <video src="${url}" controls playsinline style="width:100%;display:block;max-height:220px;object-fit:contain;background:#000"></video>
+          <video id="detail-vid" src="${url}" controls playsinline muted
+            style="width:100%;display:block;max-height:220px;object-fit:contain;background:#000"></video>
           <div style="display:flex;gap:8px;padding:10px 12px;background:var(--gs)">
-            <a id="vid-dl" href="${url}" download="WakeSki_${r.id}.${ext}" style="flex:1;text-align:center;padding:9px;border-radius:10px;background:var(--ac);color:#fff;font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
+            <button id="vid-mute-btn" style="padding:9px 14px;border-radius:10px;background:var(--glass);border:.5px solid var(--gb);color:var(--tx);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"/></svg> Ton ein
+            </button>
+            <a href="${url}" download="WakeSki_${r.id}.${ext}" style="flex:1;text-align:center;padding:9px;border-radius:10px;background:var(--ac);color:#fff;font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Video herunterladen
+              Download
             </a>
             <div style="padding:9px 12px;border-radius:10px;background:var(--glass);border:.5px solid var(--gb);font-size:11px;color:var(--tx2);display:flex;align-items:center">${(blob.size/1048576).toFixed(1)} MB</div>
           </div>`;
+        // Mute toggle
+        const vidEl=$('detail-vid'), muteBtn=$('vid-mute-btn');
+        muteBtn.addEventListener('click',()=>{
+          vidEl.muted=!vidEl.muted;
+          muteBtn.innerHTML=vidEl.muted
+            ?`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"/></svg> Ton ein`
+            :`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg> Ton aus`;
+        });
       }).catch(()=>{
         const wrap=$('vid-wrap'); if(wrap) wrap.innerHTML=`<div style="padding:14px;text-align:center;font-size:12px;color:var(--tx3)">Video konnte nicht geladen werden</div>`;
       });
@@ -1963,34 +2047,30 @@ function openDetail(r){
 function closeDetail(){if($('pd').style.display!=='none'){if(S.dmap){S.dmap.remove();S.dmap=null;}$('pd').style.display='none';}}
 $('bbtn').addEventListener('click',closeDetail);
 
-function initDMap(pts, falls){
+function initDMap(pts, falls, mode){
   const el=$('dmap'); if(!el||pts.length<2) return;
   if(S.dmap){S.dmap.remove();S.dmap=null;}
   const map=L.map(el,{zoomControl:true,attributionControl:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
   S.dmap=map;
-
-  // Draw speed-colored route
+  const trackColor=mode==='skier'?'#ffd60a':'#0a84ff';
   const hasSpdData=pts.length>1&&pts[1].speed!==undefined;
-  if(hasSpdData){
+  if(hasSpdData&&mode!=='skier'){
     for(let i=1;i<pts.length;i++)
       L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{color:spdColor(pts[i].speed||0),weight:5,opacity:1,lineCap:'round'}).addTo(map);
   } else {
-    L.polyline(pts.map(p=>[p.lat,p.lon]),{color:'#0a84ff',weight:5,opacity:1,lineCap:'round'}).addTo(map);
+    L.polyline(pts.map(p=>[p.lat,p.lon]),{color:trackColor,weight:5,opacity:1,lineCap:'round'}).addTo(map);
   }
-
-  // Start/End markers
   const ll=pts.map(p=>[p.lat,p.lon]);
   const mk=col=>L.divIcon({html:`<div style="width:11px;height:11px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[11,11],iconAnchor:[5.5,5.5],className:''});
   L.marker(ll[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Start');
   L.marker(ll[ll.length-1],{icon:mk('#ff453a')}).addTo(map).bindPopup('Ende');
-
-  // Clean fall markers with number (no emojis)
-  falls.forEach((f,idx)=>{
-    const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);
-    L.marker([cp.lat,cp.lon],{icon:fallMarkerIcon(idx+1)}).addTo(map).bindPopup(`Sturz #${idx+1} – ${(f.speed||0).toFixed(1)} km/h`);
-  });
-
+  if(mode!=='skier'){
+    falls.forEach((f,idx)=>{
+      const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);
+      L.marker([cp.lat,cp.lon],{icon:fallMarkerIcon(idx+1)}).addTo(map).bindPopup(`Sturz #${idx+1} – ${(f.speed||0).toFixed(1)} km/h`);
+    });
+  }
   const bounds=L.latLngBounds(ll);
   map.fitBounds(bounds,{padding:[20,20]});
   setTimeout(()=>{map.invalidateSize();map.fitBounds(bounds,{padding:[20,20]});},300);
