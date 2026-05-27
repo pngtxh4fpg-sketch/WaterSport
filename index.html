@@ -389,21 +389,28 @@ html[data-theme="light"] .as-slider{background:rgba(0,0,0,.18)}
 .cam-fs-zoom{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px)+24px);left:50%;transform:translateX(-50%);display:flex;gap:8px}
 .cam-fs-zoom-btn{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);backdrop-filter:blur(12px);border:.5px solid rgba(255,255,255,.22);cursor:pointer;transition:all .15s}
 .cam-fs-zoom-btn.on{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5)}
-/* ── Portrait lock: app shell always stays portrait ── */
-/* When device rotates, #app is capped to the shorter screen dimension */
+/* ── Orientation lock: #app always stays portrait via CSS transform ── */
+/* When device is landscape, we rotate the app container back to portrait */
 @media (orientation:landscape) and (max-height:600px){
-  body{overflow:hidden}
+  body{overflow:hidden;background:#000}
   #app{
-    max-width:100vh;           /* use portrait width = landscape height */
-    height:100vw;              /* use portrait height = landscape width */
-    height:100dvw;
+    position:fixed;
+    top:0; left:0;
+    width:100vh;   /* portrait width = landscape height */
+    height:100vw;  /* portrait height = landscape width */
+    transform-origin:top left;
+    transform:rotate(90deg) translateY(-100%);
+    max-width:100vh;
   }
+  /* Nav stays at the bottom of the rotated viewport */
+  #nav{max-width:100vh}
+  /* Only cam fullscreen bypasses this – it's a separate fixed layer */
+  #cam-fullscreen{transform:none;width:100vw;height:100vh}
 }
 /* Detail panel view-switch tab row */
 .dview-tabs{display:flex;gap:6px;margin:0 16px 12px;background:var(--gs);border-radius:12px;padding:3px}
 .dview-tab{flex:1;padding:8px;border-radius:9px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--tx2);transition:all .15s}
 .dview-tab.on{background:var(--ac);color:#fff}
-
 @keyframes fup  {from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes fin  {from{opacity:0}to{opacity:1}}
 @keyframes sup  {from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:none}}
@@ -1471,11 +1478,42 @@ function camDurTick(){
   const el=$('cam-dur'); if(el) el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
+/* ── Landscape canvas: if device delivers portrait video, rotate 90° for recording ── */
+let _landscapeCanvas=null, _landscapeCtx=null, _landscapeAnimID=null, _landscapeStream=null;
+function _startLandscapeCanvas(originalStream){
+  const vid=$('cam-video');
+  if(!vid||!vid.videoWidth) return;
+  const W=vid.videoHeight, H=vid.videoWidth; // swap dimensions = rotate 90°
+  _landscapeCanvas=document.createElement('canvas');
+  _landscapeCanvas.width=W; _landscapeCanvas.height=H;
+  _landscapeCtx=_landscapeCanvas.getContext('2d');
+  function drawFrame(){
+    if(!_landscapeCtx||!vid||vid.readyState<2){_landscapeAnimID=requestAnimationFrame(drawFrame);return;}
+    _landscapeCtx.save();
+    _landscapeCtx.translate(W/2,H/2);
+    _landscapeCtx.rotate(Math.PI/2); // 90° clockwise
+    _landscapeCtx.drawImage(vid,-H/2,-W/2,H,W);
+    _landscapeCtx.restore();
+    _landscapeAnimID=requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+  // Replace _camStream with canvas stream for recording (keeps audio from original)
+  const canvasStream=_landscapeCanvas.captureStream(30);
+  // Mix in audio tracks from original stream
+  originalStream.getAudioTracks().forEach(t=>canvasStream.addTrack(t));
+  _landscapeStream=canvasStream;
+  _camStream=canvasStream; // MediaRecorder will use this
+}
+function _stopLandscapeCanvas(){
+  if(_landscapeAnimID){ cancelAnimationFrame(_landscapeAnimID); _landscapeAnimID=null; }
+  _landscapeCanvas=null; _landscapeCtx=null; _landscapeStream=null;
+}
+
 /* ── Main toggle ── */
 async function toggleCam(){
   const btn=$('cam-btn'), island=$('cam-island'), vid=$('cam-video'), dot=$('cam-rec-dot');
   if(_camStream){
-    stopDetectionLoop(); clearSkierMarker(); stopSharpenLoop();
+    stopDetectionLoop(); clearSkierMarker(); stopSharpenLoop(); _stopLandscapeCanvas();
     if(_camRecorder&&_camRecorder.state!=='inactive') _camRecorder.stop();
     _camStream.getTracks().forEach(t=>t.stop());
     _camStream=null; _camRecorder=null;
@@ -1499,6 +1537,13 @@ async function toggleCam(){
     _camStream=stream; vid.srcObject=stream;
     island.classList.add('on'); btn.classList.add('active');
     _activeLens=1; _camZoom=1; updateZoomUI();
+    // Ensure landscape recording: after stream starts, check actual dimensions
+    // If the browser delivers portrait (height>width), we pipe through a rotated canvas
+    vid.addEventListener('loadedmetadata', ()=>{
+      if(vid.videoHeight > vid.videoWidth){
+        _startLandscapeCanvas(stream);
+      }
+    }, {once:true});
     if(S.tracking) startCamRecording();
     ensureModel().then(m=>{ if(m&&_camReticleOn) startDetectionLoop(); });
     toast('📷 Kamera aktiv – Pinch zum Zoomen');
@@ -1970,11 +2015,15 @@ function openDetail(r){
       <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">🔴 Stürze</div>
       <div style="line-height:1.8">${fallsSummary}</div>
     </div>`:''}
-    <!-- Map with boat/skier toggle -->
+    <!-- Map with boat/skier/combined toggle -->
     ${ht?`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:6px">
       <span class="slbl" style="padding:0;margin:0">Strecke</span>
-      ${hs?`<div class="dview-tabs" style="margin:0;width:auto"><div class="dview-tab on" id="dtab-boat">⛵ Boot</div><div class="dview-tab" id="dtab-skier">🏄 Fahrer</div></div>`:''}
+      ${hs?`<div class="dview-tabs" style="margin:0;width:auto">
+        <div class="dview-tab on" id="dtab-both">⛵🏄</div>
+        <div class="dview-tab" id="dtab-boat">⛵ Boot</div>
+        <div class="dview-tab" id="dtab-skier">🏄 Fahrer</div>
+      </div>`:''}
     </div>
     <div class="dmw"><div id="dmap"></div></div>`:''}
     <!-- Video at end, muted by default -->
@@ -1990,22 +2039,19 @@ function openDetail(r){
 
   // Wire view tabs
   if(hs){
-    $('dtab-boat')?.addEventListener('click',()=>{
-      S.detailView='boat';
-      $('dtab-boat').classList.add('on'); $('dtab-skier').classList.remove('on');
-      if(S.dmap){ S.dmap.remove(); S.dmap=null; }
-      initDMap(r.trackPoints, r.falls||[], 'boat');
-    });
-    $('dtab-skier')?.addEventListener('click',()=>{
-      S.detailView='skier';
-      $('dtab-skier').classList.add('on'); $('dtab-boat').classList.remove('on');
-      if(S.dmap){ S.dmap.remove(); S.dmap=null; }
-      initDMap(r.skierPoints||[], r.falls||[], 'skier');
-    });
+    const setTab=(id,mode)=>{
+      ['dtab-both','dtab-boat','dtab-skier'].forEach(t=>$(t)?.classList.remove('on'));
+      $(id)?.classList.add('on');
+      if(S.dmap){S.dmap.remove();S.dmap=null;}
+      initDMap(mode==='boat'?r.trackPoints:mode==='skier'?r.skierPoints||[]:r.trackPoints, r.falls||[], mode, mode==='both'?r.skierPoints:null);
+    };
+    $('dtab-both')?.addEventListener('click',()=>setTab('dtab-both','both'));
+    $('dtab-boat')?.addEventListener('click',()=>setTab('dtab-boat','boat'));
+    $('dtab-skier')?.addEventListener('click',()=>setTab('dtab-skier','skier'));
   }
 
   requestAnimationFrame(()=>{
-    if(ht) initDMap(r.trackPoints, r.falls||[], 'boat');
+    if(ht) initDMap(r.trackPoints, r.falls||[], hs?'both':'boat', hs?r.skierPoints:null);
     const cv=$('dchrt');
     if(cv) setTimeout(()=>drawChart(cv, r.speedHistory, r.falls||[]),120);
     // Load video with muted default + unmute button
@@ -2047,20 +2093,61 @@ function openDetail(r){
 function closeDetail(){if($('pd').style.display!=='none'){if(S.dmap){S.dmap.remove();S.dmap=null;}$('pd').style.display='none';}}
 $('bbtn').addEventListener('click',closeDetail);
 
-function initDMap(pts, falls, mode){
+function initDMap(pts, falls, mode, skierPts){
   const el=$('dmap'); if(!el||pts.length<2) return;
   if(S.dmap){S.dmap.remove();S.dmap=null;}
   const map=L.map(el,{zoomControl:true,attributionControl:false});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
   S.dmap=map;
-  const trackColor=mode==='skier'?'#ffd60a':'#0a84ff';
-  const hasSpdData=pts.length>1&&pts[1].speed!==undefined;
-  if(hasSpdData&&mode!=='skier'){
-    for(let i=1;i<pts.length;i++)
-      L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{color:spdColor(pts[i].speed||0),weight:5,opacity:1,lineCap:'round'}).addTo(map);
+
+  if(mode==='skier'){
+    // Yellow skier track only
+    L.polyline(pts.map(p=>[p.lat,p.lon]),{color:'#ffd60a',weight:5,opacity:1,lineCap:'round'}).addTo(map);
+  } else if(mode==='both' && skierPts && skierPts.length>1){
+    // Boot track (speed-colored or blue)
+    const hasSpdData=pts.length>1&&pts[1].speed!==undefined;
+    if(hasSpdData){
+      for(let i=1;i<pts.length;i++)
+        L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{color:spdColor(pts[i].speed||0),weight:5,opacity:1,lineCap:'round'}).addTo(map);
+    } else {
+      L.polyline(pts.map(p=>[p.lat,p.lon]),{color:CFG.accentColor||'#0a84ff',weight:5,opacity:1,lineCap:'round'}).addTo(map);
+    }
+    // Skier track on top (yellow, thinner)
+    L.polyline(skierPts.map(p=>[p.lat,p.lon]),{color:'#ffd60a',weight:3.5,opacity:.9,lineCap:'round',dashArray:'1 1'}).addTo(map);
+    // Legend
+    const legend=L.control({position:'bottomleft'});
+    legend.onAdd=()=>{
+      const d=L.DomUtil.create('div','');
+      d.style.cssText='background:rgba(0,0,0,.62);padding:5px 9px;border-radius:8px;font-size:10px;color:#fff;backdrop-filter:blur(8px);line-height:1.7';
+      d.innerHTML='<span style="color:#0a84ff">━━</span> Boot&nbsp;&nbsp;<span style="color:#ffd60a">╌╌</span> Fahrer';
+      return d;
+    };
+    legend.addTo(map);
+    // Fit combined bounds
+    const allPts=[...pts,...skierPts].map(p=>[p.lat,p.lon]);
+    map.fitBounds(L.latLngBounds(allPts),{padding:[20,20]});
+    // Fall markers on boot track
+    falls.forEach((f,idx)=>{
+      const cp=pts.reduce((a,b)=>Math.abs(b.time-f.time)<Math.abs(a.time-f.time)?b:a);
+      L.marker([cp.lat,cp.lon],{icon:fallMarkerIcon(idx+1)}).addTo(map).bindPopup(`Sturz #${idx+1}`);
+    });
+    const mk=col=>L.divIcon({html:`<div style="width:11px;height:11px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[11,11],iconAnchor:[5.5,5.5],className:''});
+    const bl=pts.map(p=>[p.lat,p.lon]);
+    L.marker(bl[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Boot Start');
+    L.marker(bl[bl.length-1],{icon:mk('#ff453a')}).addTo(map).bindPopup('Boot Ende');
+    setTimeout(()=>{map.invalidateSize();map.fitBounds(L.latLngBounds([...pts,...skierPts].map(p=>[p.lat,p.lon])),{padding:[20,20]});},300);
+    return;
   } else {
-    L.polyline(pts.map(p=>[p.lat,p.lon]),{color:trackColor,weight:5,opacity:1,lineCap:'round'}).addTo(map);
+    // Boot only (speed-colored)
+    const hasSpdData=pts.length>1&&pts[1].speed!==undefined;
+    if(hasSpdData){
+      for(let i=1;i<pts.length;i++)
+        L.polyline([[pts[i-1].lat,pts[i-1].lon],[pts[i].lat,pts[i].lon]],{color:spdColor(pts[i].speed||0),weight:5,opacity:1,lineCap:'round'}).addTo(map);
+    } else {
+      L.polyline(pts.map(p=>[p.lat,p.lon]),{color:CFG.accentColor||'#0a84ff',weight:5,opacity:1,lineCap:'round'}).addTo(map);
+    }
   }
+
   const ll=pts.map(p=>[p.lat,p.lon]);
   const mk=col=>L.divIcon({html:`<div style="width:11px;height:11px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,iconSize:[11,11],iconAnchor:[5.5,5.5],className:''});
   L.marker(ll[0],{icon:mk('#30d158')}).addTo(map).bindPopup('Start');
