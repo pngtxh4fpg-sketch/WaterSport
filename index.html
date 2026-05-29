@@ -1478,36 +1478,11 @@ function camDurTick(){
   const el=$('cam-dur'); if(el) el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-/* ── Landscape canvas: if device delivers portrait video, rotate 90° for recording ── */
-let _landscapeCanvas=null, _landscapeCtx=null, _landscapeAnimID=null, _landscapeStream=null;
-function _startLandscapeCanvas(originalStream){
-  const vid=$('cam-video');
-  if(!vid||!vid.videoWidth) return;
-  const W=vid.videoHeight, H=vid.videoWidth; // swap dimensions = rotate 90°
-  _landscapeCanvas=document.createElement('canvas');
-  _landscapeCanvas.width=W; _landscapeCanvas.height=H;
-  _landscapeCtx=_landscapeCanvas.getContext('2d');
-  function drawFrame(){
-    if(!_landscapeCtx||!vid||vid.readyState<2){_landscapeAnimID=requestAnimationFrame(drawFrame);return;}
-    _landscapeCtx.save();
-    _landscapeCtx.translate(W/2,H/2);
-    _landscapeCtx.rotate(Math.PI/2); // 90° clockwise
-    _landscapeCtx.drawImage(vid,-H/2,-W/2,H,W);
-    _landscapeCtx.restore();
-    _landscapeAnimID=requestAnimationFrame(drawFrame);
-  }
-  drawFrame();
-  // Replace _camStream with canvas stream for recording (keeps audio from original)
-  const canvasStream=_landscapeCanvas.captureStream(30);
-  // Mix in audio tracks from original stream
-  originalStream.getAudioTracks().forEach(t=>canvasStream.addTrack(t));
-  _landscapeStream=canvasStream;
-  _camStream=canvasStream; // MediaRecorder will use this
-}
-function _stopLandscapeCanvas(){
-  if(_landscapeAnimID){ cancelAnimationFrame(_landscapeAnimID); _landscapeAnimID=null; }
-  _landscapeCanvas=null; _landscapeCtx=null; _landscapeStream=null;
-}
+/* ── Landscape canvas: REMOVED – caused CPU overload.
+   iOS records in whatever orientation the device is held.
+   We detect orientation and warn the user instead. ── */
+function _startLandscapeCanvas(){ /* no-op */ }
+function _stopLandscapeCanvas(){ /* no-op */ }
 
 /* ── Main toggle ── */
 async function toggleCam(){
